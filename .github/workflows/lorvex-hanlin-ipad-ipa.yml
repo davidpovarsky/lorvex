@@ -5,6 +5,12 @@ on:
   push:
     branches:
       - feat/hanlin-ipad-ipa-20261122
+    paths:
+      - 'apps/apple/Sources/**'
+      - 'apps/apple/Vendor/**'
+      - 'apps/apple/Package.swift'
+      - 'apps/apple/Config/XcodeGen/**'
+      - 'apps/apple/script/build_hanlin_ipad_ipa.sh'
 
 permissions:
   contents: read

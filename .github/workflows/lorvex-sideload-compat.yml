@@ -1,0 +1,90 @@
+name: Lorvex Hanlin - Sideload compatible iPad IPA (no extensions)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/hanlin-ipad-ipa-20261122]
+    paths:
+      - '.github/workflows/lorvex-sideload-compat.yml'
+      - 'apps/apple/script/package_sideload_compat_ipa.py'
+      - 'apps/apple/script/test_package_sideload_compat_ipa.py'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  repackage-without-rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run sideload package regression tests
+        run: python3 apps/apple/script/test_package_sideload_compat_ipa.py -v
+
+      - name: Retrieve the exact last green native iPad IPA
+        uses: actions/download-artifact@v4
+        with:
+          repository: ${{ github.repository }}
+          run-id: 45076375705
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: Lorvex-Hanlin-iPad-IPA-UNSIGNED-45076375705
+          path: input
+
+      - name: Make no-extensions sideload variant while preserving full original IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          shopt -s nullglob
+          inputs=(input/*.ipa)
+          if [[ "${#inputs[@]}" -ne 1 ]]; then
+            echo "::error::Expected one confirmed 45076375705 IPA, got ${#inputs[@]}"
+            exit 1
+          fi
+          source_file="${inputs[0]}"
+          name="$(basename "$source_file" .ipa)"
+          target="output/${name%-UNSIGNED}-SIDELOAD-NO-EXTENSIONS-UNSIGNED.ipa"
+          python3 apps/apple/script/package_sideload_compat_ipa.py             --source "$source_file"             --output "$target"             --manifest output/Lorvex-iPad-sideload-compat-manifest.json
+          python3 - "$target" <<'PY'
+          import plistlib,sys,zipfile
+          path=sys.argv[1]
+          with zipfile.ZipFile(path) as archive:
+              names=archive.namelist()
+              assert archive.testzip() is None
+              app='Payload/LorvexMobileApp.app/'
+              info=plistlib.loads(archive.read(app+'Info.plist'))
+              assert info['CFBundleIdentifier']=='com.lorvex.apple'
+              assert app+info['CFBundleExecutable'] in names
+              assert not any('/PlugIns/' in n or '/Watch/' in n or
+                             '/Extensions/' in n or n.endswith('.appex/Info.plist') for n in names)
+              print('Sideload bundle structural acceptance PASS; no nested app extension placeholders.')
+          PY
+          cat > output/READ-ME-FIRST.txt <<'NOTE'
+          Lorvex Hanlin iPad SIDELOAD compatibility variant.
+
+          This variant is based on the verified green native iPad IPA in
+          run 45076375705 and contains the same core application and SDK.
+          Nested Focus Filter, widgets and Watch companion were intentionally
+          removed because some third-party IPA signing/install services rename
+          the containing bundle identifier (for example adding NA6HPWARQ2)
+          without renaming extensions. iPadOS then rejects the IPA with
+          IXErrorDomain Code=8, mismatched bundle IDs.
+
+          SIGNING REQUIRED: this IPA is UNSIGNED. Re-sign with a tool/account
+          that can install on the target device. This does not enable
+          installation without an Apple provisioning signature.
+          Focus Filter, widget and Watch functionality are not present in this
+          variant. For full functionality, sign the original IPA with a
+          provider that correctly rewrites and signs every nested extension.
+          Neither installation nor live ChatGPT API behavior has been tested
+          on the physical iPad by this automated pipeline.
+          NOTE
+
+      - name: Upload new sideload iPad IPA, manifest and instructions
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorvex-Hanlin-iPad-SIDELOAD-COMPAT-${{ github.run_id }}
+          path: output/*
+          if-no-files-found: error
+          retention-days: 30
