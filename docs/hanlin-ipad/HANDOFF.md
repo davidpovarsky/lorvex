@@ -30,4 +30,15 @@ All writes are denied by default until the live UI explicitly approves. The adap
 - Do not claim that the IPA exists or works until the workflow creates and validates its artifact; do not mark signed IPA complete without its signature validation.
 
 ## Status
-Engineering code prepared; native compilation, tests and artifact generation pending CI.
+Initial Apple CI: https://github.com/davidpovarsky/lorvex/actions/runs/45071179322
+- Setup/XcodeGen/schema-freeze and source checkout passed.
+- SwiftPM and iOS build both stopped at the same resource copy error:
+  Vendor/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONSchema/Resources/Draft2020-12 missing.
+- Cause: first Windows SDK vendor copy was interrupted and left 46 SDK files absent.
+- Reconciled all SDK files against the passing GSD vendor checkout, then verified
+  SHA256 identity of EVERY SDK file (159 HanlinAgentSDK, 231 HanlinPlatform).
+- Added native Swift Charts summary card, with Status/Priority segmented
+  controls using the actual get_summary tool JSON, not fabricated metrics.
+- Added an end-to-end summary JSON-to-chart-data assertion in Hanlin unit tests.
+- Re-validation after repair: Swift parse passed; Native Apple tests and IPA
+  build must be rerun on this corrected branch. Never count failed CI as success.

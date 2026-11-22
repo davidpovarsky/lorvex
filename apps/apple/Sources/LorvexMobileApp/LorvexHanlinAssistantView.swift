@@ -1,5 +1,6 @@
 import Security
 import SwiftUI
+import Charts
 import LorvexMobile
 import LorvexCore
 import LorvexHanlinAgent
@@ -10,6 +11,7 @@ struct LorvexHanlinAssistantView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var assistant: LorvexHanlinAssistantState
     @State private var prompt = ""
+    @State private var chartBreakdown = "status"
     @State private var showModelSettings = false
     @State private var apiToken = ""
     @State private var configuredToken = ""
@@ -51,6 +53,9 @@ struct LorvexHanlinAssistantView: View {
                                     if entry.role != .user { Spacer(minLength: 36) }
                                 }
                                 .id(entry.id)
+                            }
+                            if let summary = assistant.dashboard {
+                                visualDashboard(summary)
                             }
                             if assistant.isRunning {
                                 ProgressView("Working…")
@@ -120,6 +125,43 @@ struct LorvexHanlinAssistantView: View {
                 Text(assistant.pendingApproval?.description ?? "The requested change needs approval.")
             }
         }
+    }
+
+    @ViewBuilder
+    private func visualDashboard(_ summary: LorvexHanlinSummary) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Task overview").font(.headline)
+                Spacer()
+                Text(summary.partial ? "Partial sample" : "All tasks")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 12) {
+                Label("\(summary.open) active", systemImage: "circle.dotted")
+                Label("\(summary.completed) completed", systemImage: "checkmark.circle")
+            }
+            .font(.caption)
+            Picker("Breakdown", selection: $chartBreakdown) {
+                Text("Status").tag("status")
+                Text("Priority").tag("priority")
+            }
+            .pickerStyle(.segmented)
+            Chart(summary.buckets(by: chartBreakdown)) { bucket in
+                BarMark(
+                    x: .value("Category", bucket.name),
+                    y: .value("Tasks", bucket.value))
+                    .foregroundStyle(by: .value("Category", bucket.name))
+            }
+            .chartLegend(.hidden)
+            .frame(height: 170)
+            .accessibilityLabel("Task summary bar chart")
+            if summary.partial {
+                Text("Based on \(summary.sampleSize) of \(summary.totalMatching) matching tasks.")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var settings: some View {

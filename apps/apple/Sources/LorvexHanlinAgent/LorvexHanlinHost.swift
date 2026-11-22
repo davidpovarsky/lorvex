@@ -203,7 +203,7 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
         status: "all", listID: nil, priority: nil,
         text: nil, limit: 200, offset: 0)
       let tasks = page.tasks
-      let byPriority = Dictionary(grouping: tasks, by: { $0.priority.tier }).mapValues(\.count)
+      let byPriority = Dictionary(grouping: tasks, by: { String($0.priority.tier) }).mapValues(\.count)
       let byStatus = Dictionary(grouping: tasks, by: { $0.status.rawValue }).mapValues(\.count)
       return try Self.encode([
         "totalMatching": page.totalMatching, "sampleSize": tasks.count,

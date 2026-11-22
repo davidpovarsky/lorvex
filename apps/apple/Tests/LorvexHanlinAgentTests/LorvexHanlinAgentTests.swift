@@ -74,6 +74,20 @@ struct LorvexHanlinAgentTests {
       status: "all", listID: nil, priority: nil,
       text: nil, limit: 50, offset: 0)
     #expect(page.tasks.count == 1)
+    let summary = try await dispatcher.dispatch(
+      alias: "get_summary", argumentsJSON: "{}",
+      providerCallID: "summary-after-create", runID: UUID(), step: 0,
+      session: session, catalog: catalog, limits: .init())
+    if case let .completed(parts) = summary.result.outcome,
+       let first = parts.first, case let .text(text) = first,
+       let bytes = text.data(using: .utf8) {
+      let decoded = try JSONDecoder().decode(LorvexHanlinSummary.self, from: bytes)
+      #expect(decoded.totalMatching == 1)
+      #expect(decoded.byPriority["1"] == 1)
+      #expect(decoded.buckets(by: "priority").count == 1)
+    } else {
+      Issue.record("Expected a machine-readable get_summary tool result")
+    }
   }
 
   @Test func staleContextDoesNotWrite() async throws {

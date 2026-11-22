@@ -15,6 +15,29 @@ public struct LorvexHanlinMessage: Identifiable, Sendable {
   }
 }
 
+/// Native chart state derived from the get_summary tool's actual JSON payload.
+/// It is read-only: chart controls never mutate task data.
+public struct LorvexHanlinSummary: Decodable, Sendable {
+  public let totalMatching: Int
+  public let sampleSize: Int
+  public let partial: Bool
+  public let open: Int
+  public let completed: Int
+  public let byPriority: [String: Int]
+  public let byStatus: [String: Int]
+
+  public struct Bucket: Identifiable, Sendable {
+    public let name: String
+    public let value: Int
+    public var id: String { name }
+  }
+  public func buckets(by breakdown: String) -> [Bucket] {
+    let values = breakdown == "priority" ? byPriority : byStatus
+    return values.map { Bucket(name: $0.key, value: $0.value) }
+      .sorted { $0.name < $1.name }
+  }
+}
+
 /// Streamed native Chat UI state backed by the real HanlinAgentSession.
 /// User approvals cannot be silently bypassed; default is deny.
 @MainActor @Observable
@@ -23,6 +46,7 @@ public final class LorvexHanlinAssistantState {
   public private(set) var isRunning = false
   public private(set) var errorMessage: String?
   public private(set) var pendingApproval: LorvexHanlinWriteRequest?
+  public private(set) var dashboard: LorvexHanlinSummary?
 
   @ObservationIgnored private let core: any LorvexCoreServicing
   @ObservationIgnored private let didWrite: @Sendable () async -> Void
@@ -119,7 +143,12 @@ public final class LorvexHanlinAssistantState {
           if let index = messages.firstIndex(where: { $0.id == responseID }) {
             messages[index].text += delta
           }
-        case .toolResult(_, let name, _, _, let isError):
+        case .toolResult(_, let name, let modelText, _, let isError):
+          if !isError, name == "get_summary",
+             let json = modelText.data(using: .utf8),
+             let summary = try? JSONDecoder().decode(LorvexHanlinSummary.self, from: json) {
+            dashboard = summary
+          }
           messages.append(.init(role: .status,
             text: (isError ? "Tool error: " : "Tool complete: ") + name))
         case .toolApprovalRequest(let request):
