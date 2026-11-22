@@ -34,6 +34,8 @@ xcodebuild -project "$PROJECT" -scheme LorvexMobileApp \
 
 APP="$BUILD_DIR/Build/Products/Release-iphoneos/LorvexMobileApp.app"
 [[ -d "$APP" ]] || { echo "Compiled application missing: $APP" >&2; exit 1; }
+# The app must embed every dynamic SwiftPM framework used by its libraries.
+python3 "$ROOT/script/verify_macho_closure.py" "$APP"
 PLIST="$APP/Info.plist"
 [[ -f "$PLIST" ]] || { echo "App has no Info.plist" >&2; exit 1; }
 EXECUTABLE="$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$PLIST")"

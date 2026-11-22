@@ -21,7 +21,7 @@ struct LorvexHanlinAssistantView: View {
     init(store: MobileStore) {
         _assistant = State(initialValue: LorvexHanlinAssistantState(
             core: store.assistantCore,
-            didWrite: { [weak store] in await store?.refresh() }))
+            didWrite: { [weak store] in _ = await store?.refresh() }))
     }
 
     var body: some View {
