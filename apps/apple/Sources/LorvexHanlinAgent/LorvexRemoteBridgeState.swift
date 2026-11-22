@@ -59,7 +59,11 @@ public final class LorvexRemoteBridgeState {
               didWrite: @escaping @Sendable () async -> Void = {}) {
     self.core = core
     self.didWrite = didWrite
-    endpointText = UserDefaults.standard.string(forKey: "lorvex.mcp.remote.endpoint") ?? ""
+    // Public HTTPS origin of the user's isolated Oracle/Tailscale Funnel relay.
+    // No credentials are embedded in the app; OAuth and device pairing remain
+    // required before any data is accessible.
+    endpointText = UserDefaults.standard.string(forKey: "lorvex.mcp.remote.endpoint")
+      ?? "https://torah-social.tail0a6c7d.ts.net:10000"
     let key = "lorvex.mcp.remote.device.id"
     if let existing = UserDefaults.standard.string(forKey: key) {
       deviceID = existing

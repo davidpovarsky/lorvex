@@ -1,0 +1,27 @@
+[Unit]
+Description=Lorvex Hanlin Remote MCP OAuth Bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/lorvex-mcp-bridge
+Environment=LORVEX_BRIDGE_PORT=8767
+Environment=LORVEX_BRIDGE_HOST=127.0.0.1
+Environment=LORVEX_BRIDGE_STATE=/home/ubuntu/lorvex-mcp-bridge/bridge-state.json
+EnvironmentFile=-/etc/lorvex-mcp-bridge.env
+ExecStart=/usr/local/bin/node /home/ubuntu/lorvex-mcp-bridge/server.mjs
+Restart=on-failure
+RestartSec=4
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/home/ubuntu/lorvex-mcp-bridge
+ProtectHome=read-only
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target

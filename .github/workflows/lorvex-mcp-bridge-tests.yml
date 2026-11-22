@@ -24,3 +24,13 @@ jobs:
         run: node --test bridge/server.test.mjs
       - name: Validate MCP relay JS syntax
         run: node --check bridge/server.mjs
+      - name: Verify public HTTPS Funnel from an external GitHub runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin="https://torah-social.tail0a6c7d.ts.net:10000"
+          curl -fsS --retry 2 --connect-timeout 12 --max-time 35 "$origin/health" | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d["ok"] is True and d["name"]=="Lorvex Remote MCP Bridge"'
+          curl -fsS --connect-timeout 12 --max-time 35 "$origin/.well-known/oauth-protected-resource" | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d["resource"].endswith("/mcp") and d["authorization_servers"]'
+          status="$(curl -sS --connect-timeout 12 --max-time 35 -o /tmp/unauth-mcp.json -w '%{http_code}'             -X POST "$origin/mcp" -H 'Content-Type: application/json'             -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}')"
+          [[ "$status" == "401" ]] || { echo "Expected 401 from unauthenticated tools/list, got $status"; exit 1; }
+          echo "Public HTTPS MCP ingress, OAuth discovery and auth boundary verified"
