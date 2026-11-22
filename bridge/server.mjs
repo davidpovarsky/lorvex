@@ -151,7 +151,7 @@ export function createBridge({
       }
       if (u==='/.well-known/oauth-protected-resource' && method==='GET') {
         return json(res,200,{resource:publicBase+'/mcp',
-          authorization_servers:[publicBase],scopes_supported:['lorvex.read','lorvex.write'],
+          authorization_servers:[publicBase],scopes_supported:['lorvex.read','lorvex.write','offline_access'],
           bearer_methods_supported:['header']});
       }
       if (u==='/.well-known/oauth-authorization-server' && method==='GET') {
@@ -163,7 +163,7 @@ export function createBridge({
           grant_types_supported:['authorization_code','refresh_token'],
           token_endpoint_auth_methods_supported:['none'],
           code_challenge_methods_supported:['S256'],
-          scopes_supported:['lorvex.read','lorvex.write']});
+          scopes_supported:['lorvex.read','lorvex.write','offline_access']});
       }
       if (u==='/oauth/register' && method==='POST') {
         const data=JSON.parse(await readBody(req));
@@ -251,7 +251,7 @@ export function createBridge({
         persist();
         return json(res,200,{access_token:access,token_type:'Bearer',
           expires_in:Math.floor(TOKEN_TTL_MS/1000),
-          refresh_token:refresh,scope:'lorvex.read lorvex.write'});
+          refresh_token:refresh,scope:'lorvex.read lorvex.write offline_access'});
       }
       if (u==='/v1/device/register' && method==='POST') {
         const body=JSON.parse(await readBody(req));
