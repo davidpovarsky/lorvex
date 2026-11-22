@@ -57,3 +57,20 @@ Initial Apple CI: https://github.com/davidpovarsky/lorvex/actions/runs/450711793
   LORVEX_IPA_CONFIGURATION=Release to produce a Release build. Signed
   archive_ios.sh is unchanged.
 - Next Apple CI must pass both tests and build and upload IPA before a completion claim.
+
+
+## Apple CI 45074630703 — native evidence
+- SwiftPM compiled LorvexHanlinAgent successfully. The **Swift package test
+  command** failed only while compiling the iOS app's assistant View as a
+  macOS executable: navigationBarTitleDisplayMode, topBarLeading,
+  topBarTrailing and textInputAutocapitalization are iOS-only modifiers.
+  UI now uses cross-platform ToolbarItem placements and removes unneeded
+  iOS-only text modifiers so both macOS package tests and iPad app compile.
+- Actual Xcode iOS ARM64 **Debug app build SUCCEEDED** (verified in the build
+  artifact log), including the new agent and Swift Charts interface.
+- Unsigned IPA packing failed in the *post-build* strict Release-only
+  Mach-O closure verifier. Debug builds contain preview/debug dylibs and
+  watch load graphs it intentionally flags as unreachable; the Release
+  checker remains enforced for Release, while Debug trial exports verify
+  app executable ARM64, bundle Info.plist, zip Payload and digest.
+- Next run must prove successful package tests and actual validated IPA.

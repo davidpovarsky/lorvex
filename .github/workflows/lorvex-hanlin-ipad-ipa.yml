@@ -40,6 +40,14 @@ jobs:
         run: |
           set -o pipefail
           swift test --package-path apps/apple --filter LorvexHanlinAgentTests -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
+      - name: Preserve unit-test log immediately
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorvex-Hanlin-unit-test-evidence-${{ github.run_id }}
+          path: lorvex-hanlin-agent-tests.log
+          if-no-files-found: warn
+          retention-days: 14
       - name: Build iPad app and export unsigned IPA
         if: success() || failure()
         id: build

@@ -96,10 +96,9 @@ struct LorvexHanlinAssistantView: View {
                 .background(.regularMaterial)
             }
             .navigationTitle("Hanlin AI")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Model", systemImage: "gearshape") { showModelSettings = true }
                 }
             }
@@ -176,14 +175,10 @@ struct LorvexHanlinAssistantView: View {
                         Text("Other compatible").tag("Other")
                     }
                     TextField("Model identifier", text: $modelID)
-                        .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     TextField("HTTPS API base URL", text: $endpoint)
-                        .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .keyboardType(.URL)
                     SecureField("API key", text: $apiToken)
-                        .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     Text("The API key is saved only in your device Keychain. An API provider may charge for usage. This is not ChatGPT account sign-in.")
                         .font(.caption).foregroundStyle(.secondary)
