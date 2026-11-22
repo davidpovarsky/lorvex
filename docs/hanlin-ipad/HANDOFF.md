@@ -42,3 +42,18 @@ Initial Apple CI: https://github.com/davidpovarsky/lorvex/actions/runs/450711793
 - Added an end-to-end summary JSON-to-chart-data assertion in Hanlin unit tests.
 - Re-validation after repair: Swift parse passed; Native Apple tests and IPA
   build must be rerun on this corrected branch. Never count failed CI as success.
+
+
+## Apple CI 45071802426 diagnostic and correction
+- Original SDK schema resource issue eliminated. Both Swift tests and Xcode
+  Release build reached LorvexHanlinAgent.
+- Both failed at one compile error in LorvexHanlinHost: LorvexTask has no
+  isActionable member, but LorvexTask.Status does.
+- Fixed to task.status.isActionable in the task-summary aggregation.
+- Test fixture now models an attributed explicit user write
+  (writeInitiatorDefault=user), not an implicit unauthenticated write.
+- To avoid unnecessary SwiftAISDK whole-module Release optimization for an
+  unsigned trial, IPA script defaults to Debug ARM64. Use environment variable
+  LORVEX_IPA_CONFIGURATION=Release to produce a Release build. Signed
+  archive_ios.sh is unchanged.
+- Next Apple CI must pass both tests and build and upload IPA before a completion claim.

@@ -5,6 +5,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CONFIGURATION="${LORVEX_IPA_CONFIGURATION:-Debug}"
+case "$CONFIGURATION" in Debug|Release) ;; *) echo "Invalid IPA build configuration: $CONFIGURATION" >&2; exit 2 ;; esac
 PROJECT_DIR="$ROOT/dist/hanlin-ios-xcode-project"
 BUILD_DIR="$ROOT/dist/hanlin-ipad-build"
 OUTPUT_DIR="$ROOT/dist/hanlin-ipad-ipa"
@@ -27,12 +29,12 @@ xcodegen --spec "$ROOT/Config/XcodeGen/project.yml" \
 # lock (which does not yet contain swift-ai-sdk and its transitive packages).
 set -o pipefail
 xcodebuild -project "$PROJECT" -scheme LorvexMobileApp \
-  -configuration Release -destination 'generic/platform=iOS' \
+  -configuration "$CONFIGURATION" -destination 'generic/platform=iOS' \
   -derivedDataPath "$BUILD_DIR" \
   ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO \
   build 2>&1 | tee "$OUTPUT_DIR/lorvex-hanlin-build.log"
 
-APP="$BUILD_DIR/Build/Products/Release-iphoneos/LorvexMobileApp.app"
+APP="$BUILD_DIR/Build/Products/$CONFIGURATION-iphoneos/LorvexMobileApp.app"
 [[ -d "$APP" ]] || { echo "Compiled application missing: $APP" >&2; exit 1; }
 # The app must embed every dynamic SwiftPM framework used by its libraries.
 python3 "$ROOT/script/verify_macho_closure.py" "$APP"
@@ -56,7 +58,7 @@ unzip -tq "$IPA" > "$OUTPUT_DIR/ipa-zip-validation.txt"
 unzip -Z1 "$IPA" | grep -q '^Payload/LorvexMobileApp.app/Info.plist$'
 rm -rf "$STAGING"
 
-export IPA BUNDLE_ID BUILD_NO VERSION ARCHS
+export IPA BUNDLE_ID BUILD_NO VERSION ARCHS CONFIGURATION
 python3 - <<'PY'
 import hashlib,json,os,pathlib
 p=pathlib.Path(os.environ["IPA"])
@@ -68,6 +70,7 @@ receipt={
  "bundleID":os.environ["BUNDLE_ID"],
  "version":os.environ["VERSION"],
  "build":os.environ["BUILD_NO"],
+ "configuration":os.environ["CONFIGURATION"],
  "architectures":os.environ["ARCHS"].split(),
  "signed":False,
  "installable":False,

@@ -13,7 +13,7 @@ struct LorvexHanlinAgentTests {
   ) {
     let tmp = FileManager.default.temporaryDirectory
       .appending(path: "lorvex-hanlin-agent-" + UUID().uuidString + ".sqlite")
-    let core = SwiftLorvexCoreService(databasePath: tmp.path)
+    let core = SwiftLorvexCoreService(databasePath: tmp.path, writeInitiatorDefault: "user")
     let namespace = try HanlinConversationNamespace(
       app: "lorvex", account: "test-account", workspace: "personal", space: "tasks")
     let context = HanlinHostContext(

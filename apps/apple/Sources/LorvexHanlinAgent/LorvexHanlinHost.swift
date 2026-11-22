@@ -208,7 +208,7 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
       return try Self.encode([
         "totalMatching": page.totalMatching, "sampleSize": tasks.count,
         "partial": page.truncated, "byPriority": byPriority, "byStatus": byStatus,
-        "open": tasks.filter { $0.isActionable }.count,
+        "open": tasks.filter { $0.status.isActionable }.count,
         "completed": tasks.filter { $0.status == .completed }.count
       ])
     case "get_today":
