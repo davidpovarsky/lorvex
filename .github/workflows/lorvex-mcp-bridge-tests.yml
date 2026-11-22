@@ -1,0 +1,26 @@
+name: Lorvex Remote MCP Bridge Tests
+
+on:
+  push:
+    branches: [feat/hanlin-ipad-ipa-20261122]
+    paths:
+      - 'bridge/**'
+      - '.github/workflows/lorvex-mcp-bridge-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bridge-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: OAuth PKCE / MCP / iPad queue integration
+        run: node --test bridge/server.test.mjs
+      - name: Validate MCP relay JS syntax
+        run: node --check bridge/server.mjs

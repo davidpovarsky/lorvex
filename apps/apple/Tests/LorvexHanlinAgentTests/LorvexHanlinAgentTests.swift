@@ -110,4 +110,47 @@ struct LorvexHanlinAgentTests {
       text: nil, limit: 50, offset: 0)
     #expect(page.tasks.isEmpty)
   }
+
+  @Test func remoteBridgeRequiresLiveApprovalAndIsIdempotent() async throws {
+    let (core, context, _) = try fixture()
+    let denied = LorvexHanlinHost(core: core, context: context)
+    let deny = await denied.invokeRemoteTool(
+      name: "create_task", argumentsJSON: Data(#"{"title":"Denied remote"}"#.utf8),
+      remoteRequestID: "test-denied-request-1234")
+    #expect(deny.isError)
+    let empty = try await core.listTasks(
+      status: "all", listID: nil, priority: nil, text: nil, limit: 30, offset: 0)
+    #expect(empty.totalMatching == 0)
+
+    let allowed = LorvexHanlinHost(
+      core: core, context: context, authorizeWrite: { _ in true })
+    let id = "test-remote-allowed-01234"
+    let first = await allowed.invokeRemoteTool(
+      name: "create_task", argumentsJSON: Data(#"{"title":"Plan the week","priority":1}"#.utf8),
+      remoteRequestID: id)
+    #expect(!first.isError)
+    let repeated = await allowed.invokeRemoteTool(
+      name: "create_task", argumentsJSON: Data(#"{"title":"Plan the week","priority":1}"#.utf8),
+      remoteRequestID: id)
+    #expect(!repeated.isError)
+    #expect(repeated.text == first.text)
+    let tasks = try await core.listTasks(
+      status: "all", listID: nil, priority: nil, text: nil, limit: 30, offset: 0)
+    #expect(tasks.totalMatching == 1)
+    #expect(tasks.tasks.first?.title == "Plan the week")
+  }
+
+  @Test func remoteBridgeRejectsUnknownToolAndMalformedArguments() async throws {
+    let (core, context, _) = try fixture()
+    let host = LorvexHanlinHost(core: core, context: context)
+    let unknown = await host.invokeRemoteTool(
+      name: "delete_everything", argumentsJSON: Data("{}".utf8),
+      remoteRequestID: "unknown-test-123456")
+    #expect(unknown.isError)
+    let malformed = await host.invokeRemoteTool(
+      name: "list_tasks", argumentsJSON: Data(#"{"limit":-10}"#.utf8),
+      remoteRequestID: "invalid-schema-123456")
+    #expect(malformed.isError)
+  }
+
 }

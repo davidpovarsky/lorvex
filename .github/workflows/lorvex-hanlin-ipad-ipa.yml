@@ -61,6 +61,17 @@ jobs:
         run: |
           set -o pipefail
           bash apps/apple/script/build_hanlin_ipad_ipa.sh 2>&1 | tee lorvex-hanlin-ipad-pipeline.log
+      - name: Package sideload IPA without nested app extensions
+        if: steps.build.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="apps/apple/dist/hanlin-ipad-ipa"
+          ipa="$(find "$d" -maxdepth 1 -type f -name '*-UNSIGNED.ipa' | head -1)"
+          [[ -f "$ipa" ]]
+          output="${ipa%-UNSIGNED.ipa}-SIDELOAD-NO-EXTENSIONS-UNSIGNED.ipa"
+          python3 apps/apple/script/package_sideload_compat_ipa.py             --source "$ipa" --output "$output"             --manifest "$d/Lorvex-iPad-sideload-compat-manifest.json"
+
       - name: Upload real iPad IPA and verifiable manifest
         if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
@@ -69,6 +80,7 @@ jobs:
           path: |
             apps/apple/dist/hanlin-ipad-ipa/*.ipa
             apps/apple/dist/hanlin-ipad-ipa/Lorvex-Hanlin-iPad-manifest.json
+            apps/apple/dist/hanlin-ipad-ipa/Lorvex-iPad-sideload-compat-manifest.json
             apps/apple/dist/hanlin-ipad-ipa/ipa-zip-validation.txt
           if-no-files-found: error
           retention-days: 30

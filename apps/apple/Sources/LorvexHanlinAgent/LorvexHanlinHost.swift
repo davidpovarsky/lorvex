@@ -46,6 +46,12 @@ public struct LorvexHanlinArgs: Decodable, Sendable {
 /// Routes Hanlin's existing SDK tool loop through Lorvex's *original* core.
 /// Never creates a parallel SQLite service, changes schema, or copies MCP logic.
 /// Consent must come from the live user UI immediately before every write.
+public struct LorvexHanlinRemoteToolResult: Sendable {
+  public let text: String
+  public let isError: Bool
+  public init(text: String, isError: Bool) { self.text = text; self.isError = isError }
+}
+
 public actor LorvexHanlinHost: HanlinHostIntegration {
   public typealias WriteAuthorizer = @Sendable (LorvexHanlinWriteRequest) async -> Bool
   public nonisolated let apiVersion = HanlinAPIVersion(major: 1, minor: 1)
@@ -55,6 +61,7 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
   private var contextValue: HanlinHostContext
   private var cancelled = Set<String>()
   private var receipts: [String: HanlinHostExecutionResult] = [:]
+  private var remoteReceipts: [String: LorvexHanlinRemoteToolResult] = [:]
 
   public init(
     core: any LorvexCoreServicing, context: HanlinHostContext,
@@ -70,6 +77,7 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
   public func setContext(_ context: HanlinHostContext) {
     contextValue = context
     receipts.removeAll()
+    remoteReceipts.removeAll()
   }
 
   public func context(for session: HanlinHostSession) throws -> HanlinHostContext {
@@ -159,6 +167,66 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
         effect: spec.writes ? .uncertain : .confirmedNoEffect)
       receipts[request.id.rawValue] = receipt
       return receipt
+    }
+  }
+
+  /// Entry for an authenticated HTTPS bridge. It reuses the exact local
+  /// Hanlin tool catalog, schema validator, canonical Lorvex Core service
+  /// and mandatory interactive write authorizer. No second task engine.
+  ///
+  /// The remote request ID is an idempotency key for re-delivered commands.
+  public func invokeRemoteTool(
+    name: String, argumentsJSON: Data, remoteRequestID: String
+  ) async -> LorvexHanlinRemoteToolResult {
+    if let previous = remoteReceipts[remoteRequestID] { return previous }
+    guard remoteRequestID.utf8.count >= 12, remoteRequestID.utf8.count <= 128,
+          argumentsJSON.count <= 50_000,
+          let spec = LorvexHanlinToolCatalog.specs.first(where: { $0.alias == name }),
+          let schema = try? spec.schemaJSON() else {
+      return .init(text: "Invalid remote tool or request identity", isError: true)
+    }
+    do {
+      try HanlinHostSchemaValidation(schemaJSON: schema)
+        .validate(argumentsJSON: argumentsJSON)
+    } catch {
+      return .init(text: "The tool parameters do not match the declared schema", isError: true)
+    }
+    let args: LorvexHanlinArgs
+    do {
+      let decoder = JSONDecoder()
+      decoder.keyDecodingStrategy = .convertFromSnakeCase
+      args = try decoder.decode(LorvexHanlinArgs.self, from: argumentsJSON)
+    } catch {
+      return .init(text: "Cannot decode arguments", isError: true)
+    }
+
+    if spec.writes {
+      let request = LorvexHanlinWriteRequest(
+        tool: name,
+        objectIDs: args.id.map { [$0] } ?? [],
+        description: spec.summary + ": " +
+          (args.title ?? args.name ?? args.id ?? "current selection"))
+      guard await authorizer(request), !_Concurrency.Task<Never, Never>.isCancelled else {
+        return .init(text: "Change declined or cancelled on the iPad", isError: true)
+      }
+    }
+    do {
+      try _Concurrency.Task<Never, Never>.checkCancellation()
+      let value = try await perform(name, args)
+      let result = LorvexHanlinRemoteToolResult(text: value, isError: false)
+      if remoteReceipts.count >= 250 { remoteReceipts.removeAll() }
+      remoteReceipts[remoteRequestID] = result
+      if spec.writes { await didWrite() }
+      return result
+    } catch {
+      // A native write can commit before a later error: do not silently retry.
+      let result = LorvexHanlinRemoteToolResult(
+        text: spec.writes
+          ? "Write outcome uncertain. Read the task in Lorvex before attempting it again."
+          : "Task read failed: " + error.localizedDescription,
+        isError: true)
+      remoteReceipts[remoteRequestID] = result
+      return result
     }
   }
 

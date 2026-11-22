@@ -10,6 +10,8 @@ import LorvexHanlinAgent
 struct LorvexHanlinAssistantView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var assistant: LorvexHanlinAssistantState
+    let remoteBridge: LorvexRemoteBridgeState
+    @State private var showRemoteBridgeSettings = false
     @State private var prompt = ""
     @State private var chartBreakdown = "status"
     @State private var showModelSettings = false
@@ -20,7 +22,8 @@ struct LorvexHanlinAssistantView: View {
     @AppStorage("lorvex.hanlin.model") private var modelID = ""
     @AppStorage("lorvex.hanlin.endpoint") private var endpoint = "https://openrouter.ai/api/v1"
 
-    init(store: MobileStore) {
+    init(store: MobileStore, remoteBridge: LorvexRemoteBridgeState) {
+        self.remoteBridge = remoteBridge
         _assistant = State(initialValue: LorvexHanlinAssistantState(
             core: store.assistantCore,
             didWrite: { [weak store] in _ = await store?.refresh() }))
@@ -99,6 +102,11 @@ struct LorvexHanlinAssistantView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
+                    Button("MCP", systemImage: "network") {
+                        showRemoteBridgeSettings = true
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Model", systemImage: "gearshape") { showModelSettings = true }
                 }
             }
@@ -111,6 +119,9 @@ struct LorvexHanlinAssistantView: View {
                 Task { await assistant.cancel() }
             }
             .sheet(isPresented: $showModelSettings) { settings }
+            .sheet(isPresented: $showRemoteBridgeSettings) {
+                LorvexRemoteBridgeSettingsView(bridge: remoteBridge)
+            }
             .confirmationDialog(
                 "Allow the AI to modify your tasks?",
                 isPresented: Binding(

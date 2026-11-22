@@ -2,6 +2,7 @@ import Foundation
 import LorvexCore
 import LorvexMobile
 import LorvexSystemIntents
+import LorvexHanlinAgent
 import SwiftUI
 import UserNotifications
 
@@ -13,6 +14,7 @@ struct LorvexMobileApp: App {
   @Environment(\.scenePhase) private var scenePhase
 
   @State private var store: MobileStore
+  @State private var remoteBridge: LorvexRemoteBridgeState
   @State private var showHanlinAssistant = false
 
   // Retained for the process lifetime and activated during App initialization,
@@ -38,6 +40,9 @@ struct LorvexMobileApp: App {
     let builtStore = Self.makeStore()
     builtStore.diagnosticFallback = .live
     _store = State(initialValue: builtStore)
+    _remoteBridge = State(initialValue: LorvexRemoteBridgeState(
+      core: builtStore.assistantCore,
+      didWrite: { [weak builtStore] in _ = await builtStore?.refresh() }))
     #if canImport(UIKit)
       // A silent push can launch the app in the background, where no scene
       // connects and the root view's task that attaches the store never runs.
@@ -89,7 +94,7 @@ struct LorvexMobileApp: App {
   private var rootContent: some View {
     LorvexMobileStoreRootView(store: store)
       .sheet(isPresented: $showHanlinAssistant) {
-        LorvexHanlinAssistantView(store: store)
+        LorvexHanlinAssistantView(store: store, remoteBridge: remoteBridge)
       }
       .overlay(alignment: .bottomTrailing) {
         Button {
@@ -103,6 +108,21 @@ struct LorvexMobileApp: App {
         .accessibilityLabel("Open Hanlin AI personal planner")
       }
       .lorvexMobileSystemEntrypoints(store: store)
+      .confirmationDialog(
+        "Allow this change from ChatGPT?",
+        isPresented: Binding(
+          get: { remoteBridge.pendingApproval != nil },
+          set: { if !$0 && remoteBridge.pendingApproval != nil {
+            remoteBridge.resolveApproval(false)
+          } }),
+        titleVisibility: .visible
+      ) {
+        Button("Allow change") { remoteBridge.resolveApproval(true) }
+        Button("Deny", role: .cancel) { remoteBridge.resolveApproval(false) }
+      } message: {
+        Text(remoteBridge.pendingApproval?.description ??
+          "This request changes your local Lorvex data.")
+      }
       .task {
         #if canImport(UIKit)
           appDelegate.store = store
@@ -157,6 +177,7 @@ struct LorvexMobileApp: App {
         // app is suspended. The scene can already be active when this observer
         // attaches, so its initial value must take the database back too.
         DatabaseSuspension.resume()
+        remoteBridge.startPolling()
         Task {
           await store.refresh()
           store.applyPendingIntentHandoff()
@@ -166,6 +187,9 @@ struct LorvexMobileApp: App {
             store.performQuickAction(action)
           }
         }
+      }
+      if phase != .active {
+        remoteBridge.stopPolling()
       }
       #if os(iOS)
         if phase == .background, previousPhase != .background {
