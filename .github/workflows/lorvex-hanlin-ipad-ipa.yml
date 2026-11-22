@@ -1,0 +1,71 @@
+name: Lorvex Hanlin - iPad Agent and IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/hanlin-ipad-ipa-20261122
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lorvex-hanlin-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-ipad:
+    runs-on: xcode-27
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Xcode 27 and prepare XcodeGen
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          if ! xcodebuild -version | grep -q '^Xcode 27'; then
+            selected="$(find /Applications -maxdepth 1 -type d -name 'Xcode*27*.app' -print | sort -V | tail -1)"
+            [[ -n "$selected" ]]
+            sudo xcode-select -s "$selected/Contents/Developer"
+          fi
+          xcodebuild -version | grep '^Xcode 27'
+          if ! command -v xcodegen >/dev/null; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+      - name: Validate Hanlin tool catalog, consent and persistence
+        id: test
+        shell: bash
+        run: |
+          set -o pipefail
+          swift test --package-path apps/apple --filter LorvexHanlinAgentTests -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
+      - name: Build iPad app and export unsigned IPA
+        if: success() || failure()
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          bash apps/apple/script/build_hanlin_ipad_ipa.sh 2>&1 | tee lorvex-hanlin-ipad-pipeline.log
+      - name: Upload real iPad IPA and verifiable manifest
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorvex-Hanlin-iPad-IPA-UNSIGNED-${{ github.run_id }}
+          path: |
+            apps/apple/dist/hanlin-ipad-ipa/*.ipa
+            apps/apple/dist/hanlin-ipad-ipa/Lorvex-Hanlin-iPad-manifest.json
+            apps/apple/dist/hanlin-ipad-ipa/ipa-zip-validation.txt
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve diagnostics independently of outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorvex-Hanlin-iPad-evidence-${{ github.run_id }}
+          path: |
+            lorvex-hanlin-agent-tests.log
+            lorvex-hanlin-ipad-pipeline.log
+            apps/apple/dist/hanlin-ipad-ipa/lorvex-hanlin-build.log
+          if-no-files-found: warn
+          retention-days: 21

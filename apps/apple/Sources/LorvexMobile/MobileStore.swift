@@ -268,6 +268,7 @@ public final class MobileStore {
   @ObservationIgnored let habitSurfacesFlight = RefreshSingleFlight<Void>()
 
   let core: any LorvexCoreServicing
+  public var assistantCore: any LorvexCoreServicing { core }
   let feedbackProvider: any LorvexFeedbackProviding
   /// The change just made that the Undo banner offers to take back; nil when
   /// none is on offer. Set by ``offerUndo(_:undo:)`` and cleared when the banner

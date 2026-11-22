@@ -11,7 +11,7 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [
         .macOS("26.0"),
-        .iOS("26.0"),
+        .iOS("27.0"),
         .watchOS("26.0")
     ],
     products: [
@@ -19,6 +19,7 @@ let package = Package(
         .library(name: "LorvexCloudSync", targets: ["LorvexCloudSync"]),
         .library(name: "LorvexMarkdownUI", targets: ["LorvexMarkdownUI"]),
         .library(name: "LorvexMobile", targets: ["LorvexMobile"]),
+        .library(name: "LorvexHanlinAgent", targets: ["LorvexHanlinAgent"]),
         .library(name: "LorvexSystemIntents", targets: ["LorvexSystemIntents"]),
         .library(name: "LorvexWidgetKitSupport", targets: ["LorvexWidgetKitSupport"]),
         .library(name: "LorvexWidgetIntents", targets: ["LorvexWidgetIntents"]),
@@ -38,7 +39,9 @@ let package = Package(
         // The pure-Swift core (LorvexDomain/Store/Workflow/Sync/Runtime). The app
         // talks to it through LorvexCoreServicing, implemented by
         // SwiftLorvexCoreService.
-        .package(path: "core")
+        .package(path: "core"),
+        .package(path: "Vendor/HanlinPlatform"),
+        .package(path: "Vendor/HanlinAgentSDK")
     ],
     targets: [
         .target(
@@ -161,11 +164,23 @@ let package = Package(
                     .when(configuration: .debug))
             ]
         ),
+        .target(
+            name: "LorvexHanlinAgent",
+            dependencies: [
+                "LorvexCore",
+                .product(name: "HanlinHostContracts", package: "HanlinAgentSDK"),
+                .product(name: "HanlinAgentCore", package: "HanlinAgentSDK"),
+                .product(name: "HanlinPersistenceAdapters", package: "HanlinAgentSDK"),
+                .product(name: "HanlinPlatformContracts", package: "HanlinPlatform"),
+                .product(name: "HanlinChatCore", package: "HanlinPlatform")
+            ]
+        ),
         .executableTarget(
             name: "LorvexMobileApp",
             dependencies: [
                 "LorvexCore",
                 "LorvexMobile",
+                "LorvexHanlinAgent",
                 "LorvexCloudSync",
                 "LorvexSystemIntents",
                 // Lets a DEBUG launch flag host the real WidgetKit views in-app for
@@ -225,6 +240,16 @@ let package = Package(
                 .product(name: "LorvexStore", package: "core"),
                 .product(name: "LorvexWorkflow", package: "core"),
                 .product(name: "MCP", package: "swift-sdk")
+            ]
+        ),
+        .testTarget(
+            name: "LorvexHanlinAgentTests",
+            dependencies: [
+                "LorvexHanlinAgent",
+                "LorvexCore",
+                .product(name: "HanlinHostContracts", package: "HanlinAgentSDK"),
+                .product(name: "HanlinAgentCore", package: "HanlinAgentSDK"),
+                .product(name: "HanlinPlatformContracts", package: "HanlinPlatform")
             ]
         ),
         .testTarget(

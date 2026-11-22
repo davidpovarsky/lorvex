@@ -8,7 +8,7 @@ options:
   # pairs in build logic.
   developmentLanguage: en
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "27.0"
     watchOS: "26.0"
 settings:
   base:
@@ -39,6 +39,10 @@ packages:
   SwiftMarkdown:
     url: https://github.com/swiftlang/swift-markdown.git
     from: 0.8.0
+  HanlinPlatform:
+    path: Vendor/HanlinPlatform
+  HanlinAgentSDK:
+    path: Vendor/HanlinAgentSDK
 targets:
   LorvexCore:
     type: framework
@@ -144,6 +148,28 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.mobilekit
         GENERATE_INFOPLIST_FILE: YES
 
+  LorvexHanlinAgent:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/LorvexHanlinAgent
+    dependencies:
+      - target: LorvexCore
+      - package: HanlinAgentSDK
+        product: HanlinHostContracts
+      - package: HanlinAgentSDK
+        product: HanlinAgentCore
+      - package: HanlinAgentSDK
+        product: HanlinPersistenceAdapters
+      - package: HanlinPlatform
+        product: HanlinPlatformContracts
+      - package: HanlinPlatform
+        product: HanlinChatCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.hanlinagent
+        GENERATE_INFOPLIST_FILE: YES
+
   LorvexMobileApp:
     type: application
     platform: iOS
@@ -159,6 +185,7 @@ targets:
       - target: LorvexCloudSync
       - target: LorvexMarkdownUI
       - target: LorvexMobile
+      - target: LorvexHanlinAgent
       - target: LorvexSystemIntents
       # Widget sub-modules: the app embeds them so the widget extension
       # can link against the shared copies at runtime. Mirrors the Package.swift

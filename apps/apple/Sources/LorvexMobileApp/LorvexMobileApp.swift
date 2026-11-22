@@ -13,6 +13,7 @@ struct LorvexMobileApp: App {
   @Environment(\.scenePhase) private var scenePhase
 
   @State private var store: MobileStore
+  @State private var showHanlinAssistant = false
 
   // Retained for the process lifetime and activated during App initialization,
   // before any SwiftUI view task runs. A WatchConnectivity background launch
@@ -87,6 +88,20 @@ struct LorvexMobileApp: App {
   @ViewBuilder
   private var rootContent: some View {
     LorvexMobileStoreRootView(store: store)
+      .sheet(isPresented: $showHanlinAssistant) {
+        LorvexHanlinAssistantView(store: store)
+      }
+      .overlay(alignment: .bottomTrailing) {
+        Button {
+          showHanlinAssistant = true
+        } label: {
+          Label("AI", systemImage: "sparkles").labelStyle(.titleAndIcon)
+        }
+        .buttonStyle(.borderedProminent)
+        .padding(.trailing, 18)
+        .padding(.bottom, 95)
+        .accessibilityLabel("Open Hanlin AI personal planner")
+      }
       .lorvexMobileSystemEntrypoints(store: store)
       .task {
         #if canImport(UIKit)
