@@ -29,10 +29,13 @@ xcodegen --spec "$ROOT/Config/XcodeGen/project.yml" \
 # An added Hanlin SDK changes SwiftPM's dependency graph. Resolve dependencies
 # in the disposable generated project rather than enforcing Lorvex's pre-Hanlin
 # lock (which does not yet contain swift-ai-sdk and its transitive packages).
+# Enable the project's declared Swift macros for this noninteractive Xcode build,
+# matching the canonical Hanlin native CI invocation.
 set -o pipefail
 xcodebuild -project "$PROJECT" -scheme LorvexMobileApp \
   -configuration "$CONFIGURATION" -destination 'generic/platform=iOS' \
   -derivedDataPath "$BUILD_DIR" \
+  -skipMacroValidation \
   ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO \
   build 2>&1 | tee "$OUTPUT_DIR/lorvex-hanlin-build.log"
 

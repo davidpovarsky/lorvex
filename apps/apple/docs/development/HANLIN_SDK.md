@@ -114,3 +114,34 @@ the committed source and exact SDK lock.
 Run [45108101654](https://github.com/davidpovarsky/lorvex/actions/runs/45108101654) installed and verified the exact canonical SDK selection on macOS, including its zero-binary receipt. It stopped before source compilation: Lorvex required swift-markdown >=0.8 while the preserved Hanlin streaming renderer requires exactly 0.7.3; an existing Focus Filter XcodeGen runpath setting was incorrectly placed under `configs`. No UI test executed in that run.
 
 The host minimum now admits 0.7.3, and both existing lockfiles select its upstream tag commit `7d9a5ce307528578dfa777d505496bd5f544ad94`. The host's unchanged AST usage (Document, Markup, list checkbox/start index, table head/body/cells, inline nodes and PlainTextConvertibleMarkup) exists in that upstream version. The canonical renderer constraint and implementation are unchanged. The native retry compiles the actual Lorvex markdown module against the shared dependency. The Focus Filter runpaths now belong to `settings.base` for both configurations, preserving their literal values and Release signing configuration.
+
+## Native retry result and targeted corrections
+
+Run [45109608536](https://github.com/davidpovarsky/lorvex/actions/runs/45109608536),
+consumer `919a893d8310c7717420c39bcc89c71e95e47925` with SDK `b66aa5e0`,
+compiled and ran all 11 selected macOS native tests. All five new
+`LorvexHanlinPresentationStateTests` passed. Seven tests passed overall; four
+existing agent tests failed with nine issues. The catalog's exact JSON Schema
+compiler reported `JSONSchemaCompilationFailure(.metaSchema)`, which also blocked
+the dependent read/write/approval/idempotency outcomes. The canonical SDK owner
+identified the aggregate package's renamed resource bundle as the cause and is
+correcting its checked lookup without changing schema validation semantics.
+
+The independent iPad build failed because the existing EquatableMacros dependency
+required Xcode's noninteractive macro enablement. The device and focused Simulator
+build invocations now use `-skipMacroValidation`, matching canonical Hanlin native
+CI. No successful IPA or XCUI result is claimed for this run. The prior shell
+syntax checks are retained; the two changed scripts pass `bash -n` and the Git
+diff check. A native retry must use the corrected canonical SDK pin and these
+actual host build scripts.
+
+Exact retained artifacts:
+
+| Artifact | GitHub ID | ZIP SHA-256 |
+| --- | --- | --- |
+| Unit-test evidence | 14790896680 | `82509a8a2210a42143f6332e3fa602b190e514015d3bff947de942af368f2824` |
+| Native pipeline diagnostics | 14790693702 | `a89c1e790695a91d4d538d3941070d84e51fb07bcaa0215663af8551b56e9d7b` |
+
+The one watcher encountered an API quota error at 04:39:59 UTC and resumed once
+after the 04:43:45 reset. That watcher error was recorded independently of the
+actual workflow failure.

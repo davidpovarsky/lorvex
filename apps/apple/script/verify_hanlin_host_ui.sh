@@ -29,7 +29,17 @@ printf '%s\n' "$SIMULATOR_ID" > "$OUT/simulator-id.txt"
 xcrun simctl boot "$SIMULATOR_ID"
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
 status=0
-xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj"   -scheme LorvexMobileUITests -configuration Debug   -destination "platform=iOS Simulator,id=$SIMULATOR_ID"   -derivedDataPath "$ROOT/dist/hanlin-ipad-simulator"   -clonedSourcePackagesDirPath "$ROOT/dist/hanlin-ipad-build/SourcePackages"   -resultBundlePath "$OUT/Lorvex-Hanlin-UI.xcresult"   -parallel-testing-enabled NO   -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex   ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-   test 2>&1 | tee "$OUT/lorvex-hanlin-ui.log" || status=$?
+# Use the same noninteractive macro enablement as the actual device build.
+xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
+  -scheme LorvexMobileUITests -configuration Debug \
+  -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+  -derivedDataPath "$ROOT/dist/hanlin-ipad-simulator" \
+  -clonedSourcePackagesDirPath "$ROOT/dist/hanlin-ipad-build/SourcePackages" \
+  -resultBundlePath "$OUT/Lorvex-Hanlin-UI.xcresult" \
+  -parallel-testing-enabled NO -skipMacroValidation \
+  -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
+  test 2>&1 | tee "$OUT/lorvex-hanlin-ui.log" || status=$?
 if [[ -d "$OUT/Lorvex-Hanlin-UI.xcresult" ]]; then
   xcrun xcresulttool export attachments --path "$OUT/Lorvex-Hanlin-UI.xcresult"     --output-path "$OUT/screenshots" || true
 fi
