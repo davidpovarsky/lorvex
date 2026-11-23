@@ -15,6 +15,7 @@ struct LorvexMobileApp: App {
 
   @State private var store: MobileStore
   @State private var remoteBridge: LorvexRemoteBridgeState
+  @State private var cloudAccount: LorvexCloudAccountState?
   @State private var hanlinAssistant: LorvexHanlinAssistantState
   @State private var showHanlinAssistant = false
 
@@ -44,6 +45,17 @@ struct LorvexMobileApp: App {
     _remoteBridge = State(initialValue: LorvexRemoteBridgeState(
       core: builtStore.assistantCore,
       didWrite: { [weak builtStore] in _ = await builtStore?.refresh() }))
+    let cloud = (builtStore.assistantCore as? any CloudSyncEngineStore).map {
+      LorvexCloudAccountState(
+        core: $0,
+        disableICloud: { [weak builtStore] in
+          await builtStore?.setCloudSyncModeFromSettings(.off)
+        },
+        didSync: { [weak builtStore] in
+          _ = await builtStore?.refresh()
+        })
+    }
+    _cloudAccount = State(initialValue: cloud)
     _hanlinAssistant = State(initialValue: LorvexHanlinAssistantState(
       core: builtStore.assistantCore,
       didWrite: { [weak builtStore] in _ = await builtStore?.refresh() }))
@@ -98,7 +110,9 @@ struct LorvexMobileApp: App {
   private var rootContent: some View {
     LorvexMobileStoreRootView(store: store)
       .sheet(isPresented: $showHanlinAssistant) {
-        LorvexHanlinAssistantView(assistant: hanlinAssistant, remoteBridge: remoteBridge)
+        LorvexHanlinAssistantView(
+          assistant: hanlinAssistant, remoteBridge: remoteBridge,
+          cloudAccount: cloudAccount)
       }
       .overlay(alignment: .bottomTrailing) {
         Button {
@@ -183,6 +197,7 @@ struct LorvexMobileApp: App {
         // attaches, so its initial value must take the database back too.
         DatabaseSuspension.resume()
         remoteBridge.startPolling()
+        cloudAccount?.startPolling()
         Task {
           await store.refresh()
           store.applyPendingIntentHandoff()
@@ -195,6 +210,7 @@ struct LorvexMobileApp: App {
       }
       if phase != .active {
         remoteBridge.stopPolling()
+        cloudAccount?.stopPolling()
       }
       #if os(iOS)
         if phase == .background, previousPhase != .background {

@@ -1,0 +1,45 @@
+name: Lorvex Cloud Native Swift and iPad
+on:
+  push:
+    branches: [codex/lorvex-cloud-20261123]
+    paths:
+      - 'apps/apple/Sources/**'
+      - 'apps/apple/core/**'
+      - 'apps/apple/Config/XcodeGen/**'
+      - '.github/workflows/lorvex-cloud-native.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: xcode-27
+    timeout-minutes: 95
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Xcode 27 and XcodeGen
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version | grep -q '^Xcode 27'
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+      - name: Validate canonical Lorvex sync engine and cloud checkpoint code
+        shell: bash
+        run: |
+          set -o pipefail
+          swift test --package-path apps/apple/core --filter DbLocatorTests -j 3 2>&1 | tee core-sync-tests.log
+      - name: Compile all native Lorvex cloud account, Hanlin and iPad targets
+        shell: bash
+        run: |
+          set -o pipefail
+          bash apps/apple/script/build_hanlin_ipad_ipa.sh 2>&1 | tee lorvex-cloud-ipad-build.log
+      - name: Preserve evidence independent of status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lorvex-cloud-native-evidence-${{ github.run_id }}
+          path: |
+            core-sync-tests.log
+            lorvex-cloud-ipad-build.log
+            apps/apple/dist/hanlin-ipad-ipa/Lorvex-Hanlin-iPad-manifest.json
+          if-no-files-found: warn
+          retention-days: 14

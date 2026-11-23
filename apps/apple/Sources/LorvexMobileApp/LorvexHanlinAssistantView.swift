@@ -9,6 +9,8 @@ struct LorvexHanlinAssistantView: View {
     @Environment(\.dismiss) private var dismiss
     private let assistant: LorvexHanlinAssistantState
     private let remoteBridge: LorvexRemoteBridgeState
+    private let cloudAccount: LorvexCloudAccountState?
+    @State private var showCloudAccountSettings = false
     @State private var showRemoteBridgeSettings = false
     @State private var showModelSettings = false
     #if canImport(UIKit)
@@ -25,8 +27,10 @@ struct LorvexHanlinAssistantView: View {
     @AppStorage("lorvex.hanlin.model") private var modelID = ""
     @AppStorage("lorvex.hanlin.endpoint") private var endpoint = "https://openrouter.ai/api/v1"
 
-    init(assistant: LorvexHanlinAssistantState, remoteBridge: LorvexRemoteBridgeState) {
+    init(assistant: LorvexHanlinAssistantState, remoteBridge: LorvexRemoteBridgeState,
+         cloudAccount: LorvexCloudAccountState?) {
         self.assistant = assistant; self.remoteBridge = remoteBridge
+        self.cloudAccount = cloudAccount
     }
 
     var body: some View {
@@ -49,6 +53,13 @@ struct LorvexHanlinAssistantView: View {
                     Button("Close") { dismiss() }.accessibilityIdentifier("hanlin.close")
                 }
                 ToolbarItem(placement: .confirmationAction) {
+                    Button("Cloud", systemImage: "icloud") {
+                        showCloudAccountSettings = true
+                    }
+                    .accessibilityIdentifier("hanlin.cloud.settings")
+                    .disabled(cloudAccount == nil)
+                }
+                ToolbarItem(placement: .confirmationAction) {
                     Button("MCP", systemImage: "network") { showRemoteBridgeSettings = true }
                         .accessibilityIdentifier("hanlin.mcp.settings")
                 }
@@ -64,6 +75,11 @@ struct LorvexHanlinAssistantView: View {
             }
             .sheet(isPresented: $showRemoteBridgeSettings) {
                 LorvexRemoteBridgeSettingsView(bridge: remoteBridge)
+            }
+            .sheet(isPresented: $showCloudAccountSettings) {
+                if let cloudAccount {
+                    LorvexCloudAccountSettingsView(cloud: cloudAccount)
+                }
             }
         }
         .chatMotionPreferences()

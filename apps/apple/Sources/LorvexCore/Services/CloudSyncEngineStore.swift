@@ -29,6 +29,13 @@ public enum CloudSyncEngineCheckpoint: String, Sendable, CaseIterable {
   /// CloudKit. The transport discards ``engineState`` so the next engine
   /// fetches the whole zone, then deletes this checkpoint: it is one-shot.
   case refetchRequired = "refetch_required"
+  /// Bound Lorvex Cloud account for this on-device database. Never silently
+  /// send local data into a different account after a sign-out or sign-in.
+  case oracleCloudAccountID = "oracle_cloud.account_id"
+  /// Cursor commits only after LorvexSync has applied the fetched batch.
+  case oracleCloudCursor = "oracle_cloud.cursor"
+  /// Full-resync backfill is queued once per database/account.
+  case oracleCloudInitialized = "oracle_cloud.initialized"
 }
 
 /// The local-store surface the CKSyncEngine transport depends on.
