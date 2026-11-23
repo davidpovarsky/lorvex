@@ -39,10 +39,8 @@ packages:
   SwiftMarkdown:
     url: https://github.com/swiftlang/swift-markdown.git
     from: 0.8.0
-  HanlinPlatform:
-    path: Vendor/HanlinPlatform
-  HanlinAgentSDK:
-    path: Vendor/HanlinAgentSDK
+  HanlinSDK:
+    path: ../../Vendor/HanlinSDK
 targets:
   LorvexCore:
     type: framework
@@ -155,15 +153,15 @@ targets:
       - path: Sources/LorvexHanlinAgent
     dependencies:
       - target: LorvexCore
-      - package: HanlinAgentSDK
+      - package: HanlinSDK
         product: HanlinHostContracts
-      - package: HanlinAgentSDK
+      - package: HanlinSDK
         product: HanlinAgentCore
-      - package: HanlinAgentSDK
+      - package: HanlinSDK
         product: HanlinPersistenceAdapters
-      - package: HanlinPlatform
+      - package: HanlinSDK
         product: HanlinPlatformContracts
-      - package: HanlinPlatform
+      - package: HanlinSDK
         product: HanlinChatCore
     settings:
       base:
@@ -186,6 +184,10 @@ targets:
       - target: LorvexMarkdownUI
       - target: LorvexMobile
       - target: LorvexHanlinAgent
+      - package: HanlinSDK
+        product: HanlinChatUI
+      - package: HanlinSDK
+        product: HanlinPresentationKit
       - target: LorvexSystemIntents
       # Widget sub-modules: the app embeds them so the widget extension
       # can link against the shared copies at runtime. Mirrors the Package.swift

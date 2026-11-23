@@ -15,6 +15,7 @@ struct LorvexMobileApp: App {
 
   @State private var store: MobileStore
   @State private var remoteBridge: LorvexRemoteBridgeState
+  @State private var hanlinAssistant: LorvexHanlinAssistantState
   @State private var showHanlinAssistant = false
 
   // Retained for the process lifetime and activated during App initialization,
@@ -41,6 +42,9 @@ struct LorvexMobileApp: App {
     builtStore.diagnosticFallback = .live
     _store = State(initialValue: builtStore)
     _remoteBridge = State(initialValue: LorvexRemoteBridgeState(
+      core: builtStore.assistantCore,
+      didWrite: { [weak builtStore] in _ = await builtStore?.refresh() }))
+    _hanlinAssistant = State(initialValue: LorvexHanlinAssistantState(
       core: builtStore.assistantCore,
       didWrite: { [weak builtStore] in _ = await builtStore?.refresh() }))
     #if canImport(UIKit)
@@ -94,7 +98,7 @@ struct LorvexMobileApp: App {
   private var rootContent: some View {
     LorvexMobileStoreRootView(store: store)
       .sheet(isPresented: $showHanlinAssistant) {
-        LorvexHanlinAssistantView(store: store, remoteBridge: remoteBridge)
+        LorvexHanlinAssistantView(assistant: hanlinAssistant, remoteBridge: remoteBridge)
       }
       .overlay(alignment: .bottomTrailing) {
         Button {
@@ -106,6 +110,7 @@ struct LorvexMobileApp: App {
         .padding(.trailing, 18)
         .padding(.bottom, 95)
         .accessibilityLabel("Open Hanlin AI personal planner")
+        .accessibilityIdentifier("hanlin.open")
       }
       .lorvexMobileSystemEntrypoints(store: store)
       .confirmationDialog(

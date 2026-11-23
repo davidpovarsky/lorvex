@@ -1,0 +1,110 @@
+# Canonical Hanlin SDK in Lorvex
+
+Lorvex installs one immutable Hanlin SDK revision from `HanlinSDK.lock.json`. The
+old `apps/apple/Vendor/HanlinAgentSDK` and `HanlinPlatform` source forks are removed.
+`Vendor/HanlinSDK` is an ignored, installer-owned canonical checkout; shared source
+changes belong in `davidpovarsky/hanlin-ai`, then Lorvex advances its lock revision.
+
+## Setup and upgrades
+
+From the repository root, with the Apple toolchain installed:
+
+```sh
+python3 apps/apple/script/install_hanlin_sdk.py
+python3 apps/apple/script/install_hanlin_sdk.py --check
+```
+
+The small host bootstrap retrieves `Scripts/SDK/install.py` from the exact full
+commit revision in the lock. The canonical installer generates the selected
+product manifest in place and retains original target source paths. Its sparse
+checkout materializes only that closure; this consumer downloads no Node/Python
+runtime or unrelated application source. It refuses to overwrite source edits.
+An optional `--source-cache /path/to/canonical/hanlin` reuses local Git objects.
+The cache must remain available for such a shared checkout.
+
+To upgrade, change the full revision in `HanlinSDK.lock.json`, run installation,
+and validate the changed host surfaces. Both SwiftPM and XcodeGen resolve the
+same package at the repository-root `Vendor/HanlinSDK`; neither retains a second
+SDK implementation. The generated package and installation receipt are not
+committed to Lorvex.
+
+## Ownership
+
+| Surface | Canonical owner | Lorvex supplies |
+| --- | --- | --- |
+| Agent loop, provider streaming, dispatch/persistence | HanlinAgentCore, HanlinChatCore, HanlinPersistenceAdapters | Actual Core service, scoped 22-tool catalog, write authorizer, refresh callback |
+| Chat layout | HanlinChatUI `HanlinChatView` | Current conversation, host chart, placement |
+| User/assistant bubbles | `HanlinUserMessageBubble`, `HanlinAssistantMessageBubble` | Text and original host actions |
+| Streaming Markdown | `HanlinMarkdownView` | Observed response/reasoning text |
+| Composer | `HanlinMorphComposer`, `NativeMultilineTextEditor`, shared geometry | Draft identity/revision, selected model, send/stop, actual host tools |
+| Tool activity | `HanlinToolActivityHeader`, shared hierarchy/disclosure/motion | Real call IDs, accepted arguments, observed result/error/cancellation |
+| Approval | `HanlinInlineToolApproval` | The pending original host request and its one-use continuation |
+| Sources and auto-follow | Shared sources components and `ChatAutoFollowController` | Observed URLs, viewport geometry and navigation |
+| Task dashboard and ChatGPT pairing | Lorvex | Original domain chart and remote bridge; these remain host business capabilities |
+
+`LorvexMobileApp` retains one `LorvexHanlinAssistantState`, which wraps the real
+Hanlin session and existing private conversation store. Closing and reopening
+the assistant does not create a second conversation owner. Stop revokes the
+active run before awaiting session invalidation, so old events/completions cannot
+append to or clear a newer turn. Provider identity includes a non-reversible
+credential digest, ensuring API-key replacement creates a new session. A failed
+Keychain replacement retains the previous credential.
+
+`LorvexHanlinHost` and its 22-tool catalog still route through the actual
+`LorvexCoreServicing` implementation. The 12 write tools still require live host
+consent. Provider approval never grants host write authority. Activity is keyed
+by actual provider call ID; an unfinished activity cannot become a successful
+write merely because a text stream ended. The UI never synthesizes task results.
+
+## Focused verification
+
+The existing `Lorvex Hanlin - iPad Agent and IPA` workflow is the native owner.
+It installs the exact lock, runs `LorvexHanlinAgentTests` plus the five targeted
+presentation/lifecycle regressions, builds the actual arm64 application, then
+runs only `HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex` in a fresh
+headless iPad Simulator. This real-app route opens the assistant from Lorvex,
+types in the original native multiline editor, opens the original Morph panel
+and real tool catalog, and reopens the assistant. Screenshots and `.xcresult`
+are retained alongside the installation receipt and unsigned IPA provenance.
+
+The UI acceptance test does not make a paid provider request or claim live model
+output. Existing tool tests exercise the actual temporary Lorvex Core database,
+consent, stale context, read/write results and replay. The focused new tests cover
+call correlation, credential rotation, stale cancelled streams, terminal result
+truth and source deduplication. Physical-device installation and OAuth pairing
+require their separate existing acceptance evidence; an unsigned IPA alone does
+not establish those outcomes.
+
+On Oracle, the provisional `a12cf4bac4de9c3d2a60f7620b73306046f40d7a` installation
+materialized 285 files / 12,358,971 bytes, with zero binary targets and no native
+runtime directories. Installer `--check` and Lorvex's own SwiftPM manifest parse
+passed. Native evidence must cite the final lock and consumer commit; this
+provisional installation receipt is not a native UI acceptance result.
+
+## Consumer migration receipt, 2026-11-23
+
+The committed host lock selects SDK `b66aa5e0e979f36d1a34b85e08899449b72d1dc2`,
+including canonical localization/assets and the extracted original bubble chrome.
+The canonical bootstrap and sparse installer completed successfully against the
+actual Lorvex worktree. The installed closure contains 616 files / 27166042 bytes,
+with no binary targets or native runtime directories. Selected manifest SHA-256:
+`29c126b9305e88bbcaed57512374e986f7225a0c87d332950f6ba3deda9bca26`.
+
+Local review passed Swift syntax for the nine changed/new Swift files, shell and
+Python syntax, both workflow/XcodeGen YAML parses, and Git whitespace checks.
+Portable source gates passed schema/migration/wire freezes, repository hygiene,
+source entitlements/hygiene, design tokens, strategy/build matrix, CloudKit,
+MCP typed catalog, plugin vocabulary, localization, acknowledgments/privacy,
+core coverage, file sizes, SQLite portability, user docs and watch embedding.
+
+The repository-wide static tier is not reported green: its 873-script-test run
+encountered 14 errors and two failures from absent macOS utilities on Linux.
+Separate pre-existing failures are the unchanged `bridge/lorvex-mcp-bridge.service`
+public machine paths and incomplete owner-branch bundle-ID/build metadata migration
+in `script/app_metadata.sh` / `script/build_and_run.sh`. Their bytes equal base
+`f7ce8cb7ed4d0d78850d39f64336ecfdb4d6ea7e`; this SDK migration does not change those
+operational scripts. `verify_mcp_tool_manifest.py`, despite placement in the
+static tier, attempts a Swift build and cannot complete on this Linux host; its
+new disposable cache was removed. No native acceptance is inferred from these
+checks. The scoped macOS/iPad workflow owns compilation and live UI evidence for
+the committed source and exact SDK lock.

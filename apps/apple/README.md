@@ -172,3 +172,12 @@ Lorvex has no public email mailbox.
 ## License
 
 [Apache-2.0](../../LICENSE).
+
+
+## Shared Hanlin SDK
+
+The real iPad assistant uses the original modular Hanlin SDK. After checkout,
+run `python3 script/install_hanlin_sdk.py` from this directory (or
+`python3 apps/apple/script/install_hanlin_sdk.py` from the repository root).
+`HanlinSDK.lock.json` at the repository root is the sole SDK revision/product
+selection. See [canonical SDK ownership and validation](docs/development/HANLIN_SDK.md).

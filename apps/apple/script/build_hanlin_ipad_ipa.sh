@@ -16,6 +16,8 @@ for tool in xcodegen xcodebuild xcrun python3 unzip zip ditto; do
   command -v "$tool" >/dev/null || { echo "Missing required tool: $tool" >&2; exit 2; }
 done
 
+python3 "$ROOT/script/install_hanlin_sdk.py" --check
+
 # Preserve Lorvex's release schema gate.
 python3 "$ROOT/script/verify_schema_freeze.py" --release
 bash "$ROOT/script/verify_schema_embed.sh"
@@ -67,6 +69,7 @@ unzip -Z1 "$IPA" | grep -q '^Payload/LorvexMobileApp.app/Info.plist$'
 rm -rf "$STAGING"
 
 export IPA BUNDLE_ID BUILD_NO VERSION ARCHS CONFIGURATION
+export LORVEX_REPOSITORY_ROOT="$(cd "$ROOT/../.." && pwd)"
 python3 - <<'PY'
 import hashlib,json,os,pathlib
 p=pathlib.Path(os.environ["IPA"])
@@ -80,6 +83,7 @@ receipt={
  "build":os.environ["BUILD_NO"],
  "configuration":os.environ["CONFIGURATION"],
  "architectures":os.environ["ARCHS"].split(),
+ "hanlinSDK":json.loads((pathlib.Path(os.environ["LORVEX_REPOSITORY_ROOT"])/"HanlinSDK.lock.json").read_text()),
  "signed":False,
  "installable":False,
  "nextStep":"Sign with an authorized Apple Developer identity and device provisioning before installing or uploading to TestFlight."

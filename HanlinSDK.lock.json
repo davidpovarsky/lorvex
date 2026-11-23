@@ -1,0 +1,12 @@
+{
+  "revision": "b66aa5e0e979f36d1a34b85e08899449b72d1dc2",
+  "products": [
+    "HanlinAgentCore",
+    "HanlinHostContracts",
+    "HanlinPersistenceAdapters",
+    "HanlinPlatformContracts",
+    "HanlinChatCore",
+    "HanlinChatUI",
+    "HanlinPresentationKit"
+  ]
+}

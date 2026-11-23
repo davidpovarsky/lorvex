@@ -40,8 +40,7 @@ let package = Package(
         // talks to it through LorvexCoreServicing, implemented by
         // SwiftLorvexCoreService.
         .package(path: "core"),
-        .package(path: "Vendor/HanlinPlatform"),
-        .package(path: "Vendor/HanlinAgentSDK")
+        .package(path: "../../Vendor/HanlinSDK")
     ],
     targets: [
         .target(
@@ -168,11 +167,11 @@ let package = Package(
             name: "LorvexHanlinAgent",
             dependencies: [
                 "LorvexCore",
-                .product(name: "HanlinHostContracts", package: "HanlinAgentSDK"),
-                .product(name: "HanlinAgentCore", package: "HanlinAgentSDK"),
-                .product(name: "HanlinPersistenceAdapters", package: "HanlinAgentSDK"),
-                .product(name: "HanlinPlatformContracts", package: "HanlinPlatform"),
-                .product(name: "HanlinChatCore", package: "HanlinPlatform")
+                .product(name: "HanlinHostContracts", package: "HanlinSDK"),
+                .product(name: "HanlinAgentCore", package: "HanlinSDK"),
+                .product(name: "HanlinPersistenceAdapters", package: "HanlinSDK"),
+                .product(name: "HanlinPlatformContracts", package: "HanlinSDK"),
+                .product(name: "HanlinChatCore", package: "HanlinSDK")
             ]
         ),
         .executableTarget(
@@ -181,6 +180,8 @@ let package = Package(
                 "LorvexCore",
                 "LorvexMobile",
                 "LorvexHanlinAgent",
+                .product(name: "HanlinChatUI", package: "HanlinSDK"),
+                .product(name: "HanlinPresentationKit", package: "HanlinSDK"),
                 "LorvexCloudSync",
                 "LorvexSystemIntents",
                 // Lets a DEBUG launch flag host the real WidgetKit views in-app for
@@ -247,9 +248,10 @@ let package = Package(
             dependencies: [
                 "LorvexHanlinAgent",
                 "LorvexCore",
-                .product(name: "HanlinHostContracts", package: "HanlinAgentSDK"),
-                .product(name: "HanlinAgentCore", package: "HanlinAgentSDK"),
-                .product(name: "HanlinPlatformContracts", package: "HanlinPlatform")
+                .product(name: "HanlinHostContracts", package: "HanlinSDK"),
+                .product(name: "HanlinAgentCore", package: "HanlinSDK"),
+                .product(name: "HanlinPlatformContracts", package: "HanlinSDK"),
+                .product(name: "HanlinChatCore", package: "HanlinSDK")
             ]
         ),
         .testTarget(
