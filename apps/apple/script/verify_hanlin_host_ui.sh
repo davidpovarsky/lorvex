@@ -13,14 +13,18 @@ sdk=subprocess.check_output(["xcrun","--sdk","iphonesimulator","--show-sdk-versi
 if sdk.split(".")[0] != "27":
     raise SystemExit("The installed stable iOS 27 SDK is required for the real-host UI acceptance test")
 runtimes=json.loads(subprocess.check_output(["xcrun","simctl","list","runtimes","-j"]))["runtimes"]
+installed_types=json.loads(subprocess.check_output(["xcrun","simctl","list","devicetypes","-j"]))["devicetypes"]
+(pathlib.Path(sys.argv[1])/"simulator-inventory.json").write_text(json.dumps(
+    {"sdkVersion":sdk,"runtimes":runtimes,"installedDeviceTypes":installed_types},indent=2)+"\n")
 runtime=next((r for r in runtimes if r.get("isAvailable") and not r.get("isInternal")
     and r["identifier"].endswith("iOS-"+sdk.replace(".","-"))),None)
 if runtime is None:
     raise SystemExit("An available stable Simulator runtime matching the installed iOS 27 SDK is required")
-supported={d["identifier"] for d in runtime.get("supportedDeviceTypes",[])}
-types=json.loads(subprocess.check_output(["xcrun","simctl","list","devicetypes","-j"]))["devicetypes"]
-types=[d for d in types if d.get("productFamily") == "iPad" and "iPad Pro" in d["name"]
-    and d["identifier"] in supported]
+installed_ids={d["identifier"] for d in installed_types}
+# Runtime metadata owns hardware compatibility and family. The global device
+# inventory is only an installation cross-check; its rows need not carry family.
+types=[d for d in runtime.get("supportedDeviceTypes",[]) if "iPad Pro" in d["name"]
+    and d["identifier"] in installed_ids]
 if not types:
     raise SystemExit("The selected iOS 27 runtime has no compatible iPad Pro Simulator device type")
 device=next((d for d in reversed(types) if "13-inch" in d["name"]),types[-1])

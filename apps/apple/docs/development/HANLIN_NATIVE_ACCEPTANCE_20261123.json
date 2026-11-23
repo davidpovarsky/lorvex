@@ -943,11 +943,17 @@
     "currentScript": {
       "mode": "100755",
       "type": "blob",
-      "object": "ab75965e4d6eef7e9f0a8a93dbdd0d47db1b98ff"
+      "object": "c4ef363373a06780dcac5e1b6fd0a40e9bfb2dbc"
     },
-    "failedSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45126430277",
-    "failure": "CoreSimulator code403 Incompatible device: iPad Pro M4 paired with iOS-27-2-iPhone19-4.",
-    "change": "Select the installed stable iOS27 SDK runtime, then an iPad Pro explicitly listed in that runtime's supportedDeviceTypes. Preserve all original test invocation, assertions, cleanup and timeouts.",
-    "scriptAfterCleanupSHA256": "26b337f5cf7b90901f0c4dd7a2b57ba2a94c8504a2405e37d30cf780716655d1"
+    "failedSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45128927383",
+    "failure": "Setup stopped before compilation: no compatible iPad Pro passed a family filter applied to the global devicetype inventory.",
+    "change": "Select compatible iPad Pro metadata directly from the selected runtime's supportedDeviceTypes, then require its identifier in the installed devicetype inventory. Retain both raw inventories before selection. The original test invocation, assertions, cleanup and timeouts remain unchanged.",
+    "scriptAfterCleanupSHA256": "26b337f5cf7b90901f0c4dd7a2b57ba2a94c8504a2405e37d30cf780716655d1",
+    "priorSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45126430277",
+    "previousScript": {
+      "mode": "100755",
+      "type": "blob",
+      "object": "ab75965e4d6eef7e9f0a8a93dbdd0d47db1b98ff"
+    }
   }
 }

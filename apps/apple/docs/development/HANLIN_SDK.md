@@ -236,3 +236,13 @@ run. Receipt schema 2 compares all other script paths, modes and blobs exactly,
 and separately binds this UI-only setup delta. The original cleanup, xcodebuild
 arguments, test selector, UI assertions and timeouts are unchanged. No UI pass
 is claimed from the setup correction.
+
+
+The next UI-only run, 45128927383, waited for a runner and then stopped in setup
+before compilation: the iPad-family filter was applied to the global devicetype
+inventory. The original Maktabah selector and Hanlin's retained verified runtime
+metadata instead take compatible iPad Pro rows from the selected runtime's
+supportedDeviceTypes, then cross-check the installed identifiers. Lorvex now
+follows that same boundary and retains both raw inventories before selection.
+The seven product/test inputs and all 174 other scripts still match the accepted
+native run; only this UI setup delta changes. No UI result is inferred from it.
