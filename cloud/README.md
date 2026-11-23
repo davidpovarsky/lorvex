@@ -28,8 +28,10 @@ Oracle server. The old bridge continues to serve legacy clients unchanged.
 
 ## Deploy
 
-Run node --test cloud/server.test.mjs before rollout.
-Copy store.mjs, tools.mjs and server.mjs into
+Run `node --test cloud/*.test.mjs` before rollout.
+Copy the canonical `schema/sync_payload/004.json` to the runtime directory as
+`sync-payload-004.json` (or point LORVEX_CLOUD_CONTRACT_PATH at it).
+Copy payload.mjs, store.mjs, tools.mjs and server.mjs into
 /home/ubuntu/lorvex-cloud, install lorvex-cloud.service with systemd,
 and mount the public /cloud prefix through the existing localhost Lorvex MCP
 relay on port 8767. The new service itself listens only at 127.0.0.1:8769.

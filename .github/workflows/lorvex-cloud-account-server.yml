@@ -4,6 +4,8 @@ on:
     branches: [codex/lorvex-cloud-20261123]
     paths:
       - 'cloud/**'
+      - 'schema/sync_payload/**'
+      - 'apps/apple/core/Sources/LorvexSync/TaskRegisterDescriptor.swift'
       - 'bridge/server.mjs'
       - '.github/workflows/lorvex-cloud-account-server.yml'
   workflow_dispatch:
@@ -19,11 +21,12 @@ jobs:
         with:
           node-version: '24'
       - name: Native SQLite and account/OAuth/MCP/sync end-to-end tests
-        run: node --test cloud/server.test.mjs
+        run: node --test cloud/*.test.mjs
       - name: Ensure no regression to the paired legacy MCP
         run: node --test bridge/server.test.mjs
       - name: Static JavaScript syntax check
         run: |
+          node --check cloud/payload.mjs
           node --check cloud/store.mjs
           node --check cloud/tools.mjs
           node --check cloud/server.mjs

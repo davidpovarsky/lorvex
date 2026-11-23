@@ -154,7 +154,7 @@ export function createBridge({
       // Preserve the existing legacy device relay untouched while accounts
       // migrate. Only /cloud paths are forwarded; no app database or tokens
       // are exposed on arbitrary proxy destinations.
-      if (u==='/cloud' || u.startsWith('/cloud/')) {
+      if (u==='/cloud' || u.startsWith('/cloud/') || u==='/.well-known/oauth-authorization-server/cloud' || u==='/.well-known/oauth-protected-resource/cloud/mcp') {
         const upstream=http.request({
           hostname:'127.0.0.1', port:8769, path:req.url,
           method, headers:{...req.headers,host:'127.0.0.1:8769'},

@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { CloudStore,CloudError } from './store.mjs';
+import { CloudStore,CloudError,oauthScopes } from './store.mjs';
 import { CLOUD_TOOLS,invokeCloudTool } from './tools.mjs';
 
 const PREFIX='/cloud';
@@ -31,7 +31,7 @@ function validRedirect(uri,allowLocalhost=false){
  try{
    const u=new URL(uri);
    if(u.protocol==='http:'&&allowLocalhost&&u.hostname==='127.0.0.1')return true;
-   if(u.protocol!=='https:')return false;
+   if(u.protocol!=='https:'||u.hash||u.username||u.password)return false;
    return u.hostname==='chatgpt.com'||u.hostname==='chat.openai.com'||
      u.hostname.endsWith('.chatgpt.com')||u.hostname.endsWith('.openai.com')||
      u.hostname==='openai.com';
@@ -45,7 +45,14 @@ export function createCloudServer({
 }={}) {
   const origin=publicOrigin.replace(/\/$/,'');
   if(!origin.endsWith(PREFIX))throw new Error('LORVEX_CLOUD_ORIGIN must end in /cloud');
-  const store=new CloudStore(dbFile,{clock});
+  const resource=origin+'/mcp';
+  const store=new CloudStore(dbFile,{clock,resource});
+  const target=value=>{
+    if(value===undefined||value===null)return resource; // Existing registered clients remain valid.
+    try{if(new URL(value).toString()===new URL(resource).toString())return resource;}catch{}
+    throw new CloudError(400,'invalid_target');
+  };
+  const challenge=(scope,error='unauthorized')=>({'WWW-Authenticate':'Bearer resource_metadata="'+origin+'/.well-known/oauth-protected-resource", scope="'+scope+'"'+(error==='insufficient_scope'?', error="insufficient_scope"':'')});
   const attempts=new Map();
   const throttle=(name)=>{
     const entry=attempts.get(name)||{count:0,until:0};
@@ -75,7 +82,7 @@ export function createCloudServer({
     '<label>Password<input type="password" name="password" autocomplete="current-password" minlength="12" required></label>',
     '<button name="mode" value="login" type="submit">Sign in &amp; connect</button>',
     '<button name="mode" value="register" type="submit">Create account</button>',
-    '</form><p class="hint">This grants your ChatGPT connection read and write access to your Lorvex account. You can revoke it by signing out.</p>'
+    '</form><p class="hint">Requested permissions: '+htmlEscape(store.oauthRequest(requestId)?.scopes||'')+'. You can disconnect Lorvex in ChatGPT settings.</p>'
   ].join(''));
 
   const server=http.createServer(async(req,res)=>{
@@ -89,13 +96,14 @@ export function createCloudServer({
       if(method==='GET'&&pathname===PREFIX+'/health'){
         return json(res,200,{ok:true,service:'Lorvex Cloud',version:1,storage:'durable',sourceOfTruth:'server'});
       }
-      if(method==='GET'&&pathname===PREFIX+'/.well-known/oauth-protected-resource'){
+      if(method==='GET'&&[PREFIX+'/.well-known/oauth-protected-resource','/.well-known/oauth-protected-resource/cloud/mcp'].includes(pathname)){
         return json(res,200,{resource:origin+'/mcp',authorization_servers:[origin],
           scopes_supported:['lorvex.read','lorvex.write','offline_access'],bearer_methods_supported:['header']});
       }
-      if(method==='GET'&&pathname===PREFIX+'/.well-known/oauth-authorization-server'){
+      if(method==='GET'&&[PREFIX+'/.well-known/oauth-authorization-server','/.well-known/oauth-authorization-server/cloud'].includes(pathname)){
         return json(res,200,{issuer:origin,authorization_endpoint:origin+'/oauth/authorize',
           token_endpoint:origin+'/oauth/token',registration_endpoint:origin+'/oauth/register',
+          revocation_endpoint:origin+'/oauth/revoke',authorization_response_iss_parameter_supported:true,
           grant_types_supported:['authorization_code','refresh_token'],
           response_types_supported:['code'],token_endpoint_auth_methods_supported:['none'],
           code_challenge_methods_supported:['S256'],
@@ -103,6 +111,7 @@ export function createCloudServer({
       }
       if(pathname===PREFIX+'/oauth/register'&&method==='POST'){
         const params=await parseBody(req);
+        if(params.token_endpoint_auth_method&&params.token_endpoint_auth_method!=='none')throw new CloudError(400,'invalid_client_metadata');
         if(!Array.isArray(params.redirect_uris)||!params.redirect_uris.every(u=>validRedirect(u,allowLocalhostOAuth)))throw new CloudError(400,'invalid_redirect_uri');
         return json(res,201,store.registerClient(params.redirect_uris,params.client_name));
       }
@@ -112,7 +121,8 @@ export function createCloudServer({
         const clientId=url.searchParams.get('client_id');
         const redirect=url.searchParams.get('redirect_uri');
         if(!validRedirect(redirect,allowLocalhostOAuth))throw new CloudError(400,'redirect_not_allowed');
-        const requestId=store.beginOAuth(clientId,redirect,url.searchParams.get('code_challenge'),url.searchParams.get('state')||'');
+        if(url.searchParams.getAll('resource').length>1)throw new CloudError(400,'invalid_target');
+        const requestId=store.beginOAuth(clientId,redirect,url.searchParams.get('code_challenge'),url.searchParams.get('state')||'',oauthScopes(url.searchParams.get('scope')??undefined),target(url.searchParams.get('resource')));
         return loginForm(res,requestId);
       }
       if(pathname===PREFIX+'/oauth/approve'&&method==='POST'){
@@ -135,6 +145,7 @@ export function createCloudServer({
         const grant=store.approveOAuth(form.request,account.id);
         const callback=new URL(grant.redirect);
         callback.searchParams.set('code',grant.code);
+        callback.searchParams.set('iss',origin);
         if(grant.state)callback.searchParams.set('state',grant.state);
         res.writeHead(302,{'Location':callback.toString(),'Cache-Control':'no-store'});
         return res.end();
@@ -142,10 +153,13 @@ export function createCloudServer({
       if(pathname===PREFIX+'/oauth/token'&&method==='POST'){
         const params=await parseBody(req);
         if(params.grant_type==='authorization_code')
-          return json(res,200,store.exchange(params.code,params.client_id,params.redirect_uri,params.code_verifier));
+          return json(res,200,store.exchange(params.code,params.client_id,params.redirect_uri,params.code_verifier,target(params.resource)));
         if(params.grant_type==='refresh_token')
-          return json(res,200,store.refresh(params.refresh_token,params.client_id));
+          return json(res,200,store.refresh(params.refresh_token,params.client_id,target(params.resource),params.scope??null));
         throw new CloudError(400,'unsupported_grant_type');
+      }
+      if(pathname===PREFIX+'/oauth/revoke'&&method==='POST'){
+        const p=await parseBody(req);store.revokeOAuth(p.token,p.client_id);return json(res,200,{});
       }
       if(pathname===PREFIX+'/v1/auth/register'&&method==='POST'){
         const p=await parseBody(req);
@@ -175,8 +189,7 @@ export function createCloudServer({
         let session;
         try{session=store.authenticate(bearer(req),'lorvex.read');}
         catch(e){
-          return json(res,401,{error:'unauthorized'},{
-            'WWW-Authenticate':'Bearer resource_metadata="'+origin+'/.well-known/oauth-protected-resource"'});
+          return json(res,e.status===403?403:401,{error:e.code},challenge('lorvex.read',e.code));
         }
         if(p.method==='tools/list'){
           return json(res,200,oauthReply(p.id,{tools:CLOUD_TOOLS.map(({writes,...t})=>t)}));
@@ -184,7 +197,10 @@ export function createCloudServer({
         if(p.method==='tools/call'){
           try{
             const spec=CLOUD_TOOLS.find(t=>t.name===p.params?.name);
-            if(spec?.writes)store.authenticate(bearer(req),'lorvex.write');
+            if(spec?.writes){
+              try{store.authenticate(bearer(req),'lorvex.write');}
+              catch(e){return json(res,e.status,{error:e.code},challenge('lorvex.read lorvex.write',e.code));}
+            }
             const result=invokeCloudTool(store,session.account_id,p.params?.name,p.params?.arguments??{});
             return json(res,200,oauthReply(p.id,result));
           }catch(error){
@@ -208,14 +224,14 @@ export function createCloudServer({
       if(method==='POST'&&pathname===PREFIX+'/v1/sync/push'){
         store.authenticate(bearer(req),'lorvex.write');
         const body=await parseBody(req);
-        return json(res,200,store.push(accountId,body.envelopes,body.request_id));
+        return json(res,200,store.push(accountId,body.envelopes,body.request_id,body.expected_versions));
       }
       if(method==='GET'&&pathname===PREFIX+'/v1/dashboard'){
         return json(res,200,store.summary(accountId));
       }
       if(method==='POST'&&pathname===PREFIX+'/v1/tools/call'){
-        store.authenticate(bearer(req),'lorvex.write');
         const p=await parseBody(req);
+        if(CLOUD_TOOLS.find(t=>t.name===p.name)?.writes)store.authenticate(bearer(req),'lorvex.write');
         return json(res,200,invokeCloudTool(store,accountId,p.name,p.arguments));
       }
       return json(res,404,{error:'not_found'});

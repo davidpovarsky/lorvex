@@ -2,15 +2,23 @@ import { DatabaseSync } from 'node:sqlite';
 import { randomUUID, randomBytes, createHash, scryptSync, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import {entityKinds,projectServerPayload} from './payload.mjs';
 
 export const SCHEMA_VERSION=4;
-const ENTITY_KINDS=new Set(('task list habit habit_completion habit_skip calendar_event calendar_series_cutover memory daily_review daily_briefing task_tag task_dependency task_calendar_event_link task_reminder task_checklist_item task_delegation tag preference working_hours calendar_source calendar_event_reminder habit_reminder habit_schedule habit_milestone habit_goal habit_streak').split(' '));
+const ENTITY_KINDS=entityKinds;
 export const randomToken=()=>randomBytes(32).toString('base64url');
 const hash=x=>createHash('sha256').update(String(x)).digest('hex');
 const obj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const iso=()=>new Date().toISOString();
 const validVersion=/^\d{13}_\d{4}_[0-9a-f]{16}$/;
 const normalEmail=s=>typeof s==='string'?s.toLowerCase().trim():'';
+const DEFAULT_SCOPES='lorvex.read lorvex.write offline_access';
+export function oauthScopes(value=DEFAULT_SCOPES){
+  if(typeof value!=='string')throw new CloudError(400,'invalid_scope');
+  const scopes=[...new Set(value.trim().split(/\s+/).filter(Boolean))];
+  if(!scopes.length||scopes.some(s=>!DEFAULT_SCOPES.split(' ').includes(s)))throw new CloudError(400,'invalid_scope');
+  return scopes.join(' ');
+}
 export class CloudError extends Error {
   constructor(status,code){super(code);this.status=status;this.code=code;}
 }
@@ -27,8 +35,8 @@ export function validateEnvelope(e) {
   return e;
 }
 export class CloudStore {
-  constructor(filename,{clock=Date.now}={}){
-    this.clock=clock;
+  constructor(filename,{clock=Date.now,resource=null}={}){
+    this.clock=clock;this.resource=resource;
     if(filename!==':memory:')fs.mkdirSync(path.dirname(filename),{recursive:true,mode:0o700});
     this.db=new DatabaseSync(filename,{timeout:5000});
     this.db.exec('PRAGMA journal_mode=WAL;PRAGMA foreign_keys=ON;PRAGMA busy_timeout=5000;');
@@ -44,13 +52,20 @@ export class CloudStore {
       'CREATE TABLE IF NOT EXISTS receipts(account_id TEXT NOT NULL,request_id TEXT NOT NULL,response TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(account_id,request_id));',
       'CREATE TABLE IF NOT EXISTS audit(seq INTEGER PRIMARY KEY AUTOINCREMENT,account_id TEXT NOT NULL,action TEXT NOT NULL,entity_id TEXT,created INTEGER NOT NULL);'
     ].join('\n'));
+    // Additive migration preserves existing accounts, sessions and user data.
+    for(const table of ['oauth_requests','oauth_codes','tokens']){
+      const fields=new Set(this.all('PRAGMA table_info('+table+')').map(c=>c.name));
+      if(!fields.has('resource'))this.db.exec('ALTER TABLE '+table+' ADD COLUMN resource TEXT NOT NULL DEFAULT ""');
+      if(table!=='tokens'&&!fields.has('scopes'))this.db.exec('ALTER TABLE '+table+' ADD COLUMN scopes TEXT NOT NULL DEFAULT "lorvex.read lorvex.write offline_access"');
+      if(this.resource)this.run('UPDATE '+table+' SET resource=? WHERE resource=?',this.resource,'');
+    }
     this.previousPhysical=0;this.counter=0;
   }
   close(){this.db.close();}
   get(sql,...args){return this.db.prepare(sql).get(...args);}
   all(sql,...args){return this.db.prepare(sql).all(...args);}
   run(sql,...args){return this.db.prepare(sql).run(...args);}
-  tx(fn){this.db.exec('BEGIN IMMEDIATE');try{const result=fn();this.db.exec('COMMIT');return result;}catch(err){this.db.exec('ROLLBACK');throw err;}}
+  tx(fn){if(this.inTransaction)return fn();this.db.exec('BEGIN IMMEDIATE');this.inTransaction=true;try{const result=fn();this.db.exec('COMMIT');return result;}catch(err){this.db.exec('ROLLBACK');throw err;}finally{this.inTransaction=false;}}
   account(email){return this.get('SELECT * FROM accounts WHERE email=?',normalEmail(email));}
   publicAccount(record){return {id:record.id,email:record.email,timezone:record.timezone};}
   createAccount(email,password){
@@ -78,12 +93,14 @@ export class CloudStore {
     this.run('INSERT INTO oauth_clients(id,redirects,name,created) VALUES(?,?,?,?)',id,JSON.stringify(redirects),String(name||'ChatGPT').slice(0,120),this.clock());
     return {client_id:id,client_id_issued_at:Math.floor(this.clock()/1000),redirect_uris:redirects,token_endpoint_auth_method:'none',grant_types:['authorization_code','refresh_token'],response_types:['code']};
   }
-  beginOAuth(clientId,redirect,challenge,state){
+  beginOAuth(clientId,redirect,challenge,state,scopes=DEFAULT_SCOPES,resource=this.resource){
     const client=this.client(clientId);
     if(!client||!JSON.parse(client.redirects).includes(redirect)||typeof challenge!=='string'||
        challenge.length<43||challenge.length>120||typeof state!=='string'||state.length>500)throw new CloudError(400,'invalid_oauth_request');
     const id=randomToken();
-    this.run('INSERT INTO oauth_requests(id,client_id,redirect,challenge,state,expires) VALUES(?,?,?,?,?,?)',id,clientId,redirect,challenge,state,this.clock()+600000);
+    scopes=oauthScopes(scopes);
+    if((resource||'')!==(this.resource||''))throw new CloudError(400,'invalid_target');
+    this.run('INSERT INTO oauth_requests(id,client_id,redirect,challenge,state,expires,scopes,resource) VALUES(?,?,?,?,?,?,?,?)',id,clientId,redirect,challenge,state,this.clock()+600000,scopes,resource||'');
     return id;
   }
   oauthRequest(id){return this.get('SELECT * FROM oauth_requests WHERE id=? AND expires>?',id,this.clock());}
@@ -93,39 +110,43 @@ export class CloudStore {
     const code=randomToken();
     this.tx(()=>{
       this.run('DELETE FROM oauth_requests WHERE id=?',requestId);
-      this.run('INSERT INTO oauth_codes(hash,account_id,client_id,redirect,challenge,expires) VALUES(?,?,?,?,?,?)',hash(code),accountId,req.client_id,req.redirect,req.challenge,this.clock()+600000);
+      this.run('INSERT INTO oauth_codes(hash,account_id,client_id,redirect,challenge,expires,scopes,resource) VALUES(?,?,?,?,?,?,?,?)',hash(code),accountId,req.client_id,req.redirect,req.challenge,this.clock()+600000,req.scopes,req.resource);
     });
     return {code,redirect:req.redirect,state:req.state};
   }
-  issueToken(accountId,clientId=null,scopes='lorvex.read lorvex.write offline_access'){
+  issueToken(accountId,clientId=null,scopes=DEFAULT_SCOPES,resource=this.resource){
     const access=randomToken(),refresh=randomToken(),at=this.clock();
-    this.run('INSERT INTO tokens(access_hash,refresh_hash,account_id,client_id,scopes,access_exp,refresh_exp,created) VALUES(?,?,?,?,?,?,?,?)',hash(access),hash(refresh),accountId,clientId,scopes,at+3600000,at+2592000000,at);
+    this.run('INSERT INTO tokens(access_hash,refresh_hash,account_id,client_id,scopes,access_exp,refresh_exp,created,resource) VALUES(?,?,?,?,?,?,?,?,?)',hash(access),hash(refresh),accountId,clientId,scopes,at+3600000,at+2592000000,at,resource||'');
     return {access_token:access,refresh_token:refresh,token_type:'Bearer',expires_in:3600,scope:scopes};
   }
-  exchange(code,clientId,redirect,verifier){
+  exchange(code,clientId,redirect,verifier,resource=this.resource){
     if(typeof verifier!=='string'||verifier.length<43||verifier.length>128)throw new CloudError(400,'invalid_grant');
     const record=this.get('SELECT * FROM oauth_codes WHERE hash=?',hash(code||''));
     const challenge=createHash('sha256').update(verifier).digest('base64url');
-    if(!record||record.expires<=this.clock()||record.client_id!==clientId||record.redirect!==redirect||record.challenge!==challenge)throw new CloudError(400,'invalid_grant');
-    return this.tx(()=>{this.run('DELETE FROM oauth_codes WHERE hash=?',hash(code));return this.issueToken(record.account_id,clientId);});
+    if(!record||record.expires<=this.clock()||record.client_id!==clientId||record.redirect!==redirect||record.challenge!==challenge||(record.resource||'')!==(resource||''))throw new CloudError(400,'invalid_grant');
+    return this.tx(()=>{this.run('DELETE FROM oauth_codes WHERE hash=?',hash(code));return this.issueToken(record.account_id,clientId,record.scopes,record.resource);});
   }
-  refresh(token,clientId=null){
+  refresh(token,clientId=null,resource=this.resource,scope=null){
     const record=this.get('SELECT * FROM tokens WHERE refresh_hash=?',hash(token||''));
-    if(!record||record.refresh_exp<=this.clock()||record.client_id!==(clientId||null))throw new CloudError(400,'invalid_grant');
-    return this.tx(()=>{this.run('DELETE FROM tokens WHERE refresh_hash=?',hash(token));return this.issueToken(record.account_id,clientId,record.scopes);});
+    if(!record||record.refresh_exp<=this.clock()||record.client_id!==(clientId||null)||(record.resource||'')!==(resource||''))throw new CloudError(400,'invalid_grant');
+    const scopes=scope===null?record.scopes:oauthScopes(scope);
+    if(scopes.split(' ').some(s=>!record.scopes.split(' ').includes(s)))throw new CloudError(400,'invalid_scope');
+    return this.tx(()=>{this.run('DELETE FROM tokens WHERE refresh_hash=?',hash(token));return this.issueToken(record.account_id,clientId,scopes,record.resource);});
   }
   authenticate(token,scope='lorvex.read'){
     if(typeof token!=='string'||token.length<25)throw new CloudError(401,'unauthorized');
     const record=this.get('SELECT * FROM tokens WHERE access_hash=? AND access_exp>?',hash(token),this.clock());
-    if(!record||!record.scopes.split(' ').includes(scope))throw new CloudError(401,'unauthorized');
+    if(!record||(this.resource&&(record.resource||'')!==this.resource))throw new CloudError(401,'unauthorized');
+    if(!record.scopes.split(' ').includes(scope))throw new CloudError(403,'insufficient_scope');
     return record;
   }
   revoke(token){this.run('DELETE FROM tokens WHERE access_hash=?',hash(token||''));}
+  revokeOAuth(token,clientId){this.run('DELETE FROM tokens WHERE (access_hash=? OR refresh_hash=?) AND client_id IS ?',hash(token||''),hash(token||''),clientId||null);}
   wire(row){return {entity_type:row.entity_type,entity_id:row.entity_id,operation:row.operation,version:row.version,payload_schema_version:row.payload_schema_version,payload:row.payload,device_id:row.device_id};}
   receive(accountId,e){
     validateEnvelope(e);
     const old=this.get('SELECT * FROM entities WHERE account_id=? AND entity_type=? AND entity_id=?',accountId,e.entity_type,e.entity_id);
-    if(old && (old.version>e.version||(old.version===e.version&&old.payload>=e.payload))){
+    if(old && old.version>=e.version){
       if(old.version===e.version&&old.payload===e.payload&&old.operation===e.operation)return {status:'duplicate'};
       return {status:'stale',winner:this.wire(old)};
     }
@@ -133,13 +154,25 @@ export class CloudStore {
     const result=this.run('INSERT INTO changes(account_id,entity_type,entity_id,version,operation,payload,payload_schema_version,device_id,created) VALUES(?,?,?,?,?,?,?,?,?)',accountId,e.entity_type,e.entity_id,e.version,e.operation,e.payload,e.payload_schema_version,e.device_id,this.clock());
     return {status:'accepted',seq:Number(result.lastInsertRowid)};
   }
-  push(accountId,items,requestId){
+  push(accountId,items,requestId,expectedVersions=undefined){
     if(!Array.isArray(items)||items.length<1||items.length>60||typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{12,128}$/.test(requestId))throw new CloudError(400,'invalid_batch');
     const prior=this.get('SELECT response FROM receipts WHERE account_id=? AND request_id=?',accountId,requestId);
     if(prior)return JSON.parse(prior.response);
     items.forEach(validateEnvelope);
+    if(expectedVersions!==undefined&&(!obj(expectedVersions)||Object.values(expectedVersions).some(v=>v!==null&&(typeof v!=='string'||!validVersion.test(v)))))throw new CloudError(400,'invalid_expected_versions');
     return this.tx(()=>{
-      const results=items.map(e=>this.receive(accountId,e)),response={results};
+      const results=items.map(e=>{
+        if(expectedVersions!==undefined){
+          const current=this.get('SELECT * FROM entities WHERE account_id=? AND entity_type=? AND entity_id=?',accountId,e.entity_type,e.entity_id);
+          if(current&&current.version===e.version&&current.payload===e.payload&&current.operation===e.operation)return {status:'duplicate'};
+          const expected=expectedVersions[e.entity_type+':'+e.entity_id]??null;
+          if((current?.version??null)!==expected){
+            if(!current)throw new CloudError(409,'expected_version_missing');
+            return {status:'stale',winner:this.wire(current)};
+          }
+        }
+        return this.receive(accountId,e);
+      }),response={results};
       this.run('INSERT INTO receipts(account_id,request_id,response,created) VALUES(?,?,?,?)',accountId,requestId,JSON.stringify(response),this.clock());
       return response;
     });
@@ -169,7 +202,8 @@ export class CloudStore {
     if(!ENTITY_KINDS.has(kind)||!obj(payload))throw new CloudError(422,'invalid_entity');
     if(requestId){const cached=this.get('SELECT response FROM receipts WHERE account_id=? AND request_id=?',accountId,requestId);if(cached)return JSON.parse(cached.response);}
     const version=this.nextHlc(accountId);
-    const entity={...payload,id,version,updated_at:iso()};
+    const previous=this.entity(accountId,kind,id);
+    const entity=projectServerPayload(kind,payload,id,version,previous,operation);
     const wire={entity_type:kind,entity_id:id,operation,version,payload_schema_version:SCHEMA_VERSION,payload:JSON.stringify(entity),device_id:'lorvex-cloud-server'};
     return this.tx(()=>{
       const status=this.receive(accountId,wire);

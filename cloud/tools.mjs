@@ -18,8 +18,8 @@ const definitions=[
   ['list_events','List calendar events in inclusive day range',false,{from:str(10),to:str(10)},['from','to']],
   ['get_event','Read one event',false,commonID,['id']],
   ['list_habits','Read habits and daily completions',false,{date:str(10)},[]],
-  ['create_task','Create a task in Lorvex Cloud',true,{title:str(500),notes:nullable(8000),priority:int(1,3),list_id:str(128),due_date:date,planned_date:date,estimated_minutes:int(1,10080),tags:field('array',{maxItems:50,items:str(80)}),request_id:str(128)},['title']],
-  ['update_task','Update specified task fields',true,{...commonID,title:str(500),notes:nullable(8000),priority:int(1,3),due_date:date,planned_date:date,clear_due:field('boolean'),clear_planned:field('boolean'),estimated_minutes:int(1,10080),tags:field('array',{maxItems:50,items:str(80)}),request_id:str(128)},['id']],
+  ['create_task','Create a task in Lorvex Cloud',true,{title:str(500),notes:nullable(8000),priority:int(1,3),list_id:str(128),due_date:date,planned_date:date,estimated_minutes:int(1,1440),tags:field('array',{maxItems:50,items:str(80)}),request_id:str(128)},['title']],
+  ['update_task','Update specified task fields',true,{...commonID,title:str(500),notes:nullable(8000),priority:int(1,3),due_date:date,planned_date:date,clear_due:field('boolean'),clear_planned:field('boolean'),estimated_minutes:int(1,1440),tags:field('array',{maxItems:50,items:str(80)}),request_id:str(128)},['id']],
   ['complete_task','Complete a task',true,{...commonID,request_id:str(128)},['id']],
   ['reopen_task','Reopen a task',true,{...commonID,request_id:str(128)},['id']],
   ['start_task','Start a task',true,{...commonID,request_id:str(128)},['id']],
@@ -66,7 +66,7 @@ export function validateTool(name,args) {
 const taskFor=t=>({...t,notes:t.body??t.notes??null,priority:t.priority??2,dueDate:t.due_date??null,plannedDate:t.planned_date??null});
 const dayPattern=/^\d{4}-\d{2}-\d{2}$/;
 function validDay(day) {
-  if(typeof day!=='string'||!dayPattern.test(day)||Number.isNaN(Date.parse(day+'T00:00:00Z')))throw new CloudError(422,'invalid_date');
+  if(typeof day!=='string'||!dayPattern.test(day)||Number.isNaN(Date.parse(day+'T00:00:00Z'))||new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day)throw new CloudError(422,'invalid_date');
   return day;
 }
 const now=()=>new Date().toISOString().replace(/\.\d{3}Z$/,'.000Z');
@@ -75,11 +75,32 @@ const paginate=(list,args)=>{const offset=args.offset??0,limit=args.limit??100;r
   truncated:list.length>offset+limit,nextOffset:list.length>offset+limit?offset+limit:null}};
 export function invokeCloudTool(store,accountId,name,args={}) {
   const spec=validateTool(name,args);
-  const tasks=()=>store.list(accountId,'task');
+  const hydrateTask=t=>{
+    const links=store.list(accountId,'task_tag').filter(l=>l.task_id===t.id);
+    const ids=new Set(links.map(l=>l.tag_id));
+    return {...t,tags:store.list(accountId,'tag').filter(t=>ids.has(t.id)).map(t=>t.display_name)};
+  };
+  const tasks=()=>store.list(accountId,'task').map(hydrateTask);
   const lists=()=>store.list(accountId,'list');
   const events=()=>store.list(accountId,'calendar_event');
   const habits=()=>store.list(accountId,'habit');
   const requestId=args.request_id??null;
+  const writeTask=(id,payload)=>store.tx(()=>{
+    if(requestId){const cached=store.get('SELECT response FROM receipts WHERE account_id=? AND request_id=?',accountId,requestId);if(cached)return JSON.parse(cached.response).entity;}
+    const result=store.writeEntity(accountId,'task',id,payload,'upsert',requestId,name).entity;
+    if(args.tags!==undefined){
+      const wanted=new Set();
+      for(const label of [...new Set(args.tags.map(t=>t.trim()).filter(Boolean))]){
+        let tag=store.list(accountId,'tag').find(t=>t.display_name.toLowerCase()===label.toLowerCase());
+        if(!tag){const tagId=randomUUID();tag=store.writeEntity(accountId,'tag',tagId,{id:tagId,display_name:label,color:null,created_at:now(),updated_at:now()},'upsert',null,'tag_task').entity;}
+        wanted.add(tag.id);
+        const linkId=id+':'+tag.id;
+        if(!store.entity(accountId,'task_tag',linkId))store.writeEntity(accountId,'task_tag',linkId,{task_id:id,tag_id:tag.id,created_at:now()},'upsert',null,'tag_task');
+      }
+      for(const link of store.list(accountId,'task_tag').filter(l=>l.task_id===id&&!wanted.has(l.tag_id)))store.writeEntity(accountId,'task_tag',link.id,{},'delete',null,'untag_task');
+    }
+    return result;
+  });
   let answer;
   if(name==='list_tasks'||name==='search_tasks'){
     let list=tasks();
@@ -93,7 +114,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
   } else if(name==='get_task'){
     const t=store.entity(accountId,'task',args.id);
     if(!t)throw new CloudError(404,'task_not_found');
-    answer={task:taskFor(t)};
+    answer={task:taskFor(hydrateTask(t))};
   } else if(name==='get_summary') {
     answer=store.summary(accountId);
   } else if(name==='get_today'){
@@ -104,7 +125,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
     const relevant=tasks().filter(t=>!['completed','cancelled'].includes(t.status)&&(t.planned_date===date||t.due_date===date));
     answer={summary:String(relevant.length)+' tasks scheduled today',briefing:null,logicalDay:date,tasks:relevant.map(taskFor)};
   } else if(name==='list_lists'){
-    answer={lists};
+    answer={lists:lists()};
   } else if(name==='get_list_detail'){
     const list=store.entity(accountId,'list',args.id);
     if(!list)throw new CloudError(404,'list_not_found');
@@ -120,11 +141,13 @@ export function invokeCloudTool(store,accountId,name,args={}) {
   } else if(name==='list_habits'){
     const day=validDay(args.date??new Date().toISOString().slice(0,10));
     const records=store.list(accountId,'habit_completion');
-    answer={date:day,habits:habits().map(h=>({...h,completed:records.some(c=>c.habit_id===h.id&&c.date===day)}))};
+    answer={date:day,habits:habits().map(h=>({...h,completed:records.some(c=>c.habit_id===h.id&&(c.completed_date??c.date)===day)}))};
   } else if(name==='create_task'){
     const id=randomUUID(),date=now();
-    if(args.due_date)validDay(args.due_date.slice(0,10));
-    if(args.planned_date)validDay(args.planned_date.slice(0,10));
+    if(!args.title.trim())throw new CloudError(422,'invalid_argument_title');
+    if(args.list_id&&args.list_id!=='inbox'&&!store.entity(accountId,'list',args.list_id))throw new CloudError(404,'list_not_found');
+    if(args.due_date)validDay(args.due_date);
+    if(args.planned_date)validDay(args.planned_date);
     const entity={
       id,title:args.title.trim(),body:args.notes??null,status:'open',
       list_id:args.list_id??'inbox',priority:args.priority??2,
@@ -132,7 +155,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
       estimated_minutes:args.estimated_minutes??null,tags:args.tags??[],
       defer_count:0,created_at:date,updated_at:date
     };
-    answer={task:taskFor(store.writeEntity(accountId,'task',id,entity,'upsert',requestId,name).entity)};
+    answer={task:taskFor(hydrateTask(writeTask(id,entity)))};
   } else if(name==='update_task'||['complete_task','reopen_task','start_task','pause_task','cancel_task','plan_task'].includes(name)){
     const old=store.entity(accountId,'task',args.id);
     if(!old)throw new CloudError(404,'task_not_found');
@@ -148,17 +171,18 @@ export function invokeCloudTool(store,accountId,name,args={}) {
     }
     if(name==='complete_task')Object.assign(patch,{status:'completed',completed_at:now()});
     if(name==='reopen_task')Object.assign(patch,{status:'open',completed_at:null,cancelled_at:null});
-    if(name==='cancel_task')Object.assign(patch,{status:'cancelled',cancelled_at:now()});
-    if(name==='start_task')Object.assign(patch,{status:'in_progress',started_at:now()});
+    if(name==='cancel_task')Object.assign(patch,{status:'cancelled',completed_at:null});
+    if(name==='start_task')Object.assign(patch,{status:'in_progress'});
     if(name==='pause_task')Object.assign(patch,{status:'open'});
     if(name==='plan_task'){patch.planned_date=validDay(args.date);}
-    answer={task:taskFor(store.writeEntity(accountId,'task',args.id,{...old,...patch},'upsert',requestId,name).entity)};
+    answer={task:taskFor(hydrateTask(writeTask(args.id,{...old,...patch})))};
   } else if(name==='create_list'){
     const id=randomUUID(),date=now();
     const entity={id,name:args.name.trim(),description:args.description??null,position:lists().length,created_at:date,updated_at:date};
     answer={list:store.writeEntity(accountId,'list',id,entity,'upsert',requestId,name).entity};
   } else if(name==='create_event'){
     const start=validDay(args.start_date),end=validDay(args.end_date??args.start_date);
+    for(const t of [args.start_time,args.end_time])if(t!==undefined&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(t))throw new CloudError(422,'invalid_time');
     if(end<start)throw new CloudError(422,'invalid_date_range');
     const id=randomUUID(),date=now();
     const entity={
@@ -173,10 +197,10 @@ export function invokeCloudTool(store,accountId,name,args={}) {
     if(!habit)throw new CloudError(404,'habit_not_found');
     const day=validDay(args.date),id=args.id+':'+day;
     if(name==='complete_habit'){
-      const row={id,habit_id:args.id,date:day,created_at:now(),updated_at:now()};
+      const row={habit_id:args.id,completed_date:day,value:1,note:null,created_at:now(),updated_at:now()};
       store.writeEntity(accountId,'habit_completion',id,row,'upsert',requestId,name);
     } else {
-      store.writeEntity(accountId,'habit_completion',id,{id,habit_id:args.id,date:day},'delete',requestId,name);
+      store.writeEntity(accountId,'habit_completion',id,{habit_id:args.id,completed_date:day},'delete',requestId,name);
     }
     answer={habits:habits()};
   } else throw new CloudError(404,'unknown_tool');
