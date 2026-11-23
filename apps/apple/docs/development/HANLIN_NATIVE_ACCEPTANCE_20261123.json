@@ -943,17 +943,82 @@
     "currentScript": {
       "mode": "100755",
       "type": "blob",
-      "object": "c4ef363373a06780dcac5e1b6fd0a40e9bfb2dbc"
+      "object": "b096e8241cdea43ef1542815d2456781e05ff5cd"
     },
-    "failedSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45128927383",
-    "failure": "Setup stopped before compilation: no compatible iPad Pro passed a family filter applied to the global devicetype inventory.",
-    "change": "Select compatible iPad Pro metadata directly from the selected runtime's supportedDeviceTypes, then require its identifier in the installed devicetype inventory. Retain both raw inventories before selection. The original test invocation, assertions, cleanup and timeouts remain unchanged.",
-    "scriptAfterCleanupSHA256": "26b337f5cf7b90901f0c4dd7a2b57ba2a94c8504a2405e37d30cf780716655d1",
-    "priorSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45126430277",
-    "previousScript": {
-      "mode": "100755",
-      "type": "blob",
-      "object": "ab75965e4d6eef7e9f0a8a93dbdd0d47db1b98ff"
-    }
+    "failedSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45131969110",
+    "failure": "Actual retained SDK 27.1 canonical runtime supports only iPhone Duo. It contains zero compatible iPad Pro device types; stable iOS 27.2 has 16 installed iPad Pro types. No compilation or test assertion executed.",
+    "change": "Execute the existing canonical stable-Xcode selector from the locked SDK Git object and scope DEVELOPER_DIR to the UI helper. Retain exact SDK/runtime matching, runtime-owned compatibility, inventory, original cleanup, xcodebuild arguments, selector, assertions and timeouts.",
+    "canonicalToolchainSelector": {
+      "sdkRevision": "d49a4fd4115b8335105d2991bf74ab4d7f6aad2d",
+      "path": "Scripts/CI/select_stable_xcode.py",
+      "object": "0a88eccc3bd0f1366d0d62d0b8b22c740073a127",
+      "sha256": "531237772eeeb10888359064302a5980f42ad47cad135e5bb0b544afe289f05f",
+      "sourceCopiedIntoHost": false
+    },
+    "scriptAfterCleanupSHA256": "b17d11133ebdbf9ff150f81bdb0474b97cd9dcaff3f92d1bc0d0f4377eef214d",
+    "inventoryEvidence": {
+      "artifactID": 14798103497,
+      "zipBytes": 7857,
+      "zipSHA256": "30aa9e7aa52c0e8912f2430bf36d5766fcb78c6f8861257acb9754e3abd3ceac",
+      "path": "apps/apple/dist/hanlin-host-ui/simulator-inventory.json",
+      "sha256": "2c7a8d2d1d24163c2b6b4c3e55c8a0331f98d40647cd28e11b4ce1db0b00cb8d",
+      "actualSDK": "27.1",
+      "observedStableIPadRuntimeVersions": [
+        "27.0",
+        "27.2"
+      ]
+    },
+    "portableControls": [
+      {
+        "name": "Actual 451319 SDK 27.1 inventory rejects its phone-only runtime",
+        "sdkVersion": "27.1",
+        "status": "PASS",
+        "rejected": "The selected iOS 27 runtime has no compatible iPad Pro Simulator device type"
+      },
+      {
+        "name": "Same retained inventory admits canonical stable 27.2 SDK/runtime iPad pair",
+        "sdkVersion": "27.2",
+        "status": "PASS",
+        "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+        "device": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-8GB"
+      },
+      {
+        "name": "Phone-specific 27.2 variant is never substituted",
+        "sdkVersion": "27.2",
+        "status": "PASS",
+        "rejected": "An available stable Simulator runtime matching the installed iOS 27 SDK is required"
+      },
+      {
+        "name": "An uninstalled runtime-advertised iPad cannot be created",
+        "sdkVersion": "27.2",
+        "status": "PASS",
+        "rejected": "The selected iOS 27 runtime has no compatible iPad Pro Simulator device type"
+      }
+    ],
+    "controlScope": "Original selector code evaluated against exact retained runtime/device inventory with controlled SDK responses; no Simulator created and no native/UI execution is claimed by these controls. Canonical toolchain picker bytes are reused unchanged; the next native run must confirm the installed selected Xcode/SDK.",
+    "priorCorrections": [
+      {
+        "originalScript": {
+          "mode": "100755",
+          "type": "blob",
+          "object": "bb16e8d6e21f540d614d3c46a318aa5bafc1f51b"
+        },
+        "currentScript": {
+          "mode": "100755",
+          "type": "blob",
+          "object": "c4ef363373a06780dcac5e1b6fd0a40e9bfb2dbc"
+        },
+        "failedSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45128927383",
+        "failure": "Setup stopped before compilation: no compatible iPad Pro passed a family filter applied to the global devicetype inventory.",
+        "change": "Select compatible iPad Pro metadata directly from the selected runtime's supportedDeviceTypes, then require its identifier in the installed devicetype inventory. Retain both raw inventories before selection. The original test invocation, assertions, cleanup and timeouts remain unchanged.",
+        "scriptAfterCleanupSHA256": "26b337f5cf7b90901f0c4dd7a2b57ba2a94c8504a2405e37d30cf780716655d1",
+        "priorSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45126430277",
+        "previousScript": {
+          "mode": "100755",
+          "type": "blob",
+          "object": "ab75965e4d6eef7e9f0a8a93dbdd0d47db1b98ff"
+        }
+      }
+    ]
   }
 }

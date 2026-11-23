@@ -6,6 +6,13 @@ PROJECT_DIR="$ROOT/dist/hanlin-ios-xcode-project"
 OUT="$ROOT/dist/hanlin-host-ui"
 mkdir -p "$PROJECT_DIR" "$OUT"
 python3 "$ROOT/script/install_hanlin_sdk.py" --check > "$OUT/sdk-installation.json"
+# Reuse the immutable SDK's stable-build picker. Keep toolchain selection local
+# to this UI continuation; the host's accepted native tests/build are unchanged.
+SDK_ROOT="$ROOT/../../Vendor/HanlinSDK"
+git -C "$SDK_ROOT" show HEAD:Scripts/CI/select_stable_xcode.py > "$OUT/select_stable_xcode.py"
+XCODE_APP="$(python3 "$OUT/select_stable_xcode.py")"
+export DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
+xcodebuild -version > "$OUT/xcode-version.txt"
 xcodegen --spec "$ROOT/Config/XcodeGen/project.yml"   --project "$PROJECT_DIR" --project-root "$ROOT" --quiet
 SIMULATOR_ID="$(python3 - "$OUT" <<'PY'
 import json,pathlib,subprocess,sys,uuid
