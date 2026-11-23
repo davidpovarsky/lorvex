@@ -2,6 +2,15 @@ name: Lorvex Hanlin - iPad Agent and IPA
 
 on:
   workflow_dispatch:
+    inputs:
+      unit_scope:
+        description: 'Agent-only may reuse recorded presentation-state evidence when its inputs are unchanged'
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - agent
   push:
     branches:
       - feat/hanlin-ipad-ipa-20261122
@@ -54,9 +63,16 @@ jobs:
       - name: Validate Hanlin tool catalog, consent and persistence
         id: test
         shell: bash
+        env:
+          HANLIN_UNIT_SCOPE: ${{ inputs.unit_scope || 'all' }}
         run: |
-          set -o pipefail
-          swift test --package-path apps/apple --filter 'LorvexHanlin(Agent|PresentationState)Tests' -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
+          set -euo pipefail
+          case "$HANLIN_UNIT_SCOPE" in
+            all) test_filter='LorvexHanlin(Agent|PresentationState)Tests' ;;
+            agent) test_filter='LorvexHanlinAgentTests' ;;
+            *) echo "Unknown Hanlin unit scope: $HANLIN_UNIT_SCOPE" >&2; exit 2 ;;
+          esac
+          swift test --package-path apps/apple --filter "$test_filter" -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
       - name: Preserve unit-test log immediately
         if: always()
         uses: actions/upload-artifact@v4
