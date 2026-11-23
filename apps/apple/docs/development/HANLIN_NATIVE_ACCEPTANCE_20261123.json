@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "baselineRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45119218473",
   "consumerRevision": "09307ef346eb12be2bcb25141d4b76bc9beb6ed6",
   "sdkRevision": "d49a4fd4115b8335105d2991bf74ab4d7f6aad2d",
@@ -10,8 +10,7 @@
     "apps/apple/Sources": "23b4455541b6038357af5361bbeb761e823aefde",
     "apps/apple/Tests": "fed8be9a8638b76c5037164337c06bd02a8b1ce4",
     "apps/apple/core": "50f810cd0282b602e0c1eabd2aef9ed45fbd8fb3",
-    "apps/apple/Config": "8cd58e95af4666e02cbf4c33b93c016ef190c3b5",
-    "apps/apple/script": "66e366d79b2339927fc0f9a07123c8ad1ecf083d"
+    "apps/apple/Config": "8cd58e95af4666e02cbf4c33b93c016ef190c3b5"
   },
   "nativeAgentTests": {
     "status": "PASS",
@@ -53,9 +52,902 @@
   },
   "continuation": {
     "scope": "ui",
-    "reuse": "Only the six native Agent cases and actual device build are reused. Exact source objects and SDK lock must match before the unchanged original UI test script can run. The earlier five state cases retain their separate source-bound receipt.",
+    "reuse": "Only the six native Agent cases and actual device build are reused. Product/config/test inputs and every script except the identified UI-only Simulator setup file must match the accepted run. The changed UI script is separately bound by its exact blob; its cleanup, xcodebuild arguments, selector and test assertions remain unchanged. The earlier five state cases retain their separate source-bound receipt.",
     "noRepeatedAgentTests": true,
     "noRepeatedDeviceBuild": true,
     "assertionsAndTestTimeoutsUnchanged": true
+  },
+  "nativeScriptInputs": {
+    "root": "apps/apple/script",
+    "originalTree": "66e366d79b2339927fc0f9a07123c8ad1ecf083d",
+    "excludedUISetupPath": "apps/apple/script/verify_hanlin_host_ui.sh",
+    "entries": {
+      "apps/apple/script/acknowledgments_data.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "fb091aa9a2c9752dca2d3f6c3f207c5d96da13e2"
+      },
+      "apps/apple/script/app_metadata.sh": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "7bfbf762bcf87b732ddb419e58b67675f6896d86"
+      },
+      "apps/apple/script/archive_ios.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "6e86af3ff8dbbe10711b4b100a4b18f31c4c524a"
+      },
+      "apps/apple/script/archive_local.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "4b371237e03d20039edeb21a5ace3bf4359350cc"
+      },
+      "apps/apple/script/archive_mas.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5d6d37c7092ff06fb5643578df66b22c18486f0a"
+      },
+      "apps/apple/script/backup_v1_contract.lock": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "36a506b48ff2008cc54879ac36aa32b2781ed187"
+      },
+      "apps/apple/script/build_and_run.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "d71cb24864707f7610aae72a48b99c1f67aff012"
+      },
+      "apps/apple/script/build_hanlin_ipad_ipa.sh": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "43b21f0f7a149776d0e07d0f69c55de7a4115a10"
+      },
+      "apps/apple/script/bump_build.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "18466c04ede9112dab75b05eac5ae4dd38e008df"
+      },
+      "apps/apple/script/ci_appstore_connect.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "3725db061a8befd4101eb9762cebdf5c5c802221"
+      },
+      "apps/apple/script/clean_test_defaults.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "2b8b4f1826fc70a0de8016ac5ad6f311dd860beb"
+      },
+      "apps/apple/script/compile_xcstrings.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "eda92c637e0d5a658fc08b4c177f6a88dd486021"
+      },
+      "apps/apple/script/doctor.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "82ec90672bae9d02d82750aee3d1ff7d6e034434"
+      },
+      "apps/apple/script/expected_mcp_tools.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "1ba006fc38396065b500b3af1b72eaebed793389"
+      },
+      "apps/apple/script/extract_app_intents_metadata.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "6a88bee423d20397b9cccf40f7abb6b3d2a5f27b"
+      },
+      "apps/apple/script/generate_acknowledgments.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "c22936221c4a032c86cc0303e7565ad5b2e8d37d"
+      },
+      "apps/apple/script/generate_app_icon.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "c576403dea1314fa1049ea14db6725aa0c224889"
+      },
+      "apps/apple/script/generate_apple_platform_manifest.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "be8dde46d5719fefe030a376b933bfc1df61e575"
+      },
+      "apps/apple/script/generate_mcp_client_config.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "1b53c0a3daefccaffd7519e63f79f87625b9e47f"
+      },
+      "apps/apple/script/generate_production_dmg_evidence.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "cc7cbc14e60db22c1b91fd6ef5a5a58186ad846c"
+      },
+      "apps/apple/script/generate_release_manifest.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "a01a50239c6360b5aaeb6b603da026f6447f51f6"
+      },
+      "apps/apple/script/github_release.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "c144fa4388242662bebcf83a24a998aee8d12cd3"
+      },
+      "apps/apple/script/install_hanlin_sdk.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "aa8005fbd16105ea9b6c14d3866ec76affd12ebf"
+      },
+      "apps/apple/script/ios_sim_build.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "68de6a6f7e6ed11514a292ed7de30123a6d6ccf9"
+      },
+      "apps/apple/script/ios_sim_screenshots.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "ca0b5c0526a1801a790ccb34e4c761ae28baf219"
+      },
+      "apps/apple/script/lib_altool_auth.sh": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "915eb14073659d2669d5291fb393475545a57abd"
+      },
+      "apps/apple/script/lib_bundle_checks.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "39b0f4203c34db77cfec8a023adf2a7814399293"
+      },
+      "apps/apple/script/lib_ios_sim_device.sh": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "0a87548fed60f2b467862acfaa24ddfe3fc094e8"
+      },
+      "apps/apple/script/lib_ipa_build.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "b88f1eb4857b8762095ccdc792f4ab2486b9c97e"
+      },
+      "apps/apple/script/lib_launch.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "bceac996037869b45f8d669b64b0e8902ec327df"
+      },
+      "apps/apple/script/lib_real_data_guard.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "d3dfcfb82ed401300eb3b681cc1a7104c254d0c0"
+      },
+      "apps/apple/script/lib_run_masked.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "233bf1b8ecea358e68e036fa5b16966b78bc80d1"
+      },
+      "apps/apple/script/lib_watch_sim_device.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "92e47349fddc63568b74b1d8b03d591b5382cc96"
+      },
+      "apps/apple/script/lib_xcode_package_lock.sh": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "25e10e59e7321898ef96487b6050887ac31446c6"
+      },
+      "apps/apple/script/localization_transfer.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "b13d3b17a5f5d848214ed4747b235d8a3ade88f6"
+      },
+      "apps/apple/script/mac_ax_report.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "fb2670a017a37f72a47bdd6b775c7a3600ae181b"
+      },
+      "apps/apple/script/mcp_stdio_smoke.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "1e508026867cc71d4a37727f4ce69e0a57bde9b8"
+      },
+      "apps/apple/script/mcp_tool_choice_eval.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "49ddc9208dc63e28c99c8b6d5474acb4ede9d6f4"
+      },
+      "apps/apple/script/mcp_tool_choice_scenarios.json": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "7865030fb79e408870a60b37eb66b23a0bc8a0ce"
+      },
+      "apps/apple/script/mcp_tool_manifest.json": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "d0b2317ae9b6ceec41e472e8e159b5c29d485c5c"
+      },
+      "apps/apple/script/metadata_env.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "db47bbd34752cfb3926e9b03ccbed0708b14084c"
+      },
+      "apps/apple/script/notarize_archive.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "14b55ce1158097813d7b130f5c1b93cd7b1ab4f0"
+      },
+      "apps/apple/script/notary_submit_with_evidence.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "b69867872d0b501d0612056b031823a8de0e4f5b"
+      },
+      "apps/apple/script/package_dmg.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "107e346e8f109d29c57addd2281ce6ccdcf0bed6"
+      },
+      "apps/apple/script/package_local.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "e0c7d7cf452ca97a31c37382cfcc318386e0eb12"
+      },
+      "apps/apple/script/package_sideload_compat_ipa.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "822e000fd2476935e3d180ea7b24dcacc1de15c8"
+      },
+      "apps/apple/script/prepare_profile_entitlements.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "0a0f981fe784388c3012074a4df7910c6f4fba39"
+      },
+      "apps/apple/script/quality_gates.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "482150484669487becd69508ab1f1f8195f51018"
+      },
+      "apps/apple/script/recurrence_oracle.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "d11f9313d786556636a0376c4241d67dfe753d63"
+      },
+      "apps/apple/script/refresh_lorvex_url_scheme.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "c547d2155925f14e993673dc2a2aac9e5c00276e"
+      },
+      "apps/apple/script/release_strategy.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "0917b1e61bc771a8093597a05c70d47e8e3ab6ab"
+      },
+      "apps/apple/script/release_testflight.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "0fafde8469995c37d0218424ad3d9788935c2ed8"
+      },
+      "apps/apple/script/require_schema_freeze_gate.sh": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "9bfd7d75cc5ec8446071e2dcd08be8b0bb0e0029"
+      },
+      "apps/apple/script/reset_production_app_group.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "42a257b5f1d5f428a2d53144c08bf98b258c7d7a"
+      },
+      "apps/apple/script/sign_app_bundle.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "089b90effed4ba6094c7b9b0921a5e28ba0a9617"
+      },
+      "apps/apple/script/sync_payload_evolution.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "d7d27db78107c026ad8fc809c1da86d6d89d7158"
+      },
+      "apps/apple/script/test_bump_build.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "30655c24ed76f2695b7e979b9891d08f35db4963"
+      },
+      "apps/apple/script/test_clean_test_defaults.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "851873bb9aa5a31504032e738723c535b47381db"
+      },
+      "apps/apple/script/test_cloudkit_deploy_schema.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "d1e2e3108cdac96a4b7c7b84025bc4d5df3b452a"
+      },
+      "apps/apple/script/test_extract_app_intents_metadata.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "fef9e9095cb53948c559f98e1951112d95d6a533"
+      },
+      "apps/apple/script/test_generate_mcp_client_config.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "852deca2b0778005a5368a291b5a2fa6687bb849"
+      },
+      "apps/apple/script/test_github_release.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "94e6653b57554a2ad793ce4f085cf643e83cdc2d"
+      },
+      "apps/apple/script/test_lib_altool_auth.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "1d33bd6a988d9d2320a90969a99ea6e93ca05ff9"
+      },
+      "apps/apple/script/test_lib_bundle_checks.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "064c541f4f784202f709e2f138d5ad5452b3b29f"
+      },
+      "apps/apple/script/test_lib_ipa_build.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "a081dbc9fa4303149c547353b196c8a5afa813b7"
+      },
+      "apps/apple/script/test_lib_real_data_guard.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "effcef7480c635590b8fba6be8621bb0db14aead"
+      },
+      "apps/apple/script/test_lib_run_masked.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "aafc6934cc5bf22d778537bb5b60ed0ca2ca3458"
+      },
+      "apps/apple/script/test_localization_transfer.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "123f8dfaa0f0ace3aaf42d6c89075d9def3435c4"
+      },
+      "apps/apple/script/test_mcp_stdio_smoke.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "763155c2f28e41f893e7cea40f92fe52d291c282"
+      },
+      "apps/apple/script/test_mcp_tool_choice_eval.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "e1c49af2ed3b58b86f180840932e18128329742d"
+      },
+      "apps/apple/script/test_notarize_archive.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "087c0d73c9e34b6b1bd9d1947db3579c95bc9880"
+      },
+      "apps/apple/script/test_package_sideload_compat_ipa.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "75fd0ad56213b519a80d4f2cd7ece35c088a027c"
+      },
+      "apps/apple/script/test_production_dmg_packaging.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "fe94f51cfeb3177bf568a7c898e631b94a810bdd"
+      },
+      "apps/apple/script/test_quality_gates.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "b32ba95164f34a3c5c67d337dd3efb93256ccdb9"
+      },
+      "apps/apple/script/test_refresh_lorvex_url_scheme.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "4eae8f8ff7936d327491f7ab7e4b893ae74735c9"
+      },
+      "apps/apple/script/test_require_schema_freeze_gate.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "aaad73ff4070fac4d6956ffd7310cd31a7c7179d"
+      },
+      "apps/apple/script/test_verify_acknowledgments.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "93dc2345817ffc4e356035ea36a5fc0bee579752"
+      },
+      "apps/apple/script/test_verify_app_metadata.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "d4b12916e0af6477592478a2ba29946159716e62"
+      },
+      "apps/apple/script/test_verify_apple_platform_manifest.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "c5d62b05ec5682cad3ca7db13fc0c6315abccd9b"
+      },
+      "apps/apple/script/test_verify_apple_strategy.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "870f2b02d20125ee1fbf9ee7374c0d1db1d6393e"
+      },
+      "apps/apple/script/test_verify_backup_v1_contract.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "79cd5d5d1f6932276ca38db3cdf0758251e22485"
+      },
+      "apps/apple/script/test_verify_build_matrix.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "db9ee1476a0e45f6a4291981dd2e2c146ea22b21"
+      },
+      "apps/apple/script/test_verify_cloudkit_sync_readiness.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "033c64296a958d065adffa2127f724116a3d5ad0"
+      },
+      "apps/apple/script/test_verify_codesign_entitlements.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "4edfac772d77f4daec83c65e598489e04f312632"
+      },
+      "apps/apple/script/test_verify_core_service_coverage.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "1fcffd7f6cc3c803cfc0892aa05c16812629bcff"
+      },
+      "apps/apple/script/test_verify_design_tokens.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "6d940bf2d77d9805d4429e097a42b9230e1bc0e8"
+      },
+      "apps/apple/script/test_verify_hotspots.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "ea6ec1637aefa9316195ad241d4ebc2c2afa99a0"
+      },
+      "apps/apple/script/test_verify_ios_ipa.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "ad44bf8cfe219b00fbfdfcdcd94dcc2b7933d29e"
+      },
+      "apps/apple/script/test_verify_localization_arguments.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "233d20e635c20794e3e60cf70af1b6d2c18ea63d"
+      },
+      "apps/apple/script/test_verify_localization_catalog.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "07e59cb03d8874d97f45e5afb870b369895e3c68"
+      },
+      "apps/apple/script/test_verify_macho_closure.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "4d3327300e12005124c3f87c332a85394b6af5cf"
+      },
+      "apps/apple/script/test_verify_macho_distribution.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "f72b32d3af589d3854d3c48fbc1d27a50aea5b5f"
+      },
+      "apps/apple/script/test_verify_mas_provisioning.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "802381d55daa3634a2598122f2a2d761a7abf87f"
+      },
+      "apps/apple/script/test_verify_mas_release_readiness.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "3b5fbdb20bbfa22c5e29e07bfcebbb927903cde9"
+      },
+      "apps/apple/script/test_verify_mcp_client_config.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "fa1af1102603084d56ce5d2ad982912109123953"
+      },
+      "apps/apple/script/test_verify_mcp_tool_catalog.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "bc5d9787c5780bf0fefe24a747697b893900ebaa"
+      },
+      "apps/apple/script/test_verify_migration_ladder.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "25bc74c35eef5d5880599f9b38d3c5dda8fdf7d0"
+      },
+      "apps/apple/script/test_verify_plugin_skills.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "5fa4ff9c03120625c622216887dcf47d86195224"
+      },
+      "apps/apple/script/test_verify_privacy_manifests.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "c06f1d8c861f3f478bff144eed34865173d03d92"
+      },
+      "apps/apple/script/test_verify_public_safety.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "ba1512ef0f13b84dcfc2f9cc879e205dfec9fa2e"
+      },
+      "apps/apple/script/test_verify_release_manifest.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "6cb982c6856f3957e64e8a8ca5da9310728a8d3a"
+      },
+      "apps/apple/script/test_verify_repo_hygiene.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "5c27170669777b66ca05bb511b6360aa651692cd"
+      },
+      "apps/apple/script/test_verify_schema_freeze.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "8cc7f02f6a39e76f2b3079f4e8c40873d49d0a76"
+      },
+      "apps/apple/script/test_verify_source_entitlements.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "97e386868a8239567c9f12d2f33b8ab9ad789096"
+      },
+      "apps/apple/script/test_verify_source_hygiene.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "b3d6429e569b4044cc062ecb5b6bbda000bb077d"
+      },
+      "apps/apple/script/test_verify_static_gates.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "b0b8c73e3dca5e523cd7333759efc6ee91c5dfdd"
+      },
+      "apps/apple/script/test_verify_swiftpm_resource_bundles.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "b7d3897ec564d81a88b9689f290287754f92a8e4"
+      },
+      "apps/apple/script/test_verify_sync_payload_contract.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5e6c1bd8eadbc71bfed0302bd708c24a123fb2e0"
+      },
+      "apps/apple/script/test_verify_system_entrypoints.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "a008c3dba30442426b8d3e66c0aef6f024551740"
+      },
+      "apps/apple/script/test_verify_user_docs.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "471ab610f43b55f2e49ead30755af7feb72a9d14"
+      },
+      "apps/apple/script/test_xcodegen_dependency_check.py": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "6f6dc08659a172c368ea888d7e9aa68eb498ffa5"
+      },
+      "apps/apple/script/testflight_crashes.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "8d4c12c6a048e152c818a101018f0fb42a1b67e6"
+      },
+      "apps/apple/script/third_party_licenses/APACHE-2.0.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "61b0c78195f2d00acaf658000eeca6ad406a3a29"
+      },
+      "apps/apple/script/third_party_licenses/GRDB.swift.LICENSE.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "922a3e13a4e8393b30dd806098b4df3ce1189459"
+      },
+      "apps/apple/script/third_party_licenses/eventsource.LICENSE.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "1d7154314ce7df1bbcec09e1091e12ec5f5f985d"
+      },
+      "apps/apple/script/third_party_licenses/swift-cmark.LICENSE.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "db88a81b3ec3513cda9a4822565fbc06d958b74a"
+      },
+      "apps/apple/script/third_party_licenses/swift-log.NOTICE.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "ff1b6cafe69044c9a866bc146e54efae993a3752"
+      },
+      "apps/apple/script/third_party_licenses/swift-markdown.NOTICE.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "555f51d8485d271df5912777c02699c64c72a818"
+      },
+      "apps/apple/script/third_party_licenses/swift-nio.NOTICE.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "f4389cb2a43ef6cfd85e1d060c6f8b8a90d753cc"
+      },
+      "apps/apple/script/third_party_licenses/swift-sdk.LICENSE.txt": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "4a93985763241755401a10678395303de4e720ba"
+      },
+      "apps/apple/script/ui_tour_macos.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "a1a926c27c6331ee9dc454b247531f95739d1949"
+      },
+      "apps/apple/script/verify_acknowledgments.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "7555f8a6fe84d38b4bd36a1fdedf45ecd6496ac0"
+      },
+      "apps/apple/script/verify_all.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "cba06349da1b1147cf1fbf37fdb82527d1b2a187"
+      },
+      "apps/apple/script/verify_app_metadata.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "b407770a247096b6577c9139195f398fdf11c0af"
+      },
+      "apps/apple/script/verify_apple_platform_manifest.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5196f9dea75a15480a3808337366920dd48cf89e"
+      },
+      "apps/apple/script/verify_apple_simulators.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "98d131e0af64958d379d957d8a571ab38296a6af"
+      },
+      "apps/apple/script/verify_apple_strategy.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "7716189f52e87465f8a4dc2e2a351e1490f235ad"
+      },
+      "apps/apple/script/verify_backup_v1_contract.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "27609541f4f530383cc1f0cf78d24b3066462466"
+      },
+      "apps/apple/script/verify_build_matrix.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "fecb936ea28ade23f11e4299b86ceff51a31244c"
+      },
+      "apps/apple/script/verify_cloudkit_sync_readiness.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "8d44ceff39d7b0556943f235bc4ceedbfbab51b1"
+      },
+      "apps/apple/script/verify_codesign_entitlements.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5dd3897e63afa20a68a8502427f22914c0404c50"
+      },
+      "apps/apple/script/verify_core_service_coverage.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "461a0dffc493672062f4592e81a51ca45a8b9594"
+      },
+      "apps/apple/script/verify_design_tokens.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "fc00f289b3b9e541ecd32fe09790d6688e6edba2"
+      },
+      "apps/apple/script/verify_developer_id_provisioning.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5279845777eccaa2dcb046f0a3480fbcd6f6e87d"
+      },
+      "apps/apple/script/verify_hotspots.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "ceb202918251e8e83202fe1ab407b2acc6b98f2d"
+      },
+      "apps/apple/script/verify_ios_ipa.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "40e23d7962d9b175a4225df54b58e0de2d9d8942"
+      },
+      "apps/apple/script/verify_localization_arguments.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "c45ab236a3308404094af6dbaf74c7e265fda704"
+      },
+      "apps/apple/script/verify_localization_catalog.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "478896dcddf1400ba3d000c55a203916ee4c94f2"
+      },
+      "apps/apple/script/verify_macho_closure.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "27345876d927ac895dd16d16aa0bec5c3cd2c954"
+      },
+      "apps/apple/script/verify_macho_distribution.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "b7dba3a5dffc282f46a204fed76f06fb39357a70"
+      },
+      "apps/apple/script/verify_mas_provisioning.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "9a7d2ea2337a18248cede4383d37b90c572e54ab"
+      },
+      "apps/apple/script/verify_mas_release_readiness.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "ab01ccd79f3850a6cafd2b87411c7f75fd03cc4c"
+      },
+      "apps/apple/script/verify_mcp_client_config.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "f5f3561ec6d46bcec1334d9c4fdc155ed89543fa"
+      },
+      "apps/apple/script/verify_mcp_tool_catalog.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "3b199b5fc9e7d0cccfa4c277799e49a51fef95d2"
+      },
+      "apps/apple/script/verify_mcp_tool_manifest.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "712af1db3f0c1830e2d6464b70f25af424a22b46"
+      },
+      "apps/apple/script/verify_migration_ladder.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "0e219bed426a6778d470c88be1467417c9aea14f"
+      },
+      "apps/apple/script/verify_mobile_release_link.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "c57b2c4acc4f43174ba6417a3acac198413de3c2"
+      },
+      "apps/apple/script/verify_mobile_simulator.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "afd8b4977d2d018687c0b482d0535ca9ad5413da"
+      },
+      "apps/apple/script/verify_packaging.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "37d7981cccf923dfa437e84729713f05a3a2a149"
+      },
+      "apps/apple/script/verify_plugin_skills.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "dba1dd137987867c024ee499c8ca37765209c8e4"
+      },
+      "apps/apple/script/verify_privacy_manifests.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "bd6dca623142e8ad1f273d14a4eeaccc429067b0"
+      },
+      "apps/apple/script/verify_production_app_runtime.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "749d9c6c195485b5d076445f6d963ad405c27cfc"
+      },
+      "apps/apple/script/verify_public_safety.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "673feb865e6158ef210721f8bee6e939e505e669"
+      },
+      "apps/apple/script/verify_release_link.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "6f74a8fa7c79533685e4916fb647c9c193b87925"
+      },
+      "apps/apple/script/verify_release_manifest.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "cfa438f521749b104f4392de289ab5a6f92f7c52"
+      },
+      "apps/apple/script/verify_repo_hygiene.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "7ba7fa830fc3e90ece9ab204422dced152a1a9d2"
+      },
+      "apps/apple/script/verify_schema_embed.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "9c8901e2f27463a78bd616bfe2804cd104475a10"
+      },
+      "apps/apple/script/verify_schema_freeze.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5084751a58a79b5271be538fd56417db6d08917a"
+      },
+      "apps/apple/script/verify_source_entitlements.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "ef02b9a9cabdc01bff3e594ab1e3a863d359da12"
+      },
+      "apps/apple/script/verify_source_hygiene.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "62600cb18a7d52115e387d406ea62edaad401ed9"
+      },
+      "apps/apple/script/verify_sqlite_portability.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "9eff2c9c0a10410e46554f2579e431ff64cede60"
+      },
+      "apps/apple/script/verify_static_gates.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "1ff612a0bdb9d0948fa32c9ab9adcfbb9ae22e26"
+      },
+      "apps/apple/script/verify_swift.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "29823e39c224f82a81f60341f8c0876e70ca4349"
+      },
+      "apps/apple/script/verify_swiftpm_resource_bundles.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "4a2a252671dd1f24f8ea1b17d3b83ee2b616a60f"
+      },
+      "apps/apple/script/verify_sync_payload_contract.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "3d6244d634ffcd952f3117745e5745338e73abf0"
+      },
+      "apps/apple/script/verify_system_entrypoints.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "9556374d5e29203123f0de7c7d009226b646c545"
+      },
+      "apps/apple/script/verify_user_docs.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5ce64905f78ca79eb30ec2b3c21e37270ad49e80"
+      },
+      "apps/apple/script/verify_watch_simulator.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "4d2d91e3392582c1579ea11a4321e9a636496dd4"
+      },
+      "apps/apple/script/verify_xcode_simulator.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "e080915a7c9dc3b2532fc312bec6f4b35b5f9eec"
+      },
+      "apps/apple/script/verify_xcodegen_project.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "5bb5cb4a63bd6e0ddc4677d3859ebdfb7e440bd6"
+      },
+      "apps/apple/script/watch_sim_build.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "7817de0ade3e52a253214633fa52776b2e44e9ae"
+      },
+      "apps/apple/script/watch_sim_screenshots.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "311efe1d86da7552726af962b8b17d191be40e68"
+      },
+      "apps/apple/script/widget_gallery_macos.sh": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "823c19f7044054a73422a3e9353f178ef5d03413"
+      },
+      "apps/apple/script/xcodegen_dependency_check.py": {
+        "mode": "100755",
+        "type": "blob",
+        "object": "119a01eef59c9be75c0ee7aef822fd596a4b2737"
+      }
+    }
+  },
+  "uiSetupContinuation": {
+    "originalScript": {
+      "mode": "100755",
+      "type": "blob",
+      "object": "bb16e8d6e21f540d614d3c46a318aa5bafc1f51b"
+    },
+    "currentScript": {
+      "mode": "100755",
+      "type": "blob",
+      "object": "ab75965e4d6eef7e9f0a8a93dbdd0d47db1b98ff"
+    },
+    "failedSetupRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45126430277",
+    "failure": "CoreSimulator code403 Incompatible device: iPad Pro M4 paired with iOS-27-2-iPhone19-4.",
+    "change": "Select the installed stable iOS27 SDK runtime, then an iPad Pro explicitly listed in that runtime's supportedDeviceTypes. Preserve all original test invocation, assertions, cleanup and timeouts.",
+    "scriptAfterCleanupSHA256": "26b337f5cf7b90901f0c4dd7a2b57ba2a94c8504a2405e37d30cf780716655d1"
   }
 }

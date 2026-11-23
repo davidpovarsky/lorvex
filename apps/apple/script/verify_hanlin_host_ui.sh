@@ -7,16 +7,25 @@ OUT="$ROOT/dist/hanlin-host-ui"
 mkdir -p "$PROJECT_DIR" "$OUT"
 python3 "$ROOT/script/install_hanlin_sdk.py" --check > "$OUT/sdk-installation.json"
 xcodegen --spec "$ROOT/Config/XcodeGen/project.yml"   --project "$PROJECT_DIR" --project-root "$ROOT" --quiet
-SIMULATOR_ID="$(python3 - <<'PY'
-import json,subprocess,uuid
+SIMULATOR_ID="$(python3 - "$OUT" <<'PY'
+import json,pathlib,subprocess,sys,uuid
+sdk=subprocess.check_output(["xcrun","--sdk","iphonesimulator","--show-sdk-version"],text=True).strip()
+if sdk.split(".")[0] != "27":
+    raise SystemExit("The installed stable iOS 27 SDK is required for the real-host UI acceptance test")
 runtimes=json.loads(subprocess.check_output(["xcrun","simctl","list","runtimes","-j"]))["runtimes"]
-runtimes=[r for r in runtimes if r.get("isAvailable") and "iOS" in r["name"] and r.get("version", "").split(".")[0] == "27"]
-if not runtimes: raise SystemExit("iOS 27 Simulator runtime is required for the real-host UI acceptance test")
-runtime=sorted(runtimes,key=lambda r: tuple(int(p) for p in r["version"].split(".")))[-1]
+runtime=next((r for r in runtimes if r.get("isAvailable") and not r.get("isInternal")
+    and r["identifier"].endswith("iOS-"+sdk.replace(".","-"))),None)
+if runtime is None:
+    raise SystemExit("An available stable Simulator runtime matching the installed iOS 27 SDK is required")
+supported={d["identifier"] for d in runtime.get("supportedDeviceTypes",[])}
 types=json.loads(subprocess.check_output(["xcrun","simctl","list","devicetypes","-j"]))["devicetypes"]
-types=[d for d in types if "iPad Pro" in d["name"]]
-if not types: raise SystemExit("An iPad Simulator device type is required")
+types=[d for d in types if d.get("productFamily") == "iPad" and "iPad Pro" in d["name"]
+    and d["identifier"] in supported]
+if not types:
+    raise SystemExit("The selected iOS 27 runtime has no compatible iPad Pro Simulator device type")
 device=next((d for d in reversed(types) if "13-inch" in d["name"]),types[-1])
+(pathlib.Path(sys.argv[1])/"simulator-selection.json").write_text(json.dumps(
+    {"sdkVersion":sdk,"runtime":runtime,"device":device},indent=2)+"\n")
 print(subprocess.check_output(["xcrun","simctl","create","Lorvex-Hanlin-"+uuid.uuid4().hex[:8],device["identifier"],runtime["identifier"]],text=True).strip())
 PY
 )"

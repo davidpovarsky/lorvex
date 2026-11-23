@@ -220,3 +220,19 @@ full-run device artifacts are now preserved before beginning the separate UI gat
 | --- | --- | --- |
 | Six native Agent tests | 14794586293 | `a71498ac5400f691532a88363941218cf8bbd451c90965a6550dc556ac081af9` |
 | Device build and cancelled-UI diagnostics | 14794868870 | `261bbc54ac385219b3bbb104cc0161f66c61c9c134f156e38b6e297a7c15a3ab` |
+
+
+### UI-only simulator setup correction (23 November)
+
+Run [45126430277](https://github.com/davidpovarsky/lorvex/actions/runs/45126430277)
+passed the source-reuse guard and canonical installation, then stopped before
+compilation or assertions: CoreSimulator rejected an iPad Pro paired with the
+device-specific iOS-27-2-iPhone19-4 runtime. The helper now follows the original
+Hanlin native gate's stable-SDK policy and selects an iPad listed in that runtime's
+supportedDeviceTypes. The selected metadata is retained in the UI artifact.
+
+The six native Agent tests and actual device build remain bound to their original
+run. Receipt schema 2 compares all other script paths, modes and blobs exactly,
+and separately binds this UI-only setup delta. The original cleanup, xcodebuild
+arguments, test selector, UI assertions and timeouts are unchanged. No UI pass
+is claimed from the setup correction.
