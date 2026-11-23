@@ -63,7 +63,12 @@ export function createBridge({
   const html = (res,code,page) => {
     res.writeHead(code,{'Content-Type':'text/html; charset=utf-8',
       'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
-      'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'"});
+      // Deliberately omit form-action: Edge/Chromium applies it to ALL
+      // redirect hops after the consent POST, including ChatGPT's OAuth
+      // callback -> platform.openai.com. With form-action 'self', our
+      // server issues a valid 302 but Edge never leaves the consent form.
+      // This static page has no scripts or attacker-controlled form URL.
+      'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'"});
     res.end('<!doctype html><html lang=en><meta name=viewport content="width=device-width,initial-scale=1"><meta charset=utf-8><style>'+UI_CSS+'</style>'+page+'</html>');
   };
   const readBody = async (req) => {

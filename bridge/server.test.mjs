@@ -61,6 +61,11 @@ test('OAuth pairing, MCP auth and real device tool round trip without storing ta
     });
     const auth=await client('/oauth/authorize?'+args.toString());
     assert.equal(auth.status,200);
+    const policy=auth.headers.get('content-security-policy');
+    assert.match(policy,/default-src 'none'/);
+    assert.match(policy,/frame-ancestors 'none'/);
+    assert.doesNotMatch(policy,/form-action/i,
+      'The consent form must permit Chromium to follow OAuth callback redirects');
     const request=auth.json.match(/name="request" value="([^"]+)"/)[1];
     const approve=await fetch(base+'/oauth/approve',{
       method:'POST',redirect:'manual',headers:{'Content-Type':'application/x-www-form-urlencoded'},
