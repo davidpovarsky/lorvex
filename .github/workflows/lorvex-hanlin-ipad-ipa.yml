@@ -11,6 +11,11 @@ on:
       - 'apps/apple/Package.swift'
       - 'apps/apple/Config/XcodeGen/**'
       - 'apps/apple/script/build_hanlin_ipad_ipa.sh'
+      - 'apps/apple/script/install_hanlin_sdk.py'
+      - 'apps/apple/script/verify_hanlin_host_ui.sh'
+      - 'apps/apple/Tests/LorvexHanlinAgentTests/**'
+      - 'apps/apple/Tests/LorvexMobileUITests/HanlinSDKIntegrationTests.swift'
+      - 'HanlinSDK.lock.json'
 
 permissions:
   contents: read
@@ -22,7 +27,7 @@ concurrency:
 jobs:
   native-ipad:
     runs-on: xcode-27
-    timeout-minutes: 80
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - name: Confirm Xcode 27 and prepare XcodeGen
@@ -40,12 +45,18 @@ jobs:
             brew install xcodegen
           fi
           xcodegen --version
+      - name: Install the immutable canonical SDK product selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 apps/apple/script/install_hanlin_sdk.py
+          python3 apps/apple/script/install_hanlin_sdk.py --check > lorvex-hanlin-sdk-installation.json
       - name: Validate Hanlin tool catalog, consent and persistence
         id: test
         shell: bash
         run: |
           set -o pipefail
-          swift test --package-path apps/apple --filter LorvexHanlinAgentTests -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
+          swift test --package-path apps/apple --filter 'LorvexHanlin(Agent|PresentationState)Tests' -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
       - name: Preserve unit-test log immediately
         if: always()
         uses: actions/upload-artifact@v4
@@ -61,6 +72,11 @@ jobs:
         run: |
           set -o pipefail
           bash apps/apple/script/build_hanlin_ipad_ipa.sh 2>&1 | tee lorvex-hanlin-ipad-pipeline.log
+      - name: Validate original SDK UI in the real Lorvex iPad app
+        if: steps.build.outcome == 'success'
+        id: ui
+        shell: bash
+        run: bash apps/apple/script/verify_hanlin_host_ui.sh
       - name: Package sideload IPA without nested app extensions
         if: steps.build.outcome == 'success'
         shell: bash
@@ -90,8 +106,11 @@ jobs:
         with:
           name: Lorvex-Hanlin-iPad-evidence-${{ github.run_id }}
           path: |
+            HanlinSDK.lock.json
+            lorvex-hanlin-sdk-installation.json
             lorvex-hanlin-agent-tests.log
             lorvex-hanlin-ipad-pipeline.log
+            apps/apple/dist/hanlin-host-ui
             apps/apple/dist/hanlin-ipad-ipa/lorvex-hanlin-build.log
           if-no-files-found: warn
           retention-days: 21
