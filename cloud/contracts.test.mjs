@@ -119,7 +119,13 @@ test('recurring task transitions cannot emit an invalid terminal snapshot',()=>f
  const task=decode(invokeCloudTool(s,a,'create_task',{title:'Recurring'})).task;
  s.writeEntity(a,'task',task.id,{...task,recurrence:'{"frequency":"daily"}'});
  const cursor=s.changes(a,0).cursor;
- for(const name of ['complete_task','reopen_task','start_task','pause_task','cancel_task'])assert.throws(()=>invokeCloudTool(s,a,name,{id:task.id}),/recurring_transition_requires_canonical_core/);
+ const configured=process.env.LORVEX_CANONICAL_CORE_EXECUTABLE;
+ delete process.env.LORVEX_CANONICAL_CORE_EXECUTABLE;
+ try{
+   for(const name of ['complete_task','reopen_task','start_task','pause_task','cancel_task'])assert.throws(()=>invokeCloudTool(s,a,name,{id:task.id}),/recurring_transition_requires_canonical_core/);
+ }finally{
+   if(configured!==undefined)process.env.LORVEX_CANONICAL_CORE_EXECUTABLE=configured;
+ }
  assert.equal(s.changes(a,cursor).envelopes.length,0);
  assert.equal(s.entity(a,'task',task.id).status,'open');
 }));

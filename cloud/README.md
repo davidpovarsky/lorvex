@@ -50,7 +50,9 @@ mounted volume and restrict writes to their respective directory. Create these
 directories as ubuntu with mode 0700 before installing the units. When moving an
 existing database, stop the writer, use SQLite online backup, compare integrity
 and table counts, copy/verify backups, and retain the originals for rollback
-before changing LORVEX_CLOUD_DB and LORVEX_CLOUD_BACKUP_DIR. Never raw-copy a live
+before changing LORVEX_CLOUD_DB and LORVEX_CLOUD_BACKUP_DIR. After writes resume,
+a rollback must first copy and verify the latest database back to the old
+location; never reactivate the retained, now-stale pre-migration copy. Never raw-copy a live
 WAL database. This separates service persistence from the root filesystem but
 does not resolve host-wide free-space pressure; monitor both volumes.
 Daily online-safe SQLite snapshots use backup.py and the backup timer.
@@ -60,7 +62,10 @@ At-rest backups must be protected like user data and never committed.
 
 Recurring completion and related lifecycle actions invoke the shared Swift Core
 through cloud/native. Set LORVEX_CANONICAL_CORE_EXECUTABLE to the deployed
-lorvex-cloud-native binary and keep its Swift resource bundles adjacent. Each
+lorvex-cloud-native binary and keep its Swift resource bundles adjacent. After
+installing and verifying the native bundle, install lorvex-cloud-canonical.conf
+as /etc/systemd/system/lorvex-cloud.service.d/canonical.conf and reload/restart
+the service. Each
 request hydrates an ephemeral in-memory database from the account snapshot,
 runs existing lifecycle and recurrence operations, and returns canonical outbox
 envelopes. The Node service compares the account change cursor before committing
