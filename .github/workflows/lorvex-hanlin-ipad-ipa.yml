@@ -58,8 +58,39 @@ jobs:
           assert receipt['schemaVersion'] == 2
           assert receipt['nativeAgentTests']['status'] == 'PASS' and receipt['nativeAgentTests']['passed'] == 6
           assert receipt['deviceBuild']['status'] == 'BUILD SUCCEEDED'
-          assert json.loads((root / 'HanlinSDK.lock.json').read_text())['revision'] == receipt['sdkRevision']
-          for path, expected in receipt['sourceInputs'].items():
+          repair_path = root / 'apps/apple/docs/development/HANLIN_DRAFT_UI_REPAIR_20261123.json'
+          inputs, revision = receipt['sourceInputs'], receipt['sdkRevision']
+          if repair_path.exists():
+              import hashlib
+              repair = json.loads(repair_path.read_text())
+              assert repair['schemaVersion'] == 1
+              assert repair['baselineConsumerRevision'] == receipt['consumerRevision']
+              assert repair['baselineSdkRevision'] == receipt['sdkRevision']
+              assert repair['historicalDeviceEvidence']['consumerRevision'] == receipt['consumerRevision']
+              assert repair['historicalDeviceEvidence']['currentRepairedBinaryClaimed'] is False
+              assert repair['sourceInputs'].keys() == receipt['sourceInputs'].keys()
+              expected_deltas = {'apps/apple/Sources/LorvexMobileApp/' + name for name in (
+                  'LorvexHanlinAssistantView.swift', 'LorvexHanlinChatWorkspace.swift', 'LorvexHanlinComposer.swift')}
+              assert set(repair['hostSourceDelta']) == expected_deltas
+              entries = {}
+              for row in subprocess.check_output(['git', 'ls-tree', '-rz', 'HEAD', '--', 'apps/apple/Sources']).split(b'\0'):
+                  if row:
+                      metadata, name = row.split(b'\t', 1)
+                      mode, kind, blob = metadata.decode().split()
+                      entries[name.decode()] = {'mode': mode, 'type': kind, 'object': blob}
+              for path, delta in repair['hostSourceDelta'].items():
+                  assert entries[path] == delta['after'], 'Unreviewed UI repair: ' + path
+                  entries[path] = delta['before']
+              digest = hashlib.sha256(json.dumps(entries, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+              assert digest == repair['baselineSourceEntriesSHA256'], 'Source changed outside the three reviewed draft adapters'
+              for path, expected in repair['unchangedAgentAndConfigurationInputs'].items():
+                  actual = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + path], text=True).strip()
+                  assert actual == expected, 'Retained native Agent inputs changed: ' + path
+              for path in ('apps/apple/Package.swift', 'apps/apple/Package.resolved', 'apps/apple/Tests', 'apps/apple/core', 'apps/apple/Config'):
+                  assert repair['sourceInputs'][path] == receipt['sourceInputs'][path]
+              inputs, revision = repair['sourceInputs'], repair['sdkRevision']
+          assert json.loads((root / 'HanlinSDK.lock.json').read_text())['revision'] == revision
+          for path, expected in inputs.items():
               actual = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + path], text=True).strip()
               assert actual == expected, 'Native evidence does not match the current source: ' + path
           scripts = receipt['nativeScriptInputs']
@@ -76,7 +107,7 @@ jobs:
           current_ui = current_scripts.pop(scripts['excludedUISetupPath'])
           assert current_scripts == scripts['entries'], 'Native build or test script inputs changed'
           assert current_ui == receipt['uiSetupContinuation']['currentScript'], 'UI setup delta changed'
-          print('Exact product, test and native script inputs match run 45119218473; continuing its original UI gate with the recorded simulator setup correction.')
+          print('Exact source guards passed. Agent evidence remains bound to run 45119218473; its device export remains historical. The reviewed current UI compiles and executes below.')
           PY
       - name: Confirm Xcode 27 and prepare XcodeGen
         shell: bash
@@ -100,6 +131,39 @@ jobs:
           set -euo pipefail
           python3 apps/apple/script/install_hanlin_sdk.py
           python3 apps/apple/script/install_hanlin_sdk.py --check > lorvex-hanlin-sdk-installation.json
+      - name: Verify the complete canonical UI repair source profile
+        if: inputs.validation_scope == 'ui'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib, subprocess
+          root = pathlib.Path('.')
+          repair_path = root / 'apps/apple/docs/development/HANLIN_DRAFT_UI_REPAIR_20261123.json'
+          if not repair_path.exists():
+              raise SystemExit(0)
+          repair = json.loads(repair_path.read_text())
+          profile = repair['sdkProfile']
+          sdk = root / profile['path']
+          installed = json.loads((sdk / '.hanlin-sdk/installation.json').read_text())
+          assert installed['state'] == 'installed' and installed['revision'] == repair['sdkRevision']
+          assert installed['sourcePaths'] == profile['sourcePaths']
+          assert installed['binaryTargets'] == profile['binaryTargets'] == []
+          assert hashlib.sha256((sdk / 'Package.swift').read_bytes()).hexdigest() == profile['manifestSHA256'] == profile['baselineManifestSHA256']
+          entries = {}
+          rows = subprocess.check_output(['git', '-C', str(sdk), 'ls-tree', '-rz', 'HEAD', '--', *profile['sourcePaths']])
+          for row in rows.split(b'\0'):
+              if row:
+                  metadata, name = row.split(b'\t', 1)
+                  mode, kind, blob = metadata.decode().split()
+                  entries[name.decode()] = {'mode': mode, 'type': kind, 'object': blob}
+          assert entries == profile['entries'] and len(entries) == profile['currentEntries']
+          draft_path = 'Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Composer/HanlinComposerDraft.swift'
+          assert set(profile['added']) == {draft_path} and not profile['modified'] and not profile['removed']
+          assert entries.pop(draft_path) == profile['added'][draft_path]
+          digest = hashlib.sha256(json.dumps(entries, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+          assert digest == profile['unchangedEntriesSHA256'] and len(entries) == profile['baselineEntries']
+          print('All 534 original selected source/resource entries and manifest are unchanged; the one added file is the reviewed original live draft owner. No new device binary is claimed.')
+          PY
       - name: Validate Hanlin tool catalog, consent and persistence
         if: inputs.validation_scope != 'ui'
         id: test
