@@ -5,15 +5,21 @@ on:
     paths:
       - 'apps/apple/Sources/**'
       - 'apps/apple/core/**'
+      - 'apps/apple/Tests/**'
       - 'apps/apple/Config/XcodeGen/**'
+      - 'apps/apple/Package.swift'
+      - 'HanlinSDK.lock.json'
       - '.github/workflows/lorvex-cloud-native.yml'
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: lorvex-cloud-native-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   native:
     runs-on: xcode-27
-    timeout-minutes: 95
+    timeout-minutes: 110
     steps:
       - uses: actions/checkout@v4
       - name: Confirm Xcode 27 and XcodeGen
@@ -23,30 +29,60 @@ jobs:
           xcode_version="$(xcodebuild -version)"
           printf '%s\n' "$xcode_version" | grep '^Xcode 27'
           if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
-      - name: Install pinned canonical Hanlin SDK from HanlinSDK.lock.json
+      - name: Install pinned canonical Hanlin SDK
         shell: bash
         run: |
           set -euo pipefail
           python3 apps/apple/script/install_hanlin_sdk.py
           python3 apps/apple/script/install_hanlin_sdk.py --check
-      - name: Validate canonical Lorvex sync engine and cloud checkpoint code
+      - name: Verify canonical ChatGPT plan OAuth and streaming contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,pathlib,urllib.request
+          pin=json.loads(pathlib.Path("HanlinSDK.lock.json").read_text())["revision"]
+          dest=pathlib.Path(os.environ["RUNNER_TEMP"],"lorvex-siwc-contract")
+          dest.mkdir(exist_ok=True)
+          paths=[
+            "Packages/HanlinPlatform/Sources/HanlinChatCore/HanlinChatGPTPlanClient.swift",
+            "Packages/HanlinPlatform/Sources/HanlinChatCore/HanlinChatGPTPlanWire.swift",
+            "Scripts/Tests/verify_chatgpt_plan_contract.swift"]
+          for path in paths:
+              url=f"https://raw.githubusercontent.com/davidpovarsky/hanlin-ai/{pin}/{path}"
+              with urllib.request.urlopen(url,timeout=45) as response:
+                  data=response.read(1000001)
+              if len(data)>1000000: raise SystemExit("Unexpected SDK contract source size")
+              (dest/pathlib.Path(path).name).write_bytes(data)
+          print("CANONICAL_SDK_CONTRACT_PIN",pin)
+          PY
+          swiftc -swift-version 6 -parse-as-library \
+            "$RUNNER_TEMP/lorvex-siwc-contract/HanlinChatGPTPlanClient.swift" \
+            "$RUNNER_TEMP/lorvex-siwc-contract/HanlinChatGPTPlanWire.swift" \
+            "$RUNNER_TEMP/lorvex-siwc-contract/verify_chatgpt_plan_contract.swift" \
+            -o "$RUNNER_TEMP/verify-chatgpt-plan"
+          "$RUNNER_TEMP/verify-chatgpt-plan" 2>&1 | tee chatgpt-plan-contract.log
+      - name: Validate account sync and changed Hanlin host boundaries
         shell: bash
         run: |
           set -o pipefail
-          swift test --package-path apps/apple/core --filter DbLocatorTests -j 3 2>&1 | tee core-sync-tests.log
-      - name: Compile all native Lorvex cloud account, Hanlin and iPad targets
+          swift test --package-path apps/apple \
+            --filter 'LorvexCloudAccountSyncTests|LorvexHanlin(Agent|PresentationState)Tests' \
+            -j 3 2>&1 | tee cloud-and-hanlin-tests.log
+      - name: Compile and exercise the original native iPad UI in English and Hebrew
         shell: bash
         run: |
           set -o pipefail
-          bash apps/apple/script/build_hanlin_ipad_ipa.sh 2>&1 | tee lorvex-cloud-ipad-build.log
+          bash apps/apple/script/verify_hanlin_host_ui.sh 2>&1 | tee lorvex-cloud-ipad-build.log
       - name: Preserve evidence independent of status
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: lorvex-cloud-native-evidence-${{ github.run_id }}
           path: |
-            core-sync-tests.log
+            cloud-and-hanlin-tests.log
+            chatgpt-plan-contract.log
             lorvex-cloud-ipad-build.log
-            apps/apple/dist/hanlin-ipad-ipa/Lorvex-Hanlin-iPad-manifest.json
+            apps/apple/dist/hanlin-host-ui
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 21

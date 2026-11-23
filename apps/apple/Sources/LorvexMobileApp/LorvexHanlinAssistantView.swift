@@ -154,6 +154,7 @@ struct LorvexHanlinAssistantView: View {
                         apiToken = configuredToken
                         showModelSettings = false
                     }.disabled(isSavingSettings)
+                    .accessibilityIdentifier("hanlin.model.cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: saveSettings).disabled(isSavingSettings)

@@ -57,7 +57,7 @@ xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
   -clonedSourcePackagesDirPath "$ROOT/dist/hanlin-ipad-build/SourcePackages" \
   -resultBundlePath "$OUT/Lorvex-Hanlin-UI.xcresult" \
   -parallel-testing-enabled NO -skipMacroValidation \
-  -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex \
+  -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests \
   ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
   test 2>&1 | tee "$OUT/lorvex-hanlin-ui.log" || status=$?
 if [[ -d "$OUT/Lorvex-Hanlin-UI.xcresult" ]]; then

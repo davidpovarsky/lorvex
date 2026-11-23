@@ -45,6 +45,35 @@ final class HanlinSDKIntegrationTests: XCTestCase {
     }
 
     @MainActor
+    func testHebrewCloudAndChatGPTSettings() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-setupCompleted", "YES", "-AppleLanguages", "(he)", "-AppleLocale", "he_IL"]
+        app.launch()
+        let open = app.buttons["hanlin.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 20))
+        open.tap()
+        let cancel = app.buttons["hanlin.model.cancel"]
+        if cancel.waitForExistence(timeout: 3) { cancel.tap() }
+        let close = app.buttons["hanlin.close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 10))
+        XCTAssertEqual(close.label, "סגירה")
+        let nav = app.navigationBars["Hanlin AI"]
+        XCTAssertGreaterThan(close.frame.midX, nav.frame.midX, "Hebrew cancellation control must follow RTL navigation")
+        app.buttons["hanlin.cloud.settings"].tap()
+        XCTAssertTrue(app.navigationBars["ענן Lorvex"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["lorvex.cloud.sign-in"].exists)
+        XCTAssertEqual(app.buttons["lorvex.cloud.sign-in"].label, "התחברות")
+        XCTAssertTrue(app.textFields["lorvex.cloud.email"].exists)
+        XCTAssertTrue(app.secureTextFields["lorvex.cloud.password"].exists)
+        attach(app, "Lorvex - Hebrew RTL cloud account")
+        app.buttons["סיום"].tap()
+        app.buttons["hanlin.model.settings"].tap()
+        XCTAssertTrue(app.navigationBars["הגדרות מודל Hanlin"].waitForExistence(timeout: 5))
+        attach(app, "Lorvex - Hebrew provider settings")
+    }
+
+    @MainActor
     private func attach(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name

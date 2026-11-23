@@ -25,14 +25,18 @@ struct LorvexCloudAccountSettingsView: View {
           Section("Sign in or create an account") {
             TextField("Email",text:$email)
               .textContentType(.emailAddress)
+              .accessibilityIdentifier("lorvex.cloud.email")
               .autocorrectionDisabled()
             SecureField("Password (at least 12 characters)",text:$password)
               .textContentType(.password)
+              .accessibilityIdentifier("lorvex.cloud.password")
             Button("Sign in") { authenticate(register:false) }
+              .accessibilityIdentifier("lorvex.cloud.sign-in")
               .disabled(cloud.isSigningIn || email.isEmpty || password.isEmpty)
             Button("Create Lorvex account") { authenticate(register:true) }
+              .accessibilityIdentifier("lorvex.cloud.register")
               .disabled(cloud.isSigningIn || email.isEmpty || password.count<12)
-            if cloud.isSigningIn { ProgressView("Connectingâ€¦") }
+            if cloud.isSigningIn { ProgressView("ConnectingÃ¢â‚¬Â¦") }
           }
         } else {
           Section("Connected account") {
@@ -47,7 +51,7 @@ struct LorvexCloudAccountSettingsView: View {
             Button {
               _Concurrency.Task { await cloud.syncNow() }
             } label: {
-              Label(cloud.isSyncing ? "Synchronizingâ€¦" : "Sync now",
+              Label(cloud.isSyncing ? "SynchronizingÃ¢â‚¬Â¦" : "Sync now",
                     systemImage:"arrow.triangle.2.circlepath")
             }
             .disabled(cloud.isSyncing)

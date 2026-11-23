@@ -43,7 +43,7 @@ class Client:
         self.issuer = os.environ["ASC_ISSUER_ID"]
         self.team = os.environ["APPLE_TEAM_ID"]
 
-    def request(self, suffix):
+    def request(self, suffix, method="GET", body=None):
         now = int(time.time())
         token = self.jwt.encode(
             {"iss": self.issuer, "iat": now - 10, "exp": now + 600, "aud": "appstoreconnect-v1"},
@@ -51,11 +51,15 @@ class Client:
         )
         req = urllib.request.Request(
             "https://api.appstoreconnect.apple.com/v1/" + suffix,
-            headers={"Authorization": "Bearer " + token, "Accept": "application/json"},
+            data=json.dumps(body).encode("utf-8") if body is not None else None,
+            method=method,
+            headers={"Authorization": "Bearer " + token, "Accept": "application/json",
+                     "Content-Type": "application/json"},
         )
         try:
             with urllib.request.urlopen(req, timeout=35) as res:
-                return res.status, json.load(res)
+                raw = res.read()
+                return res.status, json.loads(raw) if raw else {}
         except urllib.error.HTTPError as exc:
             raw = exc.read(3000)
             try:
@@ -139,12 +143,95 @@ def verify(client, version, timeout):
                 last_state = state
             if state in ("VALID", "COMPLETE"):
                 print("TESTFLIGHT_BUILD_AVAILABLE", build["id"], version, flush=True)
-                return
+                return build
             if state in ("FAILED", "INVALID"):
                 raise RuntimeError("Apple rejected the build: " + state)
         if time.monotonic() >= deadline:
             raise RuntimeError("Upload submitted, but TestFlight build processing has not completed")
         time.sleep(25)
+
+def list_resources(client, suffix):
+    rows = []
+    while suffix:
+        code, response = client.request(suffix)
+        if code != 200:
+            raise RuntimeError("Unable to inspect Apple resource: " + suffix.split("?")[0])
+        rows.extend(response.get("data", []))
+        next_url = response.get("links", {}).get("next")
+        if next_url:
+            prefix = "https://api.appstoreconnect.apple.com/v1/"
+            if not next_url.startswith(prefix):
+                raise RuntimeError("Unexpected Apple pagination URL")
+            suffix = next_url[len(prefix):]
+        else:
+            suffix = None
+    return rows
+
+
+def internal_group(client, name):
+    groups = list_resources(client, "apps/" + APP_ID + "/betaGroups?limit=200")
+    matches = [g for g in groups if g.get("attributes", {}).get("name") == name
+               and g.get("attributes", {}).get("isInternalGroup") is True]
+    if len(matches) != 1:
+        raise RuntimeError("Expected exactly one existing internal TestFlight group: " + name)
+    group = matches[0]
+    testers = list_resources(client, "betaGroups/" + group["id"] + "/betaTesters?limit=200")
+    if not testers or any(not t.get("attributes", {}).get("email") for t in testers):
+        raise RuntimeError("The existing internal group has no fully identified tester roster")
+    return group, testers
+
+
+def distribute(client, build, group_name):
+    # Resolve the exact current, bounded Apple roster before any write.
+    group, testers = internal_group(client, group_name)
+    build_id = build["id"]
+    code, detail = client.request("builds/" + build_id + "/buildBetaDetail")
+    if code != 200:
+        raise RuntimeError("Unable to inspect internal TestFlight availability")
+    state = detail.get("data", {}).get("attributes", {}).get("internalBuildState")
+    print("TESTFLIGHT_INTERNAL_STATE", build_id, state, flush=True)
+    if state not in ("READY_FOR_BETA_TESTING", "IN_BETA_TESTING"):
+        raise RuntimeError("Apple has not enabled this build for internal testing: " + str(state))
+    groups = list_resources(client, "builds/" + build_id + "/betaGroups?limit=200")
+    if not any(g["id"] == group["id"] for g in groups):
+        code, _ = client.request("betaGroups/" + group["id"] + "/relationships/builds",
+                                 method="POST", body={"data": [{"type": "builds", "id": build_id}]})
+        if code != 204:
+            raise RuntimeError("Apple did not associate the build with the existing internal group")
+        groups = list_resources(client, "builds/" + build_id + "/betaGroups?limit=200")
+        if not any(g["id"] == group["id"] for g in groups):
+            raise RuntimeError("Internal build association could not be read back")
+    print("TESTFLIGHT_INTERNAL_GROUP_VERIFIED", group["id"], group_name, build_id, flush=True)
+    evidence = []
+    for tester in testers:
+        attrs = tester.get("attributes", {})
+        tester_state = attrs.get("state", "UNKNOWN")
+        invited_now = False
+        # Do not resend mail to people who have already accepted or been invited.
+        if tester_state == "NOT_INVITED":
+            body = {"data": {"type": "betaTesterInvitations", "relationships": {
+                "app": {"data": {"type": "apps", "id": APP_ID}},
+                "betaTester": {"data": {"type": "betaTesters", "id": tester["id"]}}
+            }}}
+            code, _ = client.request("betaTesterInvitations", method="POST", body=body)
+            if code != 201:
+                raise RuntimeError("Apple did not accept the invitation for existing tester " + tester["id"])
+            invited_now = True
+            code, response = client.request("betaTesters/" + tester["id"])
+            if code != 200:
+                raise RuntimeError("Invitation status could not be read back")
+            tester_state = response.get("data", {}).get("attributes", {}).get("state", "UNKNOWN")
+        if tester_state not in ("INVITED", "ACCEPTED", "INSTALLED"):
+            raise RuntimeError("Tester invitation is not confirmed: " + tester["id"] + " " + tester_state)
+        # CI is public: do not publish the roster's email addresses.
+        print("TESTFLIGHT_TESTER_VERIFIED", tester["id"], tester_state,
+              "INVITATION_SENT" if invited_now else "EXISTING_INVITATION", flush=True)
+        evidence.append({"tester_id": tester["id"], "state": tester_state,
+                         "invitation_sent_now": invited_now})
+    print("TESTFLIGHT_DISTRIBUTION_VERIFIED", json.dumps({
+        "app_id": APP_ID, "build_id": build_id, "build_number": build["attributes"]["version"],
+        "group_id": group["id"], "group_name": group_name, "testers": evidence
+    }, sort_keys=True), flush=True)
 
 
 if __name__ == "__main__":
@@ -152,15 +239,18 @@ if __name__ == "__main__":
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("install-profiles")
     verify_cmd = sub.add_parser("verify-upload")
-    verify_cmd.add_argument("--build", default="171")
+    verify_cmd.add_argument("--build", default="172")
     verify_cmd.add_argument("--timeout-seconds", type=int, default=1100)
+    verify_cmd.add_argument("--internal-group")
     args = parser.parse_args()
     try:
         client = Client()
         if args.cmd == "install-profiles":
             install(client)
         else:
-            verify(client, args.build, args.timeout_seconds)
+            build = verify(client, args.build, args.timeout_seconds)
+            if args.internal_group:
+                distribute(client, build, args.internal_group)
     except Exception as e:
         print("LORVEX_SIGNING_ERROR", type(e).__name__, str(e)[:200], file=sys.stderr)
         sys.exit(1)
