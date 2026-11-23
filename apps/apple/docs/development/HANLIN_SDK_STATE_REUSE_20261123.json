@@ -1,0 +1,184 @@
+{
+  "baselineRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45109608536",
+  "baselineHostRevision": "919a893d8310c7717420c39bcc89c71e95e47925",
+  "baselineSDKRevision": "b66aa5e0e979f36d1a34b85e08899449b72d1dc2",
+  "currentHostRevision": "d414ca44b6c092fa589d8d7f03cb340c5150ca5a",
+  "hostInputs": [
+    {
+      "path": "apps/apple/Sources/LorvexHanlinAgent",
+      "baselineGitObject": "cf9b005dd448bf8b8ae5cdf4ddfc42f2102a77fa",
+      "currentGitObject": "cf9b005dd448bf8b8ae5cdf4ddfc42f2102a77fa",
+      "unchanged": true
+    },
+    {
+      "path": "apps/apple/Sources/LorvexCore",
+      "baselineGitObject": "c8bbc8d637e91d4ad3305c72caa65cf6e8c2196f",
+      "currentGitObject": "c8bbc8d637e91d4ad3305c72caa65cf6e8c2196f",
+      "unchanged": true
+    },
+    {
+      "path": "apps/apple/core",
+      "baselineGitObject": "50f810cd0282b602e0c1eabd2aef9ed45fbd8fb3",
+      "currentGitObject": "50f810cd0282b602e0c1eabd2aef9ed45fbd8fb3",
+      "unchanged": true
+    },
+    {
+      "path": "apps/apple/Tests/LorvexHanlinAgentTests/LorvexHanlinPresentationStateTests.swift",
+      "baselineGitObject": "e162f7925995a01a8aa5ef912b959f5a6cda796b",
+      "currentGitObject": "e162f7925995a01a8aa5ef912b959f5a6cda796b",
+      "unchanged": true
+    },
+    {
+      "path": "apps/apple/Package.swift",
+      "baselineGitObject": "1b3c04826d59188fcf15035e95c73a21c93d0c7c",
+      "currentGitObject": "1b3c04826d59188fcf15035e95c73a21c93d0c7c",
+      "unchanged": true
+    },
+    {
+      "path": "apps/apple/Package.resolved",
+      "baselineGitObject": "fe7ac5e918b90090788f10f62cbd1297e8f88ed3",
+      "currentGitObject": "fe7ac5e918b90090788f10f62cbd1297e8f88ed3",
+      "unchanged": true
+    }
+  ],
+  "state": "source-inputs-verified-existing-five-test-evidence-reused-native-agent-and-ui-retry-required",
+  "targetSDKRevision": "d49a4fd4115b8335105d2991bf74ab4d7f6aad2d",
+  "unchangedSDKInputs": [
+    {
+      "path": "Packages/HanlinPlatform/Sources/HanlinChatCore",
+      "baselineGitObject": "c9705a181ef4c4defc8642ceec9c014b55b320fd",
+      "targetGitObject": "c9705a181ef4c4defc8642ceec9c014b55b320fd",
+      "unchanged": true
+    },
+    {
+      "path": "Packages/HanlinPlatform/Sources/HanlinPlatformContracts",
+      "baselineGitObject": "b713f076c15922e70139c583bc87f1201c7f1a3f",
+      "targetGitObject": "b713f076c15922e70139c583bc87f1201c7f1a3f",
+      "unchanged": true
+    },
+    {
+      "path": "Packages/HanlinAgentSDK/Sources/HanlinPersistenceAdapters",
+      "baselineGitObject": "945cca8bc6f9d85784dff2394af005c805e9527b",
+      "targetGitObject": "945cca8bc6f9d85784dff2394af005c805e9527b",
+      "unchanged": true
+    }
+  ],
+  "selectedSourceChanges": [
+    {
+      "status": "M",
+      "path": "Packages/HanlinAgentSDK/Sources/HanlinAgentCore/HanlinHostDispatcher.swift",
+      "baselineGitObject": "d5e7d185f73c5e2c82912c037eb41154fb6e5c9a",
+      "targetGitObject": "889fd8071ee18fd3fe9ccb611094e6273d54c4b9"
+    },
+    {
+      "status": "A",
+      "path": "Packages/HanlinAgentSDK/Sources/HanlinHostContracts/HanlinHostNavigationTransition.swift",
+      "baselineGitObject": null,
+      "targetGitObject": "05d524c01119976113b7741f55641754375c57c7"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONSchema/Document/JSONSchemaBuiltins.swift",
+      "baselineGitObject": "1a2239193116eb727b1c3415a3a00b40b56c5a2c",
+      "targetGitObject": "4272f27fe96dfe1de806fe71711014ef6d4f0e52"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Composer/HanlinDetachedCapabilityChips.swift",
+      "baselineGitObject": "4374cafd2aec6280c8bf9486a31dc201efb0fe08",
+      "targetGitObject": "a10df2270d174ac04d560445aafb032f38eb2871"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Composer/HanlinMorphComposer.swift",
+      "baselineGitObject": "3a87aed5dcde11605b98d5d8b953161851148c87",
+      "targetGitObject": "2022a53978dfb0f0541d47dc2e045f60241ccb5b"
+    },
+    {
+      "status": "A",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/HanlinChatAppearance.swift",
+      "baselineGitObject": null,
+      "targetGitObject": "a6f03cc60255dd954c0af4b32fcdce571e8f4f4f"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/HanlinInlineToolApproval.swift",
+      "baselineGitObject": "d88e7c2ac108c743bb997928a0224acb4dba22a2",
+      "targetGitObject": "39587d47fc2a0f0e067d7ca1b4fb8b681b0d4d54"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/HanlinMarkdownView.swift",
+      "baselineGitObject": "91d770db707e435eee9dab1c9cf897334623168c",
+      "targetGitObject": "44882f2ce6f148e33fd9f9fe4c6eee33c099ef5d"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/HanlinMessageBubble.swift",
+      "baselineGitObject": "c208cd483c29ae0853c12c2cb9d6df9a6feb5095",
+      "targetGitObject": "b04ab7de8446dc91c4a8246a392278b6e6a72b16"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/HanlinToolActivityHeader.swift",
+      "baselineGitObject": "007cb803e538047b85f3b16b87f8b18083b5e50e",
+      "targetGitObject": "a4f1355a550ae02d3854b94acfaf694c101c9eb2"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Motion/ChatMotionPreferences.swift",
+      "baselineGitObject": "fe96f83f30af08236b3393f02dad9056a86f43d3",
+      "targetGitObject": "fc0a8dce2d1ce958dde7f3bc817eb16c546a33f1"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Motion/ChatShimmerEffect.swift",
+      "baselineGitObject": "6e845e6b5d6f89c9f16d281a83cd33d9828a4c25",
+      "targetGitObject": "289cd0deb853b655b5cfd991d9e95d58014f4ef7"
+    },
+    {
+      "status": "A",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Motion/HanlinOriginalActivityControls.swift",
+      "baselineGitObject": null,
+      "targetGitObject": "b7e26cedd3403c4594a38ad3bba9cc98a7b63042"
+    },
+    {
+      "status": "A",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Scrolling/ChatScrollImmediateContentTouches.swift",
+      "baselineGitObject": null,
+      "targetGitObject": "7fa7762a268ad6384b9362e04024151366ecd4c4"
+    },
+    {
+      "status": "M",
+      "path": "Packages/HanlinPresentationSDK/Sources/HanlinLocalization/HanlinLocalization.swift",
+      "baselineGitObject": "33752680d9eb11fc3a1eb17f3a3a76860d880ade",
+      "targetGitObject": "42cd9a756ffafa173c74f54e131b670428d12e19"
+    }
+  ],
+  "selectedProducts": [
+    "HanlinAgentCore",
+    "HanlinHostContracts",
+    "HanlinPersistenceAdapters",
+    "HanlinPlatformContracts",
+    "HanlinChatCore",
+    "HanlinChatUI",
+    "HanlinPresentationKit"
+  ],
+  "generatedManifestSHA256": "29c126b9305e88bbcaed57512374e986f7225a0c87d332950f6ba3deda9bca26",
+  "binaryTargets": [],
+  "managedNativeTargets": [],
+  "nativeStateEvidence": {
+    "testCount": 5,
+    "result": "passed-in-baseline-run",
+    "artifactID": 14790896680,
+    "artifactZIP_SHA256": "82509a8a2210a42143f6332e3fa602b190e514015d3bff947de942af368f2824",
+    "tests": [
+      "activityKeepsDistinctCallsAndObservedResultState",
+      "cancellationCannotPublishIntoTheNextRequest",
+      "changedCredentialCreatesADifferentProviderIdentity",
+      "sourcesAreObservedDeduplicatedAndSafeForNavigation",
+      "failedOrCancelledToolCannotBecomeACompletedReceipt"
+    ]
+  },
+  "scope": "The five state tests exercise the unchanged host state/message implementation and ChatCore event DTOs. They never call state.send or construct an agent bundle. Their cancellation fixture has no agent to invalidate. Changed dispatcher/schema/UI/asset code is excluded from this evidence reuse and must pass the six existing agent tests plus the actual iPad build/XCUI retry."
+}

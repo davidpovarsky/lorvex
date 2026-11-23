@@ -83,7 +83,7 @@ provisional installation receipt is not a native UI acceptance result.
 
 ## Consumer migration receipt, 2026-11-23
 
-The committed host lock selects SDK `b66aa5e0e979f36d1a34b85e08899449b72d1dc2`,
+The initial migration lock selected SDK `b66aa5e0e979f36d1a34b85e08899449b72d1dc2`,
 including canonical localization/assets and the extracted original bubble chrome.
 The canonical bootstrap and sparse installer completed successfully against the
 actual Lorvex worktree. The installed closure contains 616 files / 27166042 bytes,
@@ -124,8 +124,9 @@ compiled and ran all 11 selected macOS native tests. All five new
 existing agent tests failed with nine issues. The catalog's exact JSON Schema
 compiler reported `JSONSchemaCompilationFailure(.metaSchema)`, which also blocked
 the dependent read/write/approval/idempotency outcomes. The canonical SDK owner
-identified the aggregate package's renamed resource bundle as the cause and is
-correcting its checked lookup without changing schema validation semantics.
+identified the aggregate package's renamed resource bundle as the cause. Its
+checked lookup is corrected in canonical commit `446600ea26dc914a9161885f329893111e746754`,
+without changing schema validation semantics.
 
 The independent iPad build failed because the existing EquatableMacros dependency
 required Xcode's noninteractive macro enablement. The device and focused Simulator
@@ -145,3 +146,37 @@ Exact retained artifacts:
 The one watcher encountered an API quota error at 04:39:59 UTC and resumed once
 after the 04:43:45 reset. That watcher error was recorded independently of the
 actual workflow failure.
+
+
+## Coherent SDK pin and exact evidence reuse
+
+The host now selects canonical SDK `d49a4fd4115b8335105d2991bf74ab4d7f6aad2d`.
+The actual sparse install and read-only `--check` both pass. The seven-product
+selection, selected manifest SHA-256 `29c126b9305e88bbcaed57512374e986f7225a0c87d332950f6ba3deda9bca26`,
+and zero-binary/zero-managed-native closure remain unchanged. No copied runtime
+or second SDK source implementation is introduced.
+
+[HANLIN_SDK_STATE_REUSE_20261123.json](HANLIN_SDK_STATE_REUSE_20261123.json)
+records the exact Git objects for the prior passing input trees and every one
+of the 15 changed selected SDK source files. The host Agent and Core sources,
+pure Swift core, five-test source, host manifest and dependency lock are byte
+identical to run `45109608536`. The complete canonical ChatCore,
+PlatformContracts and PersistenceAdapters source trees are also byte identical.
+The five state tests construct no agent bundle and perform no dispatch/schema
+work; they test observed event projection, credential identity and host-owned
+cancellation state. Their original five PASS receipts are retained from that
+run and artifact, with no new execution claim.
+
+The changed Host1.2 dispatcher, checked JSON Schema bundle loader, and original
+UI appearance/motion source are outside that reuse boundary. All six existing
+Agent tests must run against this new pin, followed by the actual arm64 iPad
+build and `HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex`.
+The workflow's default `unit_scope=all` still runs all 11 tests. This corrective
+run uses `unit_scope=agent` and an explicit PresentationState suite exclusion;
+SwiftPM target names alone would otherwise match that suite too. Native outcome
+and UI acceptance remain pending until this corrective run finishes.
+
+Neither host's current chat composition instantiates Hanlin's extension stores
+or CompactAgentClient. Their existing App Groups remain owned by each host; this
+pin does not require an invented Hanlin App Group entitlement or Info.plist
+dictionary in Lorvex.
