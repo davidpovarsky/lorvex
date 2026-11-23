@@ -72,3 +72,11 @@
 "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset." = "המשימות המקומיות יישארו במכשיר. חשבון ענן אחר לא יוכל להשתמש במסד הנתונים הזה ללא ייצוא ואיפוס נפרדים.";
 
 "Signed out locally. OpenAI session revocation could not be confirmed." = "החשבון נותק במכשיר. לא ניתן היה לאמת את ביטול ההרשאה ב־OpenAI.";
+"ChatGPT accounts" = "חשבונות ChatGPT";
+"Active" = "פעיל";
+"Saved account" = "חשבון שמור";
+"Add ChatGPT account" = "הוספת חשבון ChatGPT";
+"Choose a saved account to sign in again, or add another. Each account keeps its own sign-in and model selection." = "אפשר להתחבר מחדש לחשבון שמור או להוסיף חשבון נוסף. לכל חשבון נשמרות הרשאות ובחירת מודל נפרדות.";
+"Signing out of ChatGPT…" = "מתנתק מ־ChatGPT…";
+"Unable to remove the saved ChatGPT session: " = "לא ניתן להסיר את הרשאת ChatGPT השמורה: ";
+"Unable to start secure ChatGPT sign-in." = "לא ניתן להתחיל התחברות מאובטחת ל־ChatGPT.";

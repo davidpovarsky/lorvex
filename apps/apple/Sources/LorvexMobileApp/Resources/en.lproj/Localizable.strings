@@ -72,3 +72,11 @@
 "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset." = "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset.";
 
 "Signed out locally. OpenAI session revocation could not be confirmed." = "Signed out locally. OpenAI session revocation could not be confirmed.";
+"ChatGPT accounts" = "ChatGPT accounts";
+"Active" = "Active";
+"Saved account" = "Saved account";
+"Add ChatGPT account" = "Add ChatGPT account";
+"Choose a saved account to sign in again, or add another. Each account keeps its own sign-in and model selection." = "Choose a saved account to sign in again, or add another. Each account keeps its own sign-in and model selection.";
+"Signing out of ChatGPT…" = "Signing out of ChatGPT…";
+"Unable to remove the saved ChatGPT session: " = "Unable to remove the saved ChatGPT session: ";
+"Unable to start secure ChatGPT sign-in." = "Unable to start secure ChatGPT sign-in.";

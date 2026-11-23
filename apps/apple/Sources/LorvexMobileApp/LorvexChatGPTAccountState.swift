@@ -8,62 +8,181 @@ import Security
 import SwiftUI
 import UIKit
 
-/// The official OpenAI OSS plan-sharing flow is local to this iPad. It does
-/// not use Lorvex's server, copy ChatGPT cookies, or collect an API key.
+struct LorvexChatGPTSavedAccount: Codable, Identifiable, Sendable {
+  var registration: HanlinChatGPTPlanRegistration
+  let ordinal: Int
+  var modelID: String
+  var id: String { registration.clientID }
+  var label: String { String(localized: "Account") + " " + String(ordinal) }
+}
+
+/// The official OpenAI OSS flow keeps each validated registration and renewable
+/// session separate on this iPad. Account selection takes effect after OAuth.
 @MainActor @Observable
 final class LorvexChatGPTAccountState {
   private(set) var status = String(localized: "Not connected")
   private(set) var email: String?
   private(set) var canUsePlan = false
   private(set) var models: [HanlinChatGPTPlanModel] = []
+  private(set) var accounts: [LorvexChatGPTSavedAccount] = []
+  private(set) var activeAccountID: String?
+  private(set) var sessionRevision = UUID()
   private(set) var isConnecting = false
-  var selectedModelID: String {
-    didSet { UserDefaults.standard.set(selectedModelID,forKey:"lorvex.chatgpt.plan.model") }
-  }
+  private(set) var revokingAccountIDs: Set<String> = []
+  private(set) var signOutNotice: String?
   private(set) var authorizationURL: URL?
+  var selectedModelID: String {
+    didSet {
+      guard let index = accounts.firstIndex(where: { $0.id == activeAccountID }),
+            accounts[index].modelID != selectedModelID else { return }
+      accounts[index].modelID = selectedModelID
+      do { try persistAccounts(accounts) }
+      catch { reportConnectionError(error) }
+    }
+  }
+  var activeAccount: LorvexChatGPTSavedAccount? {
+    accounts.first { $0.id == activeAccountID }
+  }
 
   @ObservationIgnored private let client = HanlinChatGPTPlanClient()
   @ObservationIgnored private var saved: HanlinChatGPTPlanCredentials?
-  @ObservationIgnored private var registration: HanlinChatGPTPlanRegistration?
   @ObservationIgnored private var pending: HanlinChatGPTAuthorizationAttempt?
+  @ObservationIgnored private var pendingPriorAccount: HanlinChatGPTPlanCredentials?
   @ObservationIgnored private var listener: NWListener?
-  @ObservationIgnored private let queue = DispatchQueue(label:"lorvex.chatgpt.loopback.listener")
+  @ObservationIgnored private let queue = DispatchQueue(label: "lorvex.chatgpt.loopback.listener")
   @ObservationIgnored private let hostID: String
   @ObservationIgnored private var sessionGeneration = UUID()
   @ObservationIgnored private var authorizationGeneration = UUID()
   @ObservationIgnored private var flowTimeout: _Concurrency.Task<Void, Never>?
 
+  private enum Keys {
+    static let host = "lorvex.chatgpt.plan.host-id"
+    static let accounts = "lorvex.chatgpt.plan.registrations"
+    static let active = "lorvex.chatgpt.plan.active-client-id"
+    static let legacyRegistration = "lorvex.chatgpt.plan.registration"
+    static let legacyModel = "lorvex.chatgpt.plan.model"
+    static let migrated = "lorvex.chatgpt.plan.multi-account-migrated"
+  }
+
   init() {
-    let key="lorvex.chatgpt.plan.host-id"
-    if let existing=UserDefaults.standard.string(forKey:key),existing.hasPrefix("urn:uuid:") {
-      hostID=existing
+    let defaults = UserDefaults.standard
+    if let existing = defaults.string(forKey: Keys.host), existing.hasPrefix("urn:uuid:") {
+      hostID = existing
     } else {
-      let generated=HanlinChatGPTPlanClient.makeHostID()
-      hostID=generated
-      UserDefaults.standard.set(generated,forKey:key)
+      let generated = HanlinChatGPTPlanClient.makeHostID()
+      hostID = generated
+      defaults.set(generated, forKey: Keys.host)
     }
-    selectedModelID=UserDefaults.standard.string(forKey:"lorvex.chatgpt.plan.model") ?? ""
-    saved=LorvexChatGPTPlanKeychain.load()
-    if let saved {
-      registration = HanlinChatGPTPlanRegistration(credentials: saved)
-      if let data = try? JSONEncoder().encode(registration) {
-        UserDefaults.standard.set(data, forKey: "lorvex.chatgpt.plan.registration")
+    selectedModelID = ""
+    do {
+      if let data = defaults.data(forKey: Keys.accounts) {
+        accounts = try JSONDecoder().decode([LorvexChatGPTSavedAccount].self, from: data)
+        guard Set(accounts.map(\.id)).count == accounts.count,
+              Set(accounts.map(\.ordinal)).count == accounts.count,
+              accounts.allSatisfy({ $0.ordinal > 0 && !$0.registration.subject.isEmpty
+                && !$0.id.isEmpty && $0.id != "dynamic_agent_client" }) else {
+          throw HanlinChatGPTPlanError.invalidIdentity
+        }
       }
-    } else if let data = UserDefaults.standard.data(forKey: "lorvex.chatgpt.plan.registration") {
-      registration = try? JSONDecoder().decode(HanlinChatGPTPlanRegistration.self, from: data)
-    }
-    if let saved {
-      email=saved.email
-      canUsePlan=saved.canUsePlan
-      status=saved.canUsePlan
-        ? String(localized: "Connected to ChatGPT plan")
-        : String(localized: "ChatGPT account connected; plan usage not granted")
+      if !defaults.bool(forKey: Keys.migrated) {
+        try migrateSingleAccount()
+      } else {
+        // A failed cleanup never reactivates or overwrites an older token set.
+        try LorvexChatGPTPlanKeychain.deleteLegacy()
+      }
+      if let activeID = defaults.string(forKey: Keys.active),
+         let profile = accounts.first(where: { $0.id == activeID }),
+         let credentials = try LorvexChatGPTPlanKeychain.load(clientID: activeID) {
+        guard credentials.subject == profile.registration.subject else {
+          throw HanlinChatGPTPlanError.invalidIdentity
+        }
+        activeAccountID = activeID
+        saved = credentials
+        email = credentials.email
+        canUsePlan = credentials.canUsePlan
+        selectedModelID = profile.modelID
+        status = credentials.canUsePlan
+          ? String(localized: "Connected to ChatGPT plan")
+          : String(localized: "ChatGPT account connected; plan usage not granted")
+      }
+    } catch {
+      reportConnectionError(error)
     }
   }
 
-  func beginSignIn() {
-    guard !isConnecting else{return}
-    isConnecting=true
+  private func migrateSingleAccount() throws {
+    let defaults = UserDefaults.standard
+    if let data = defaults.data(forKey: Keys.legacyRegistration) {
+      let registration = try JSONDecoder().decode(HanlinChatGPTPlanRegistration.self, from: data)
+      if !accounts.contains(where: { $0.id == registration.clientID }) {
+        accounts.append(.init(registration: registration, ordinal: nextOrdinal, modelID: ""))
+      }
+    }
+    if let legacy = try LorvexChatGPTPlanKeychain.loadLegacy() {
+      let destination = try LorvexChatGPTPlanKeychain.load(clientID: legacy.clientID)
+      if let destination, destination.subject != legacy.subject {
+        throw HanlinChatGPTPlanError.invalidIdentity
+      }
+      // A crash after the durable copy must not replace a newer rotating token.
+      let credentials = destination ?? legacy
+      if destination == nil { try LorvexChatGPTPlanKeychain.save(credentials) }
+      accounts = try updatingAccounts(with: credentials)
+      if let index = accounts.firstIndex(where: { $0.id == credentials.clientID }),
+         accounts[index].modelID.isEmpty {
+        accounts[index].modelID = defaults.string(forKey: Keys.legacyModel) ?? ""
+      }
+      try persistAccounts(accounts)
+      if defaults.string(forKey: Keys.active) == nil {
+        defaults.set(credentials.clientID, forKey: Keys.active)
+      }
+    } else {
+      try persistAccounts(accounts)
+    }
+    defaults.set(true, forKey: Keys.migrated)
+    defaults.removeObject(forKey: Keys.legacyRegistration)
+    defaults.removeObject(forKey: Keys.legacyModel)
+    // Only remove the old Keychain record after its per-client copy succeeded.
+    try LorvexChatGPTPlanKeychain.deleteLegacy()
+  }
+
+  private var nextOrdinal: Int { (accounts.map(\.ordinal).max() ?? 0) + 1 }
+
+  private func updatingAccounts(
+    with credentials: HanlinChatGPTPlanCredentials
+  ) throws -> [LorvexChatGPTSavedAccount] {
+    var result = accounts
+    let registration = HanlinChatGPTPlanRegistration(credentials: credentials)
+    if let index = result.firstIndex(where: { $0.id == registration.clientID }) {
+      guard result[index].registration.subject == registration.subject else {
+        throw HanlinChatGPTPlanError.invalidIdentity
+      }
+      result[index].registration = registration
+    } else {
+      result.append(.init(registration: registration, ordinal: nextOrdinal, modelID: ""))
+    }
+    return result
+  }
+
+  private func persistAccounts(_ values: [LorvexChatGPTSavedAccount]) throws {
+    let data = try JSONEncoder().encode(values)
+    UserDefaults.standard.set(data, forKey: Keys.accounts)
+  }
+
+  /// A nil account ID explicitly registers a different ChatGPT account.
+  func beginSignIn(accountID: String? = nil) {
+    guard !isConnecting else { return }
+    let profile = accounts.first { $0.id == accountID }
+    guard accountID == nil || profile != nil else { return }
+    guard accountID.map({ !revokingAccountIDs.contains($0) }) ?? true else { return }
+    let prior: HanlinChatGPTPlanCredentials?
+    do {
+      prior = try profile.flatMap { try LorvexChatGPTPlanKeychain.load(clientID: $0.id) }
+      if let prior, let profile, prior.subject != profile.registration.subject {
+        throw HanlinChatGPTPlanError.invalidIdentity
+      }
+    } catch { reportConnectionError(error); return }
+    pendingPriorAccount = prior
+    isConnecting = true
     let flowID = UUID()
     authorizationGeneration = flowID
     flowTimeout?.cancel()
@@ -73,32 +192,31 @@ final class LorvexChatGPTAccountState {
       guard let self, self.authorizationGeneration == flowID, self.isConnecting else { return }
       self.fail(String(localized: "ChatGPT sign-in timed out. Please try again."))
     }
-    status=String(localized: "Opening secure ChatGPT sign-in…")
-    let params=NWParameters.tcp
-    params.requiredLocalEndpoint = .hostPort(
-      host:NWEndpoint.Host("127.0.0.1"),port:.any)
+    status = String(localized: "Opening secure ChatGPT sign-in…")
+    let params = NWParameters.tcp
+    params.requiredLocalEndpoint = .hostPort(host: NWEndpoint.Host("127.0.0.1"), port: .any)
     do {
-      let server=try NWListener(using:params)
-      listener=server
-      server.stateUpdateHandler={ [weak self,weak server] newState in
-        _Concurrency.Task { @MainActor [weak self,weak server] in
-          guard let self,let server, self.listener === server else{return}
+      let server = try NWListener(using: params)
+      listener = server
+      server.stateUpdateHandler = { [weak self, weak server] newState in
+        _Concurrency.Task { @MainActor [weak self, weak server] in
+          guard let self, let server, self.listener === server,
+                self.authorizationGeneration == flowID else { return }
           switch newState {
           case .ready:
-            guard let port=server.port else {
-              self.fail("Loopback listener has no port")
+            guard let port = server.port else {
+              self.fail(String(localized: "Unable to start secure ChatGPT sign-in."))
               return
             }
             do {
-              let auth=try HanlinChatGPTPlanClient.makeAttempt(
-                hostID:self.hostID,loopbackPort:port.rawValue,previous:self.saved,
-                appName:"Lorvex AI Planner",registration:self.registration)
-              self.pending=auth
-              self.authorizationURL=auth.url
-              self.status=String(localized: "Sign in with ChatGPT in the browser")
-            }catch{self.fail(error.localizedDescription)}
-          case .failed(let error):
-            self.fail("Unable to start local OAuth callback: "+error.localizedDescription)
+              let auth = try HanlinChatGPTPlanClient.makeAttempt(
+                hostID: self.hostID, loopbackPort: port.rawValue, previous: prior,
+                appName: "Lorvex AI Planner", registration: profile?.registration)
+              self.pending = auth
+              self.authorizationURL = auth.url
+              self.status = String(localized: "Sign in with ChatGPT in the browser")
+            } catch { self.fail(error.localizedDescription) }
+          case .failed(let error): self.fail(error.localizedDescription)
           default: break
           }
         }
@@ -118,13 +236,11 @@ final class LorvexChatGPTAccountState {
           }
         }.start()
       }
-      server.start(queue:queue)
-    }catch{
-      fail(error.localizedDescription)
-    }
+      server.start(queue: queue)
+    } catch { fail(error.localizedDescription) }
   }
 
-  private func handleOAuthCallback(_ url:URL) {
+  private func handleOAuthCallback(_ url: URL) {
     guard let pending, url.path == "/auth/callback", url.host == "127.0.0.1",
           let expected = URLComponents(url: pending.url, resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { $0.name == "state" })?.value,
@@ -133,81 +249,93 @@ final class LorvexChatGPTAccountState {
           query.first(where: { $0.name == "state" })?.value == expected else { return }
     let flowID = authorizationGeneration
     let generation = sessionGeneration
-    // Close the browser only after a callback has actually arrived.
-    authorizationURL=nil
-    listener?.cancel();listener=nil
-    self.pending=nil
-    status=String(localized: "Verifying the ChatGPT account and permissions…")
+    let prior = pendingPriorAccount
+    authorizationURL = nil
+    listener?.cancel(); listener = nil
+    self.pending = nil; pendingPriorAccount = nil
+    status = String(localized: "Verifying the ChatGPT account and permissions…")
     _Concurrency.Task { [weak self] in
-      guard let self else {return}
+      guard let self else { return }
       do {
-        let credentials=try await client.exchange(callback:url,attempt:pending,
-                                                   priorAccount:self.saved)
-        guard self.authorizationGeneration == flowID,
-              self.sessionGeneration == generation else { return }
-        let registration = HanlinChatGPTPlanRegistration(credentials: credentials)
-        let registrationData = try JSONEncoder().encode(registration)
+        let credentials = try await client.exchange(callback: url, attempt: pending, priorAccount: prior)
+        guard self.authorizationGeneration == flowID, self.sessionGeneration == generation else { return }
+        let next = try updatingAccounts(with: credentials)
         try LorvexChatGPTPlanKeychain.save(credentials)
-        UserDefaults.standard.set(registrationData, forKey: "lorvex.chatgpt.plan.registration")
-        self.registration = registration
+        try persistAccounts(next)
+        self.accounts = next
+        self.saved = credentials
+        self.activeAccountID = credentials.clientID
+        UserDefaults.standard.set(credentials.clientID, forKey: Keys.active)
+        self.email = credentials.email
+        self.canUsePlan = credentials.canUsePlan
+        self.models = []
+        self.selectedModelID = next.first { $0.id == credentials.clientID }?.modelID ?? ""
         self.sessionGeneration = UUID()
+        self.sessionRevision = UUID()
         self.flowTimeout?.cancel(); self.flowTimeout = nil
-        self.saved=credentials
-        self.email=credentials.email
-        self.canUsePlan=credentials.canUsePlan
-        self.isConnecting=false
-        self.status=credentials.canUsePlan
+        self.isConnecting = false
+        self.status = credentials.canUsePlan
           ? String(localized: "ChatGPT plan connected")
           : String(localized: "Connected without ChatGPT plan usage permission")
-        if credentials.canUsePlan {await loadModels()}
-      }catch{
-        guard self.authorizationGeneration == flowID,
-              self.sessionGeneration == generation else { return }
+        if credentials.canUsePlan { await loadModels() }
+      } catch {
+        guard self.authorizationGeneration == flowID, self.sessionGeneration == generation else { return }
         self.fail(error.localizedDescription)
       }
     }
   }
 
   func cancelSignIn() {
-    // Do not override a successful callback's pending verification when the
-    // Safari sheet dismisses itself.
+    // Safari dismisses itself while the validated callback is being exchanged.
     guard pending != nil || authorizationURL != nil || listener != nil else { return }
-    authorizationGeneration = UUID()
-    flowTimeout?.cancel(); flowTimeout = nil
-    listener?.cancel();listener=nil
-    pending=nil
-    authorizationURL=nil
-    isConnecting=false
-    status=saved?.canUsePlan==true ? String(localized: "ChatGPT plan connected") : String(localized: "Sign-in cancelled")
+    finishAuthorization()
+    status = saved?.canUsePlan == true
+      ? String(localized: "ChatGPT plan connected") : String(localized: "Sign-in cancelled")
   }
 
-  private func fail(_ message:String) {
+  private func finishAuthorization() {
     authorizationGeneration = UUID()
     flowTimeout?.cancel(); flowTimeout = nil
-    listener?.cancel();listener=nil
-    pending=nil;authorizationURL=nil
-    isConnecting=false
-    status=message
+    listener?.cancel(); listener = nil
+    pending = nil; pendingPriorAccount = nil; authorizationURL = nil
+    isConnecting = false
+  }
+
+  private func fail(_ message: String) {
+    finishAuthorization()
+    status = message
   }
 
   private func currentCredentials() async throws -> HanlinChatGPTPlanCredentials {
     let generation = sessionGeneration
-    guard var account = saved, account.canUsePlan else {
+    guard var account = saved, account.clientID == activeAccountID, account.canUsePlan else {
       throw HanlinChatGPTPlanError.unavailable
     }
     if account.expiresAt.timeIntervalSinceNow < 90 {
-      account = try await client.refresh(account)
-      guard sessionGeneration == generation else { throw CancellationError() }
+      let previous = account
+      account = try await client.refresh(previous)
+      guard sessionGeneration == generation, activeAccountID == account.clientID,
+            account.clientID == previous.clientID, account.subject == previous.subject else {
+        throw CancellationError()
+      }
+      let next = try updatingAccounts(with: account)
       try LorvexChatGPTPlanKeychain.save(account)
+      try persistAccounts(next)
+      accounts = next
       saved = account
       email = account.email
       canUsePlan = account.canUsePlan
+      if !account.canUsePlan {
+        models = []
+        sessionRevision = UUID()
+        status = String(localized: "ChatGPT account connected; plan usage not granted")
+      }
     }
     guard account.canUsePlan else { throw HanlinChatGPTPlanError.unavailable }
     return account
   }
 
-  func accessForInference() async throws -> (token:String,modelID:String) {
+  func accessForInference() async throws -> (token: String, modelID: String) {
     let generation = sessionGeneration
     let account = try await currentCredentials()
     if models.isEmpty { await loadModels() }
@@ -228,15 +356,17 @@ final class LorvexChatGPTAccountState {
       if !catalog.contains(where: { $0.slug == selectedModelID }) {
         selectedModelID = catalog.first?.slug ?? ""
       }
-      status = catalog.isEmpty
-        ? String(localized: "This account currently has no eligible ChatGPT models.")
-        : String(localized: "ChatGPT models are ready")
+      if !isConnecting {
+        status = catalog.isEmpty
+          ? String(localized: "This account currently has no eligible ChatGPT models.")
+          : String(localized: "ChatGPT models are ready")
+      }
     } catch is CancellationError {
       return
     } catch {
       guard generation == sessionGeneration else { return }
       models = []
-      reportConnectionError(error)
+      if !isConnecting { reportConnectionError(error) }
     }
   }
 
@@ -245,78 +375,115 @@ final class LorvexChatGPTAccountState {
   }
 
   func signOut() {
-    let accountToRevoke = saved
+    guard let accountToRevoke = saved, accountToRevoke.clientID == activeAccountID else { return }
+    let label = activeAccount?.label ?? String(localized: "ChatGPT account")
     sessionGeneration = UUID()
-    authorizationGeneration = UUID()
-    flowTimeout?.cancel(); flowTimeout = nil
-    listener?.cancel();listener=nil
-    pending=nil;authorizationURL=nil
-    do { try LorvexChatGPTPlanKeychain.delete() }
-    catch { reportConnectionError(error); return }
-    saved=nil;models=[];email=nil;canUsePlan=false;isConnecting=false
-    selectedModelID=""
-    status=String(localized: "Signed out of ChatGPT in Lorvex")
-    // Keep only the non-token registration and host identity for returning login.
-    if let accountToRevoke {
-      let generation = sessionGeneration
-      let client = self.client
-      _Concurrency.Task { [weak self] in
-        do { try await client.revoke(accountToRevoke) }
+    sessionRevision = UUID()
+    finishAuthorization()
+    UserDefaults.standard.removeObject(forKey: Keys.active)
+    activeAccountID = nil
+    saved = nil; models = []; email = nil; canUsePlan = false
+    selectedModelID = ""
+    signOutNotice = nil
+    revokingAccountIDs.insert(accountToRevoke.clientID)
+    status = String(localized: "Signing out of ChatGPT…")
+    let generation = sessionGeneration
+    let authorizationID = authorizationGeneration
+    _Concurrency.Task { [weak self, client] in
+      // Stop requests immediately, then revoke before clearing this session.
+      var confirmed = false
+      for attempt in 0..<2 {
+        do { try await client.revoke(accountToRevoke); confirmed = true; break }
         catch {
-          guard let self, self.sessionGeneration == generation, self.saved == nil else { return }
-          self.status = String(localized: "Signed out locally. OpenAI session revocation could not be confirmed.")
+          let shouldRetry: Bool
+          if case HanlinChatGPTPlanError.server(let code) = error { shouldRetry = code >= 500 }
+          else { shouldRetry = error is URLError }
+          guard attempt == 0 && shouldRetry else { break }
+          try? await _Concurrency.Task<Never, Never>.sleep(for: .seconds(1))
         }
+      }
+      var deletionError: Error?
+      do { try LorvexChatGPTPlanKeychain.delete(accountToRevoke) }
+      catch { deletionError = error }
+      guard let self else { return }
+      self.revokingAccountIDs.remove(accountToRevoke.clientID)
+      let message: String
+      if let deletionError {
+        message = String(localized: "Unable to remove the saved ChatGPT session: ") + deletionError.localizedDescription
+      } else if confirmed {
+        message = String(localized: "Signed out of ChatGPT in Lorvex")
+      } else {
+        message = String(localized: "Signed out locally. OpenAI session revocation could not be confirmed.")
+      }
+      if deletionError != nil || !confirmed { self.signOutNotice = label + ": " + message }
+      if self.sessionGeneration == generation, self.authorizationGeneration == authorizationID {
+        self.status = message
       }
     }
   }
 }
 
 private enum LorvexChatGPTPlanKeychain {
-  private static let service="com.itorah.lorvex.chatgpt.plan"
-  private static let account="active"
-  static func load()->HanlinChatGPTPlanCredentials? {
-    let query:[String:Any]=[
-      kSecClass as String:kSecClassGenericPassword,
-      kSecAttrService as String:service,
-      kSecAttrAccount as String:account,
-      kSecReturnData as String:true,
-      kSecMatchLimit as String:kSecMatchLimitOne
-    ]
-    var result:CFTypeRef?
-    guard SecItemCopyMatching(query as CFDictionary,&result)==errSecSuccess,
-          let bytes=result as? Data else{return nil}
-    return try? JSONDecoder().decode(HanlinChatGPTPlanCredentials.self,from:bytes)
+  private static let service = "com.itorah.lorvex.chatgpt.plan"
+  private static func query(account: String) -> [String: Any] {
+    [kSecClass as String: kSecClassGenericPassword,
+     kSecAttrService as String: service, kSecAttrAccount as String: account]
   }
-  static func save(_ value:HanlinChatGPTPlanCredentials)throws {
+  private static func read(account: String) throws -> HanlinChatGPTPlanCredentials? {
+    var request = query(account: account)
+    request[kSecReturnData as String] = true
+    request[kSecMatchLimit as String] = kSecMatchLimitOne
+    var result: CFTypeRef?
+    let status = SecItemCopyMatching(request as CFDictionary, &result)
+    if status == errSecItemNotFound { return nil }
+    guard status == errSecSuccess, let bytes = result as? Data else {
+      throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
+    }
+    return try JSONDecoder().decode(HanlinChatGPTPlanCredentials.self, from: bytes)
+  }
+  static func load(clientID: String) throws -> HanlinChatGPTPlanCredentials? {
+    let value = try read(account: "client:" + clientID)
+    guard value == nil || value?.clientID == clientID else {
+      throw HanlinChatGPTPlanError.invalidIdentity
+    }
+    return value
+  }
+  static func loadLegacy() throws -> HanlinChatGPTPlanCredentials? { try read(account: "active") }
+  static func save(_ value: HanlinChatGPTPlanCredentials) throws {
+    guard !value.clientID.isEmpty, value.clientID != "dynamic_agent_client", !value.subject.isEmpty else {
+      throw HanlinChatGPTPlanError.invalidIdentity
+    }
+    if let existing = try load(clientID: value.clientID), existing.subject != value.subject {
+      throw HanlinChatGPTPlanError.invalidIdentity
+    }
     let content = try JSONEncoder().encode(value)
-    let query: [String: Any] = [
-      kSecClass as String: kSecClassGenericPassword,
-      kSecAttrService as String: service,
-      kSecAttrAccount as String: account
-    ]
+    let request = query(account: "client:" + value.clientID)
     let attributes: [String: Any] = [
       kSecValueData as String: content,
       kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
     ]
-    let updated = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+    let updated = SecItemUpdate(request as CFDictionary, attributes as CFDictionary)
     if updated == errSecSuccess { return }
     guard updated == errSecItemNotFound else {
       throw NSError(domain: NSOSStatusErrorDomain, code: Int(updated))
     }
-    let added = SecItemAdd(query.merging(attributes) { _, new in new } as CFDictionary, nil)
+    let added = SecItemAdd(request.merging(attributes) { _, new in new } as CFDictionary, nil)
     guard added == errSecSuccess else {
       throw NSError(domain: NSOSStatusErrorDomain, code: Int(added))
     }
   }
-  static func delete() throws {
-    let query:[String:Any]=[
-      kSecClass as String:kSecClassGenericPassword,
-      kSecAttrService as String:service,
-      kSecAttrAccount as String:account
-    ]
-    let result = SecItemDelete(query as CFDictionary)
-    guard result == errSecSuccess || result == errSecItemNotFound else {
-      throw NSError(domain: NSOSStatusErrorDomain, code: Int(result))
+  static func delete(_ session: HanlinChatGPTPlanCredentials) throws {
+    guard let current = try load(clientID: session.clientID),
+          current.subject == session.subject,
+          current.refreshToken == session.refreshToken else { return }
+    // A new, validated login may have installed a different session meanwhile.
+    try remove(account: "client:" + session.clientID)
+  }
+  static func deleteLegacy() throws { try remove(account: "active") }
+  private static func remove(account: String) throws {
+    let status = SecItemDelete(query(account: account) as CFDictionary)
+    guard status == errSecSuccess || status == errSecItemNotFound else {
+      throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
     }
   }
 }
@@ -399,10 +566,11 @@ final class LorvexChatGPTAccountState {
   var isConnecting = false
   var selectedModelID = ""
   var authorizationURL: URL?
-  func beginSignIn() {}
+  private(set) var sessionRevision = UUID()
+  func beginSignIn(accountID: String? = nil) {}
   func cancelSignIn() {}
   func loadModels() async {}
-  func signOut() {}
+  func signOut() { sessionRevision = UUID() }
   func reportConnectionError(_ error: Error) { status = error.localizedDescription }
   func accessForInference() async throws -> (token:String,modelID:String) {
     throw CocoaError(.featureUnsupported)
