@@ -8,14 +8,14 @@ import WidgetKit
 @Test
 func widgetConfigurationBuildsSnapshotURLInsideLorvexDirectory() {
   let configuration = LorvexWidgetConfiguration(
-    appGroupID: "group.com.lorvex.apple",
+    appGroupID: "group.com.itorah.lorvex",
     snapshotFileName: "custom-widget.json"
   )
-  let containerURL = URL(fileURLWithPath: "/tmp/group.com.lorvex.apple", isDirectory: true)
+  let containerURL = URL(fileURLWithPath: "/tmp/group.com.itorah.lorvex", isDirectory: true)
 
   let url = configuration.snapshotURL(in: containerURL)
 
-  #expect(url.path == "/tmp/group.com.lorvex.apple/Lorvex/custom-widget.json")
+  #expect(url.path == "/tmp/group.com.itorah.lorvex/Lorvex/custom-widget.json")
 }
 
 @Test

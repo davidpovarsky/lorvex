@@ -31,7 +31,7 @@ struct CoreBridgeConfigurationTests {
     defer { try? FileManager.default.removeItem(at: databaseURL) }
 
     let configuration = try CoreBridgeConfiguration(environment: [
-      "APP_SANDBOX_CONTAINER_ID": "com.lorvex.apple.mcp-host",
+      "APP_SANDBOX_CONTAINER_ID": "com.itorah.lorvex.mcp-host",
       "LORVEX_APPLE_DB_PATH": databaseURL.path,
     ])
     // The override is a readable, existing file, yet the sandboxed helper still

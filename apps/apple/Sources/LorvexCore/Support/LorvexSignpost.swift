@@ -67,7 +67,7 @@ public enum LorvexSignpost {
 
   /// The process-wide signposter. `category: "phase"` groups every Lorvex phase
   /// interval under one Instruments lane.
-  public static let signposter = OSSignposter(subsystem: "com.lorvex.apple", category: "phase")
+  public static let signposter = OSSignposter(subsystem: "com.itorah.lorvex", category: "phase")
 
   /// An in-flight interval. Opaque token pairing the phase with its signpost
   /// state so a caller cannot close an interval under the wrong name. A fresh

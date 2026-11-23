@@ -10,9 +10,9 @@ import Testing
 @Test
 func handoffActivityTypeSetContainsAllTypes() {
   #expect(LorvexActivityType.all.count == 3)
-  #expect(LorvexActivityType.all.contains("com.lorvex.apple.openTask"))
-  #expect(LorvexActivityType.all.contains("com.lorvex.apple.openDestination"))
-  #expect(LorvexActivityType.all.contains("com.lorvex.apple.openList"))
+  #expect(LorvexActivityType.all.contains("com.itorah.lorvex.openTask"))
+  #expect(LorvexActivityType.all.contains("com.itorah.lorvex.openDestination"))
+  #expect(LorvexActivityType.all.contains("com.itorah.lorvex.openList"))
 }
 
 // MARK: - Round-trip: openTask
@@ -27,7 +27,7 @@ func openTaskActivityRoundTrip() {
 
 @Test
 func openTaskActivityRejectsWrongType() {
-  let activity = NSUserActivity(activityType: "com.lorvex.apple.openDestination")
+  let activity = NSUserActivity(activityType: "com.itorah.lorvex.openDestination")
   activity.addUserInfoEntries(from: ["taskID": "task-xyz"])
   #expect(parseOpenTaskActivity(activity) == nil)
 }

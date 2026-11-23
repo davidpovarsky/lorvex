@@ -201,8 +201,8 @@
       guard let scratch = ProcessInfo.processInfo.environment["LORVEX_SCRATCH_DIR"] else { return }
       var report: [String] = []
       let variants: [(String, UTType)] = [
-        ("plain", UTType(exportedAs: "com.lorvex.apple.zzprobe.plain")),
-        ("conformingTo data", UTType(exportedAs: "com.lorvex.apple.zzprobe.data", conformingTo: .data)),
+        ("plain", UTType(exportedAs: "com.itorah.lorvex.zzprobe.plain")),
+        ("conformingTo data", UTType(exportedAs: "com.itorah.lorvex.zzprobe.data", conformingTo: .data)),
       ]
       for (label, type) in variants {
         let board = NSPasteboard(name: NSPasteboard.Name("lorvex.zzprobe.\(UUID().uuidString)"))
@@ -227,7 +227,7 @@
 
     struct ProbeCustomRef: Codable, Transferable {
       var id: String
-      static let type = UTType(exportedAs: "com.lorvex.apple.zzprobe.custom")
+      static let type = UTType(exportedAs: "com.itorah.lorvex.zzprobe.custom")
       static var transferRepresentation: some TransferRepresentation {
         CodableRepresentation(contentType: type)
         ProxyRepresentation(exporting: \.id)
@@ -244,7 +244,7 @@
 
     struct ProbeDeclaredRef: Codable, Transferable {
       var id: String
-      static let type = UTType(exportedAs: "com.lorvex.apple.zzprobe.declared")
+      static let type = UTType(exportedAs: "com.itorah.lorvex.zzprobe.declared")
       static var transferRepresentation: some TransferRepresentation {
         CodableRepresentation(contentType: type)
         ProxyRepresentation(exporting: \.id)

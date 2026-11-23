@@ -25,7 +25,7 @@ extension LorvexDataImporter {
 
   /// Where a rejected import file's ``ImportError/diagnosticDescription`` is
   /// written, privately, while the interface shows the localized outcome.
-  static let importLog = Logger(subsystem: "com.lorvex.apple", category: "import")
+  static let importLog = Logger(subsystem: "com.itorah.lorvex", category: "import")
 
   /// Build the content plan for a decoded payload: for each category the file
   /// carries, the count of records it holds (not a target-DB diff). Lists only

@@ -56,7 +56,7 @@ extension UTType {
   /// custom type the system does not know, SwiftUI accepts a drop over a
   /// `dropDestination` yet never decodes the payload, so the drop handler does
   /// not run.
-  public static let lorvexTask = UTType(exportedAs: "com.lorvex.apple.task-ref", conformingTo: .data)
+  public static let lorvexTask = UTType(exportedAs: "com.itorah.lorvex.task-ref", conformingTo: .data)
 }
 
 extension LorvexTaskRef: Transferable {

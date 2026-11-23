@@ -33,7 +33,7 @@ extension Notification.Name {
 /// CloudKit push for Lorvex's container.
 public enum CloudKitPushParser {
   /// Returns `true` when the payload is a CloudKit notification for
-  /// `iCloud.com.lorvex.apple`. The subscription is not inspected: the sync
+  /// `iCloud.com.itorah.lorvex`. The subscription is not inspected: the sync
   /// engine registers its own database subscription under an identifier it
   /// chooses, and Lorvex owns no other subscription in that container.
   public static func isLorvexCloudKitNotification(_ userInfo: [String: Any]) -> Bool {

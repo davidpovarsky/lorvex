@@ -83,9 +83,9 @@ func widgetSnapshotLoaderReturnsFallbacksForMissingAndUnsupportedSnapshots() thr
 @Test
 func widgetSnapshotLoaderBuildsAppGroupRelativeURL() {
   let loader = WidgetSnapshotLoader()
-  let containerURL = URL(fileURLWithPath: "/tmp/group.com.lorvex.apple", isDirectory: true)
+  let containerURL = URL(fileURLWithPath: "/tmp/group.com.itorah.lorvex", isDirectory: true)
 
   let snapshotURL = loader.snapshotURL(inAppGroupContainer: containerURL)
 
-  #expect(snapshotURL.path == "/tmp/group.com.lorvex.apple/Lorvex/widget_snapshot.json")
+  #expect(snapshotURL.path == "/tmp/group.com.itorah.lorvex/Lorvex/widget_snapshot.json")
 }

@@ -40,7 +40,7 @@ final class LorvexCoreRuntimeFactoryTests: XCTestCase {
     let tmp = NSTemporaryDirectory() + "lorvex-rtf-sandboxed-\(UUID().uuidString).db"
     let core = try XCTUnwrap(
       LorvexCoreRuntimeFactory.make(environment: [
-        "APP_SANDBOX_CONTAINER_ID": "com.lorvex.apple.mcp-host",
+        "APP_SANDBOX_CONTAINER_ID": "com.itorah.lorvex.mcp-host",
         "LORVEX_APPLE_DB_PATH": tmp,
       ]) as? SwiftLorvexCoreService)
     // The sandbox guard drops the override; the surface resolves managed storage.

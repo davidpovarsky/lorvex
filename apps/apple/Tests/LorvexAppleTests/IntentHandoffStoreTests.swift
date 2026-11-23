@@ -66,7 +66,7 @@ func intentHandoffStoreDropsAQuickActionThatNamesNothing() {
   defer { defaults.removePersistentDomain(forName: suiteName) }
   let store = LorvexIntentHandoffStore(defaults: defaults)
 
-  defaults.set("com.lorvex.apple.notAnAction", forKey: LorvexIntentHandoffKeys.quickAction)
+  defaults.set("com.itorah.lorvex.notAnAction", forKey: LorvexIntentHandoffKeys.quickAction)
 
   #expect(store.consumeQuickAction() == nil)
   #expect(defaults.string(forKey: LorvexIntentHandoffKeys.quickAction) == nil)

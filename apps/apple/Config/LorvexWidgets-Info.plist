@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>LorvexWidgets</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.lorvex.apple.focuswidget</string>
+	<string>com.itorah.lorvex.widgets</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleLocalizations</key>
@@ -50,14 +50,14 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>168</string>
+	<string>171</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
 	<key>LorvexWidgetAppGroupID</key>
-	<string>group.com.lorvex.apple</string>
+	<string>group.com.itorah.lorvex</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

@@ -25,7 +25,7 @@
     /// Must match the `BGTaskSchedulerPermittedIdentifiers` entry in
     /// `LorvexMobileApp-Info.plist`; registering a handler for an identifier the
     /// plist does not permit traps at launch.
-    static let taskIdentifier = "com.lorvex.apple.reminder-refresh"
+    static let taskIdentifier = "com.itorah.lorvex.reminder-refresh"
 
     /// Earliest spacing before the system may run the next refresh. iOS treats it
     /// as a floor, not a schedule, and usually runs less often.

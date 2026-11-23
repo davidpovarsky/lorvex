@@ -51,7 +51,7 @@ func mcpHelperProbeSkipsTheSelfCheckInsideTheSandbox() async throws {
   try Data("#!/bin/sh\nexit 42\n".utf8).write(to: helper)
   try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: helper.path)
 
-  let sandboxed = [MCPHelperProbe.sandboxContainerKey: "com.lorvex.apple"]
+  let sandboxed = [MCPHelperProbe.sandboxContainerKey: "com.itorah.lorvex"]
   #expect(
     await MCPHelperProbe.probe(bundleURL: bundle, inheritedEnvironment: sandboxed) == .ready)
   #expect(await MCPHelperProbe.probe(bundleURL: bundle, inheritedEnvironment: [:]) == .runtimeFailed)

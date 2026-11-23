@@ -70,7 +70,7 @@ struct ManagedStorageInvariantTests {
     #expect(FileManager.default.isReadableFile(atPath: readable))
 
     let sandboxEnv = [
-      "APP_SANDBOX_CONTAINER_ID": "com.lorvex.apple.mcp-host",
+      "APP_SANDBOX_CONTAINER_ID": "com.itorah.lorvex.mcp-host",
       "LORVEX_APPLE_DB_PATH": readable,
     ]
     // The MCP helper and the shared runtime factory both drop the override under

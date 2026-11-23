@@ -13,7 +13,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    CURRENT_PROJECT_VERSION: "168"
+    CURRENT_PROJECT_VERSION: "171"
     MARKETING_VERSION: "1.0.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
@@ -90,7 +90,7 @@ targets:
         product: GRDB
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.core
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.core
         GENERATE_INFOPLIST_FILE: YES
 
   LorvexMarkdownUI:
@@ -104,7 +104,7 @@ targets:
         product: Markdown
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.markdownui
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.markdownui
         GENERATE_INFOPLIST_FILE: YES
 
   # CloudKit sync engine, extracted into its own module so every surface that
@@ -123,7 +123,7 @@ targets:
         product: LorvexDomain
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.cloudsync
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.cloudsync
         GENERATE_INFOPLIST_FILE: YES
 
   LorvexMobile:
@@ -145,7 +145,7 @@ targets:
         product: LorvexSync
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.mobilekit
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.mobilekit
         GENERATE_INFOPLIST_FILE: YES
 
   LorvexHanlinAgent:
@@ -167,7 +167,7 @@ targets:
         product: HanlinChatCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.hanlinagent
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.hanlinagent
         GENERATE_INFOPLIST_FILE: YES
 
   LorvexMobileApp:
@@ -244,7 +244,7 @@ targets:
         product: GRDB
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex
         # The app icon ships in Config/Assets.xcassets; without naming it the
         # Home Screen icon renders blank.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -262,6 +262,8 @@ targets:
           "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": $(SRCROOT)/../../Config/LorvexMobileAppCloudKit.entitlements
         Release:
           CODE_SIGN_ENTITLEMENTS: $(SRCROOT)/../../Config/LorvexMobileAppCloudKitAppStore.entitlements
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: Lorvex_AI_MAIN_AppStore_20261123
 
   # The widget sub-modules are separate frameworks (matching Package.swift's
   # module graph). The app-extension below compiles only the @main
@@ -276,7 +278,7 @@ targets:
       - target: LorvexCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.widgetkitsupport
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.widgetkitsupport
         GENERATE_INFOPLIST_FILE: YES
         APPLICATION_EXTENSION_API_ONLY: YES
 
@@ -290,7 +292,7 @@ targets:
       - target: LorvexWidgetIntents
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.widgetviews
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.widgetviews
         GENERATE_INFOPLIST_FILE: YES
         APPLICATION_EXTENSION_API_ONLY: YES
 
@@ -306,7 +308,7 @@ targets:
       - target: LorvexWidgetIntents
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.widgetextensionlib
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.widgetextensionlib
         GENERATE_INFOPLIST_FILE: YES
         APPLICATION_EXTENSION_API_ONLY: YES
 
@@ -324,7 +326,7 @@ targets:
       - target: LorvexWidgetIntents
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.focuswidget
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.widgets
         PRODUCT_NAME: LorvexWidgets
         # iOS-only entitlements: app group without the macOS `app-sandbox` key.
         # The macOS widget uses Config/LorvexWidgetsMacOS.entitlements (which
@@ -333,6 +335,10 @@ targets:
         INFOPLIST_FILE: $(SRCROOT)/../../Config/LorvexWidgets-Info.plist
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: Lorvex_AI_WIDGETS_AppStore_20261123
 
   LorvexSystemIntents:
     type: framework
@@ -349,7 +355,7 @@ targets:
       - target: LorvexWidgetKitSupport
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.systemintents
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.systemintents
         GENERATE_INFOPLIST_FILE: YES
 
   LorvexFocusFilterExtension:
@@ -368,13 +374,17 @@ targets:
       - target: LorvexSystemIntents
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.focus-filter
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.focusfilter
         PRODUCT_NAME: LorvexFocusFilterExtension
         CODE_SIGN_ENTITLEMENTS: $(SRCROOT)/../../Config/LorvexFocusFilterExtension.entitlements
         INFOPLIST_FILE: $(SRCROOT)/../../Config/LorvexFocusFilterExtension-Info.plist
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) LORVEX_FOCUS_FILTER_EXTENSION
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: Lorvex_AI_FOCUS_AppStore_20261123
         LD_RUNPATH_SEARCH_PATHS:
           - $(inherited)
           - "@executable_path/Frameworks"
@@ -390,7 +400,7 @@ targets:
       - target: LorvexWidgetKitSupport
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.widgetintents
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.widgetintents
         GENERATE_INFOPLIST_FILE: YES
 
   LorvexCoreWatch:
@@ -422,7 +432,7 @@ targets:
         product: GRDB
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.watch.core
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.watch.core
         PRODUCT_NAME: LorvexCore
         GENERATE_INFOPLIST_FILE: YES
 
@@ -438,7 +448,7 @@ targets:
       - target: LorvexCoreWatch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.watch.widgetkitsupport
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.watch.widgetkitsupport
         PRODUCT_NAME: LorvexWidgetKitSupport
         GENERATE_INFOPLIST_FILE: YES
 
@@ -452,7 +462,7 @@ targets:
       - target: LorvexWidgetKitSupportWatch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.watch.watchkit
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.watch.watchkit
         PRODUCT_NAME: LorvexWatch
         GENERATE_INFOPLIST_FILE: YES
 
@@ -496,7 +506,7 @@ targets:
         product: GRDB
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.watchkitapp
         PRODUCT_NAME: LorvexWatchApp
         # XcodeGen's watchOS platform preset predates single-target watch
         # apps and sets no LD_RUNPATH_SEARCH_PATHS (the iOS preset sets
@@ -515,6 +525,10 @@ targets:
         CODE_SIGN_ENTITLEMENTS: $(SRCROOT)/../../Config/LorvexWatchApp.entitlements
         INFOPLIST_FILE: $(SRCROOT)/../../Config/LorvexWatchApp-Info.plist
         GENERATE_INFOPLIST_FILE: NO
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: Lorvex_AI_WATCH_AppStore_20261123
 
   LorvexWatchComplication:
     type: app-extension
@@ -529,12 +543,16 @@ targets:
       - target: LorvexWatch
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lorvex.apple.watchkitapp.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.itorah.lorvex.watchkitapp.widgets
         PRODUCT_NAME: LorvexWatchComplication
         CODE_SIGN_ENTITLEMENTS: $(SRCROOT)/../../Config/LorvexWatchComplication.entitlements
         INFOPLIST_FILE: $(SRCROOT)/../../Config/LorvexWatchComplication-Info.plist
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: Lorvex_AI_WATCHWIDGETS_AppStore_20261123
 
   LorvexMobileUITests:
     type: bundle.ui-testing

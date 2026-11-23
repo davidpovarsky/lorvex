@@ -30,7 +30,7 @@
   /// diagnostics API's version requirement, so no runtime `@available` gate is
   /// needed.
   public final class MetricKitDiagnosticsSubscriber: NSObject, MXMetricManagerSubscriber {
-    private static let log = Logger(subsystem: "com.lorvex.apple", category: "metrickit")
+    private static let log = Logger(subsystem: "com.itorah.lorvex", category: "metrickit")
 
     private let resolveService: @Sendable () -> any LorvexCoreServicing
 

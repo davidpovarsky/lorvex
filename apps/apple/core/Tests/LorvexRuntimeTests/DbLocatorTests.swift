@@ -31,7 +31,7 @@ final class DbLocatorTests: XCTestCase {
     // A sandboxed Apple plane sets allowsDbPathOverride: false; the resolver
     // drops the override and opens the App Group container instead, recording a
     // dbPathOverrideIgnored diagnostic.
-    let appGroup = "/Users/tester/Library/Group Containers/group.com.lorvex.apple"
+    let appGroup = "/Users/tester/Library/Group Containers/group.com.itorah.lorvex"
     let expected = "\(appGroup)/Lorvex/db.sqlite"
     let env = InMemoryDbLocatorEnv(
       dbPathEnvOverride: "/tmp/dev-override.sqlite",
@@ -48,7 +48,7 @@ final class DbLocatorTests: XCTestCase {
   }
 
   func testAppleAppGroupBeatsPlatformDataDir() throws {
-    let appGroup = "/Users/tester/Library/Group Containers/group.com.lorvex.apple"
+    let appGroup = "/Users/tester/Library/Group Containers/group.com.itorah.lorvex"
     let expected = "\(appGroup)/Lorvex/db.sqlite"
     let env = InMemoryDbLocatorEnv(
       dataDir: "/Users/tester/Library/Application Support",
@@ -73,7 +73,7 @@ final class DbLocatorTests: XCTestCase {
       platform: .iOS,
       appleAppGroupContainerPath: appGroup,
       allowsDbPathOverride: false,
-      appleAppGroupIdentifier: "group.com.lorvex.apple")
+      appleAppGroupIdentifier: "group.com.itorah.lorvex")
     let details = try DbLocator.resolveDetails(env)
     XCTAssertEqual(details.resolvedPath, expected)
     XCTAssertEqual(details.source, .appleAppGroup)
@@ -91,14 +91,14 @@ final class DbLocatorTests: XCTestCase {
       platform: .iOS,
       appleAppGroupContainerPath: nil,
       allowsDbPathOverride: false,
-      appleAppGroupIdentifier: "group.com.lorvex.apple")
+      appleAppGroupIdentifier: "group.com.itorah.lorvex")
     XCTAssertThrowsError(try DbLocator.resolveDetails(env)) { error in
       XCTAssertEqual(
         error as? DbLocationError,
-        .appGroupContainerUnavailable(appGroupIdentifier: "group.com.lorvex.apple"))
+        .appGroupContainerUnavailable(appGroupIdentifier: "group.com.itorah.lorvex"))
       // The error text names the App Group so the misconfiguration is diagnosable.
       XCTAssertTrue(
-        "\(error)".contains("group.com.lorvex.apple"),
+        "\(error)".contains("group.com.itorah.lorvex"),
         "fail-closed error must name the missing App Group; got \(error)")
     }
   }

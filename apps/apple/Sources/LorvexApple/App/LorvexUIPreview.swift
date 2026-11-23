@@ -89,7 +89,7 @@
     /// neither reads nor writes the developer's defaults and never inherits
     /// view state — an expanded section, a table-mode toggle — from an earlier
     /// run.
-    static let previewDefaultsSuiteName = "com.lorvex.apple.ui-preview"
+    static let previewDefaultsSuiteName = "com.itorah.lorvex.ui-preview"
 
     static var previewDefaults: UserDefaults {
       UserDefaults(suiteName: previewDefaultsSuiteName) ?? .standard

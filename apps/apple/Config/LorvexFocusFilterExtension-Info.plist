@@ -61,6 +61,6 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LorvexWidgetAppGroupID</key>
-	<string>group.com.lorvex.apple</string>
+	<string>group.com.itorah.lorvex</string>
 </dict>
 </plist>

@@ -12,7 +12,7 @@ import Observation
 @MainActor
 final class QuickCaptureController {
   /// Posted by the menu command and the palette action to open the window.
-  static let requestNotification = Notification.Name("com.lorvex.apple.quickCaptureRequested")
+  static let requestNotification = Notification.Name("com.itorah.lorvex.quickCaptureRequested")
 
   private let settings: AppSettingsStore
   private let model: QuickCaptureModel

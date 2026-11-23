@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>LorvexWatchComplication</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.lorvex.apple.watchkitapp.widgets</string>
+	<string>com.itorah.lorvex.watchkitapp.widgets</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -52,7 +52,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>168</string>
+	<string>171</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

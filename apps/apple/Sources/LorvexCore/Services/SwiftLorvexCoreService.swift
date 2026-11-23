@@ -152,7 +152,7 @@ public final class SwiftLorvexCoreService: LorvexCoreServicing, LorvexNativeImpo
     _lastDatabaseRecovery = nil
   }
 
-  static let log = Logger(subsystem: "com.lorvex.apple", category: "store")
+  static let log = Logger(subsystem: "com.itorah.lorvex", category: "store")
 
   /// The MCP tool name driving the current write, bound by the MCP host's
   /// dispatch funnel for the duration of one tool call. `writeChangelogRow`

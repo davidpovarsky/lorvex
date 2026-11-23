@@ -9,8 +9,8 @@ import Testing
 func quickActionCatalogIdentifiersAreStable() {
   // Type identifiers are embedded in Info.plist and must never change without
   // a coordinated plist update.
-  #expect(LorvexQuickAction.quickCapture.typeIdentifier == "com.lorvex.apple.quickCapture")
-  #expect(LorvexQuickAction.openToday.typeIdentifier == "com.lorvex.apple.openToday")
+  #expect(LorvexQuickAction.quickCapture.typeIdentifier == "com.itorah.lorvex.quickCapture")
+  #expect(LorvexQuickAction.openToday.typeIdentifier == "com.itorah.lorvex.openToday")
 }
 
 @Test

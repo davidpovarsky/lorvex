@@ -11,7 +11,7 @@ import os
 /// second lock protocol. Reads need no lock: atomic rename exposes either the
 /// complete old payload or the complete new payload.
 public actor FocusFilterStore {
-  private static let log = Logger(subsystem: "com.lorvex.apple", category: "focus-filter")
+  private static let log = Logger(subsystem: "com.itorah.lorvex", category: "focus-filter")
   private static let formatVersion = 1
   private static let maxStateBytes = 64 * 1024
 

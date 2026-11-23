@@ -240,7 +240,7 @@ struct LorvexHanlinAssistantView: View {
 }
 
 private enum LorvexHanlinKeychain {
-    private static let service = "com.lorvex.apple.hanlin-agent"
+    private static let service = "com.itorah.lorvex.hanlin-agent"
     private static let account = "current-provider-api-key"
 
     static func read() -> String {

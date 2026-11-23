@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.lorvex.apple</string>
+	<string>com.itorah.lorvex</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -52,12 +52,12 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>168</string>
+	<string>171</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.lorvex.apple</string>
+			<string>com.itorah.lorvex</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>lorvex</string>
@@ -67,7 +67,7 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>MinimumOSVersion</key>
-	<string>26.0</string>
+	<string>27.0</string>
 	<!--
 	A launch screen is mandatory for the app to render at the device's native
 	resolution. Without UILaunchScreen, iOS runs the app in legacy compatibility
@@ -93,15 +93,15 @@
 	</array>
 	<key>NSUserActivityTypes</key>
 	<array>
-		<string>com.lorvex.apple.openTask</string>
-		<string>com.lorvex.apple.openDestination</string>
-		<string>com.lorvex.apple.openList</string>
+		<string>com.itorah.lorvex.openTask</string>
+		<string>com.itorah.lorvex.openDestination</string>
+		<string>com.itorah.lorvex.openList</string>
 	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>com.lorvex.apple.task-ref</string>
+			<string>com.itorah.lorvex.task-ref</string>
 			<key>UTTypeDescription</key>
 			<string>Lorvex Task Reference</string>
 			<key>UTTypeConformsTo</key>
@@ -111,7 +111,7 @@
 		</dict>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>com.lorvex.apple.checklist-item-ref</string>
+			<string>com.itorah.lorvex.checklist-item-ref</string>
 			<key>UTTypeDescription</key>
 			<string>Lorvex Checklist Item Reference</string>
 			<key>UTTypeConformsTo</key>
@@ -124,7 +124,7 @@
 	<array>
 		<dict>
 			<key>UIApplicationShortcutItemType</key>
-			<string>com.lorvex.apple.quickCapture</string>
+			<string>com.itorah.lorvex.quickCapture</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Quick Capture</string>
 			<key>UIApplicationShortcutItemIconSymbolName</key>
@@ -132,7 +132,7 @@
 		</dict>
 		<dict>
 			<key>UIApplicationShortcutItemType</key>
-			<string>com.lorvex.apple.openToday</string>
+			<string>com.itorah.lorvex.openToday</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Open Today</string>
 			<key>UIApplicationShortcutItemIconSymbolName</key>
@@ -146,7 +146,7 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.lorvex.apple.reminder-refresh</string>
+		<string>com.itorah.lorvex.reminder-refresh</string>
 	</array>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Lorvex can read event details to build schedules and assistant context.</string>

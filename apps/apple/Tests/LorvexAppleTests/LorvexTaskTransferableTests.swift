@@ -56,7 +56,7 @@ func lorvexTaskRefExportsItsReferenceAndItsTitleAsText() async throws {
 
 @Test
 func lorvexTaskUTTypeIdentifier() {
-  #expect(UTType.lorvexTask.identifier == "com.lorvex.apple.task-ref")
+  #expect(UTType.lorvexTask.identifier == "com.itorah.lorvex.task-ref")
 }
 
 // MARK: - A drag that carries several tasks

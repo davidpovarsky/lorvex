@@ -13,10 +13,10 @@ func appMetadataMatchesAppleDistributionIdentity() {
   #expect(LorvexProductMetadata.watchComplicationProduct == "LorvexWatchComplication")
   #expect(
     LorvexProductMetadata.watchComplicationBundleIdentifier
-      == "com.lorvex.apple.watchkitapp.widgets")
+      == "com.itorah.lorvex.watchkitapp.widgets")
   #expect(
     LorvexProductMetadata.watchComplicationKind
-      == "com.lorvex.apple.watchkitapp.widgets.today")
+      == "com.itorah.lorvex.watchkitapp.widgets.today")
   #expect(LorvexProductMetadata.watchComplicationDisplayName == "Lorvex Today")
   // Apple's embedded-companion rule (TN3157) requires the Watch app's bundle ID
   // to be prefixed by its iOS host's, and the complication's by the Watch app's.
@@ -30,24 +30,24 @@ func appMetadataMatchesAppleDistributionIdentity() {
       .hasPrefix(LorvexProductMetadata.watchBundleIdentifier + "."))
   #expect(AppMetadata.mcpHostProduct == "LorvexMCPHost")
   #expect(AppMetadata.mcpServerName == "lorvex")
-  #expect(AppMetadata.bundleIdentifier == "com.lorvex.apple")
-  #expect(MobileAppMetadata.bundleIdentifier == "com.lorvex.apple")
-  #expect(AppMetadata.widgetBundleIdentifier == "com.lorvex.apple.focuswidget")
+  #expect(AppMetadata.bundleIdentifier == "com.itorah.lorvex")
+  #expect(MobileAppMetadata.bundleIdentifier == "com.itorah.lorvex")
+  #expect(AppMetadata.widgetBundleIdentifier == "com.itorah.lorvex.widgets")
   #expect(LorvexProductMetadata.widgetExecutable == "LorvexWidgets")
   #expect(LorvexProductMetadata.widgetAppeXName == "LorvexWidgets.appex")
   // The kind strings are WidgetKit identities: a placed widget finds its
   // timeline by them, so they stay fixed whatever the widget is called.
-  #expect(AppMetadata.widgetKind == "com.lorvex.apple.widget.today")
-  #expect(LorvexProductMetadata.progressWidgetKind == "com.lorvex.apple.widget.progress")
-  #expect(LorvexProductMetadata.habitsWidgetKind == "com.lorvex.apple.widget.habits")
+  #expect(AppMetadata.widgetKind == "com.itorah.lorvex.widget.today")
+  #expect(LorvexProductMetadata.progressWidgetKind == "com.itorah.lorvex.widget.progress")
+  #expect(LorvexProductMetadata.habitsWidgetKind == "com.itorah.lorvex.widget.habits")
   #expect(AppMetadata.widgetDisplayName == "Lorvex Today")
   #expect(AppMetadata.widgetDescription == "See today’s tasks at a glance.")
   #expect(AppMetadata.widgetExtensionPointIdentifier == "com.apple.widgetkit-extension")
   #expect(LorvexProductMetadata.controlWidgetKind == "com.lorvex.control.today")
   #expect(LorvexProductMetadata.controlWidgetDisplayName == "Lorvex Today")
   #expect(LorvexProductMetadata.controlWidgetDescription == "Shows the task at the top of Today.")
-  #expect(AppMetadata.appGroupIdentifier == "group.com.lorvex.apple")
-  #expect(AppMetadata.cloudKitContainerIdentifier == "iCloud.com.lorvex.apple")
+  #expect(AppMetadata.appGroupIdentifier == "group.com.itorah.lorvex")
+  #expect(AppMetadata.cloudKitContainerIdentifier == "iCloud.com.itorah.lorvex")
   #expect(AppMetadata.marketingVersion == "1.0.0")
   #expect(AppMetadata.buildVersion == "168")
   // Derived, not a third literal: the marketing and build values are pinned

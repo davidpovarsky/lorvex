@@ -273,7 +273,7 @@ public final class LorvexRemoteBridgeState {
 }
 
 private enum LorvexRemoteBridgeKeychain {
-  private static let service = "com.lorvex.apple.hanlin.remote-mcp"
+  private static let service = "com.itorah.lorvex.hanlin.remote-mcp"
   private static let account = "device-pairing-secret"
 
   static func makeRandom() throws -> String {

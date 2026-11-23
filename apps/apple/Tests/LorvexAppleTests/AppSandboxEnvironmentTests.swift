@@ -20,7 +20,7 @@ struct AppSandboxEnvironmentTests {
   @Test("sandboxed when APP_SANDBOX_CONTAINER_ID is set (entitlement unreadable)")
   func sandboxedWhenContainerIDPresent() {
     #expect(AppSandboxEnvironment.isSandboxed(
-      environment: ["APP_SANDBOX_CONTAINER_ID": "com.lorvex.apple"],
+      environment: ["APP_SANDBOX_CONTAINER_ID": "com.itorah.lorvex"],
       signedEntitlement: { nil }))
   }
 
@@ -54,7 +54,7 @@ struct AppSandboxEnvironmentTests {
     // otherwise — the entitlement authority must win, so the storage policy
     // can't be forced by an injected variable.
     #expect(!AppSandboxEnvironment.isSandboxed(
-      environment: ["APP_SANDBOX_CONTAINER_ID": "com.lorvex.apple"],
+      environment: ["APP_SANDBOX_CONTAINER_ID": "com.itorah.lorvex"],
       signedEntitlement: { false }))
   }
 }

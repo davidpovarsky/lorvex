@@ -21,7 +21,7 @@ extension UTType {
   /// Private UTType for intra-app `LorvexChecklistItemRef` drag-and-drop,
   /// declared in the macOS and iOS `Info.plist` like ``UTType/lorvexTask``.
   public static let lorvexChecklistItem = UTType(
-    exportedAs: "com.lorvex.apple.checklist-item-ref", conformingTo: .data)
+    exportedAs: "com.itorah.lorvex.checklist-item-ref", conformingTo: .data)
 }
 
 extension LorvexChecklistItemRef: Transferable {

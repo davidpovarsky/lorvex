@@ -164,7 +164,7 @@ extension ToolRegistry {
     return typeName.hasPrefix("Lorvex") || typeName.hasPrefix("MCP.")
   }
 
-  private static let log = Logger(subsystem: "com.lorvex.apple", category: "mcp")
+  private static let log = Logger(subsystem: "com.itorah.lorvex", category: "mcp")
 
   /// `result` with a closing text note naming the arguments the call sent that its
   /// tool's schema does not declare. A handler ignores such an argument, so

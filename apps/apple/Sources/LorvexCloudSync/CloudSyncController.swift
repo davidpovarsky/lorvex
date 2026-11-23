@@ -102,7 +102,7 @@ public actor CloudSyncController: CKSyncEngineDelegate {
   ]
   static let maxBatchRecords = 200
   static let maxBatchBytes = 768 * 1024
-  static let log = Logger(subsystem: "com.lorvex.apple", category: "cloudsync")
+  static let log = Logger(subsystem: "com.itorah.lorvex", category: "cloudsync")
 
   let zoneID = CKRecordZone.ID(zoneName: CloudSyncController.zoneName, ownerName: CKCurrentUserDefaultName)
   private(set) var store: any CloudSyncEngineStore

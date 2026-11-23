@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>LorvexMCPHost</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.lorvex.apple.mcp-host</string>
+	<string>com.itorah.lorvex.mcp-host</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleLocalizations</key>
