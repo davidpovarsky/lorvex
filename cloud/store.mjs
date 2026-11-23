@@ -147,7 +147,7 @@ export class CloudStore {
     validateEnvelope(e);
     const old=this.get('SELECT * FROM entities WHERE account_id=? AND entity_type=? AND entity_id=?',accountId,e.entity_type,e.entity_id);
     if(old && old.version>=e.version){
-      if(old.version===e.version&&old.payload===e.payload&&old.operation===e.operation)return {status:'duplicate'};
+      if(old.version===e.version&&old.payload===e.payload&&old.operation===e.operation&&old.payload_schema_version===e.payload_schema_version)return {status:'duplicate'};
       return {status:'stale',winner:this.wire(old)};
     }
     this.run('INSERT INTO entities(account_id,entity_type,entity_id,version,operation,payload,payload_schema_version,device_id,changed) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(account_id,entity_type,entity_id) DO UPDATE SET version=excluded.version,operation=excluded.operation,payload=excluded.payload,payload_schema_version=excluded.payload_schema_version,device_id=excluded.device_id,changed=excluded.changed',accountId,e.entity_type,e.entity_id,e.version,e.operation,e.payload,e.payload_schema_version,e.device_id,this.clock());
@@ -164,7 +164,7 @@ export class CloudStore {
       const results=items.map(e=>{
         if(expectedVersions!==undefined){
           const current=this.get('SELECT * FROM entities WHERE account_id=? AND entity_type=? AND entity_id=?',accountId,e.entity_type,e.entity_id);
-          if(current&&current.version===e.version&&current.payload===e.payload&&current.operation===e.operation)return {status:'duplicate'};
+          if(current&&current.version===e.version&&current.payload===e.payload&&current.operation===e.operation&&current.payload_schema_version===e.payload_schema_version)return {status:'duplicate'};
           const expected=expectedVersions[e.entity_type+':'+e.entity_id]??null;
           if((current?.version??null)!==expected){
             if(!current)throw new CloudError(409,'expected_version_missing');

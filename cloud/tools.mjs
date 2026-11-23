@@ -159,6 +159,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
   } else if(name==='update_task'||['complete_task','reopen_task','start_task','pause_task','cancel_task','plan_task'].includes(name)){
     const old=store.entity(accountId,'task',args.id);
     if(!old)throw new CloudError(404,'task_not_found');
+    if(old.recurrence&&['complete_task','reopen_task','start_task','pause_task','cancel_task'].includes(name))throw new CloudError(422,'recurring_transition_requires_canonical_core');
     const patch={};
     if(name==='update_task'){
       for(const key of ['title','priority','estimated_minutes'])if(key in args)patch[key]=args[key];

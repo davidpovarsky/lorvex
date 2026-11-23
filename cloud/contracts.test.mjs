@@ -114,3 +114,18 @@ test('task updates reject date-times without poisoning native change pages',()=>
  invokeCloudTool(s,a,'update_task',{id:task.id,due_date:'2026-12-01',planned_date:'2026-11-30'});
  for(const e of s.changes(a,cursor).envelopes)contractCheck(e);
 }));
+
+test('recurring task transitions cannot emit an invalid terminal snapshot',()=>fixture((s,a)=>{
+ const task=decode(invokeCloudTool(s,a,'create_task',{title:'Recurring'})).task;
+ s.writeEntity(a,'task',task.id,{...task,recurrence:'{"frequency":"daily"}'});
+ const cursor=s.changes(a,0).cursor;
+ for(const name of ['complete_task','reopen_task','start_task','pause_task','cancel_task'])assert.throws(()=>invokeCloudTool(s,a,name,{id:task.id}),/recurring_transition_requires_canonical_core/);
+ assert.equal(s.changes(a,cursor).envelopes.length,0);
+ assert.equal(s.entity(a,'task',task.id).status,'open');
+}));
+test('same payload under another schema is reconciled instead of acknowledged as exact replay',()=>fixture((s,a)=>{
+ const task=decode(invokeCloudTool(s,a,'create_task',{title:'Versioned payload'})).task;
+ const envelope=s.changes(a,0).envelopes[0];
+ assert.equal(s.receive(a,{...envelope,payload_schema_version:104}).status,'stale');
+ assert.equal(s.push(a,[{...envelope,payload_schema_version:104}],'schema-replay-check-0001',{['task:'+task.id]:envelope.version}).results[0].status,'stale');
+}));
