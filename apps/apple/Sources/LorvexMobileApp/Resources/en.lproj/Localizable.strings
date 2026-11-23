@@ -70,3 +70,5 @@
 "Your local database stays available offline. The first synchronization merges your existing tasks into this account. CloudKit sync is disabled while Lorvex Cloud is active to avoid competing sync transports." = "Your local database stays available offline. The first synchronization merges your existing tasks into this account. CloudKit sync is disabled while Lorvex Cloud is active to avoid competing sync transports.";
 "Sign out of Lorvex Cloud?" = "Sign out of Lorvex Cloud?";
 "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset." = "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset.";
+
+"Signed out locally. OpenAI session revocation could not be confirmed." = "Signed out locally. OpenAI session revocation could not be confirmed.";

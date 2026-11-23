@@ -24,6 +24,7 @@ final class LorvexChatGPTAccountState {
 
   @ObservationIgnored private let client = HanlinChatGPTPlanClient()
   @ObservationIgnored private var saved: HanlinChatGPTPlanCredentials?
+  @ObservationIgnored private var registration: HanlinChatGPTPlanRegistration?
   @ObservationIgnored private var pending: HanlinChatGPTAuthorizationAttempt?
   @ObservationIgnored private var listener: NWListener?
   @ObservationIgnored private let queue = DispatchQueue(label:"lorvex.chatgpt.loopback.listener")
@@ -43,6 +44,14 @@ final class LorvexChatGPTAccountState {
     }
     selectedModelID=UserDefaults.standard.string(forKey:"lorvex.chatgpt.plan.model") ?? ""
     saved=LorvexChatGPTPlanKeychain.load()
+    if let saved {
+      registration = HanlinChatGPTPlanRegistration(credentials: saved)
+      if let data = try? JSONEncoder().encode(registration) {
+        UserDefaults.standard.set(data, forKey: "lorvex.chatgpt.plan.registration")
+      }
+    } else if let data = UserDefaults.standard.data(forKey: "lorvex.chatgpt.plan.registration") {
+      registration = try? JSONDecoder().decode(HanlinChatGPTPlanRegistration.self, from: data)
+    }
     if let saved {
       email=saved.email
       canUsePlan=saved.canUsePlan
@@ -64,7 +73,7 @@ final class LorvexChatGPTAccountState {
       guard let self, self.authorizationGeneration == flowID, self.isConnecting else { return }
       self.fail(String(localized: "ChatGPT sign-in timed out. Please try again."))
     }
-    status=String(localized: "Opening secure ChatGPT sign-inâ€¦")
+    status=String(localized: "Opening secure ChatGPT sign-in…")
     let params=NWParameters.tcp
     params.requiredLocalEndpoint = .hostPort(
       host:NWEndpoint.Host("127.0.0.1"),port:.any)
@@ -82,7 +91,8 @@ final class LorvexChatGPTAccountState {
             }
             do {
               let auth=try HanlinChatGPTPlanClient.makeAttempt(
-                hostID:self.hostID,loopbackPort:port.rawValue,previous:self.saved)
+                hostID:self.hostID,loopbackPort:port.rawValue,previous:self.saved,
+                appName:"Lorvex AI Planner",registration:self.registration)
               self.pending=auth
               self.authorizationURL=auth.url
               self.status=String(localized: "Sign in with ChatGPT in the browser")
@@ -127,7 +137,7 @@ final class LorvexChatGPTAccountState {
     authorizationURL=nil
     listener?.cancel();listener=nil
     self.pending=nil
-    status=String(localized: "Verifying the ChatGPT account and permissionsâ€¦")
+    status=String(localized: "Verifying the ChatGPT account and permissions…")
     _Concurrency.Task { [weak self] in
       guard let self else {return}
       do {
@@ -135,7 +145,11 @@ final class LorvexChatGPTAccountState {
                                                    priorAccount:self.saved)
         guard self.authorizationGeneration == flowID,
               self.sessionGeneration == generation else { return }
+        let registration = HanlinChatGPTPlanRegistration(credentials: credentials)
+        let registrationData = try JSONEncoder().encode(registration)
         try LorvexChatGPTPlanKeychain.save(credentials)
+        UserDefaults.standard.set(registrationData, forKey: "lorvex.chatgpt.plan.registration")
+        self.registration = registration
         self.sessionGeneration = UUID()
         self.flowTimeout?.cancel(); self.flowTimeout = nil
         self.saved=credentials
@@ -231,6 +245,7 @@ final class LorvexChatGPTAccountState {
   }
 
   func signOut() {
+    let accountToRevoke = saved
     sessionGeneration = UUID()
     authorizationGeneration = UUID()
     flowTimeout?.cancel(); flowTimeout = nil
@@ -241,6 +256,18 @@ final class LorvexChatGPTAccountState {
     saved=nil;models=[];email=nil;canUsePlan=false;isConnecting=false
     selectedModelID=""
     status=String(localized: "Signed out of ChatGPT in Lorvex")
+    // Keep only the non-token registration and host identity for returning login.
+    if let accountToRevoke {
+      let generation = sessionGeneration
+      let client = self.client
+      _Concurrency.Task { [weak self] in
+        do { try await client.revoke(accountToRevoke) }
+        catch {
+          guard let self, self.sessionGeneration == generation, self.saved == nil else { return }
+          self.status = String(localized: "Signed out locally. OpenAI session revocation could not be confirmed.")
+        }
+      }
+    }
   }
 }
 

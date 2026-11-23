@@ -70,3 +70,5 @@
 "Your local database stays available offline. The first synchronization merges your existing tasks into this account. CloudKit sync is disabled while Lorvex Cloud is active to avoid competing sync transports." = "הנתונים המקומיים נשארים זמינים ללא אינטרנט. הסנכרון הראשון ממזג את המשימות הקיימות בחשבון הזה. סנכרון CloudKit כבוי עבור מסד הנתונים המשויך לענן Lorvex.";
 "Sign out of Lorvex Cloud?" = "להתנתק מענן Lorvex?";
 "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset." = "המשימות המקומיות יישארו במכשיר. חשבון ענן אחר לא יוכל להשתמש במסד הנתונים הזה ללא ייצוא ואיפוס נפרדים.";
+
+"Signed out locally. OpenAI session revocation could not be confirmed." = "החשבון נותק במכשיר. לא ניתן היה לאמת את ביטול ההרשאה ב־OpenAI.";

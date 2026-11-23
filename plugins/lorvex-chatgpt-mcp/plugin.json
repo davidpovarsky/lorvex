@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "lorvex-chatgpt-mcp",
+  "version": "0.2.0",
+  "description": "Private Lorvex Cloud account access through OAuth, with the existing iPad bridge retained for migration.",
+  "author": {
+    "name": "Lorvex Hanlin integration"
+  },
+  "repository": "https://github.com/davidpovarsky/lorvex",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Lorvex Tasks",
+        "shortDescription": "Plan with your Lorvex cloud",
+        "longDescription": "Access your Lorvex account tasks, lists, calendar and habits from ChatGPT. Connect Lorvex Cloud with normal account sign-in; authorized routine updates work while the iPad is closed and sync when it reconnects. The existing iPad bridge remains available during migration.",
+        "developerName": "Lorvex Hanlin integration",
+        "category": "Productivity",
+        "capabilities": [
+          "Interactive"
+        ],
+        "defaultPrompt": "Help me plan my week using the tasks already in Lorvex."
+      }
+    }
+  }
+}

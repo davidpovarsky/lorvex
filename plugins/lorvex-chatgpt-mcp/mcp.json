@@ -1,0 +1,53 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "lorvex-remote": {
+      "type": "streamable-http",
+      "url": "https://torah-social.tail0a6c7d.ts.net:10000/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "dcr"
+            },
+            "baseScopes": [
+              "lorvex.read",
+              "lorvex.write",
+              "offline_access"
+            ],
+            "defaultScopes": [
+              "lorvex.read",
+              "lorvex.write",
+              "offline_access"
+            ]
+          }
+        }
+      }
+    },
+    "lorvex-cloud": {
+      "type": "streamable-http",
+      "url": "https://torah-social.tail0a6c7d.ts.net:10000/cloud/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": {
+              "mode": "dcr"
+            },
+            "baseScopes": [
+              "lorvex.read",
+              "lorvex.write",
+              "offline_access"
+            ],
+            "defaultScopes": [
+              "lorvex.read",
+              "lorvex.write",
+              "offline_access"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
