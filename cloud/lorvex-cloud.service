@@ -2,6 +2,7 @@
 Description=Lorvex Cloud Account and MCP Service
 Wants=network-online.target
 After=network-online.target
+RequiresMountsFor=/mnt/development/services/lorvex-cloud/data
 
 [Service]
 Type=simple
@@ -11,7 +12,7 @@ WorkingDirectory=/home/ubuntu/lorvex-cloud
 Environment=LORVEX_CLOUD_HOST=127.0.0.1
 Environment=LORVEX_CLOUD_PORT=8769
 Environment=LORVEX_CLOUD_ORIGIN=https://torah-social.tail0a6c7d.ts.net:10000/cloud
-Environment=LORVEX_CLOUD_DB=/home/ubuntu/lorvex-cloud/data/lorvex.sqlite
+Environment=LORVEX_CLOUD_DB=/mnt/development/services/lorvex-cloud/data/lorvex.sqlite
 ExecStart=/usr/local/bin/node /home/ubuntu/lorvex-cloud/server.mjs
 Restart=on-failure
 RestartSec=5
@@ -20,7 +21,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/ubuntu/lorvex-cloud/data
+ReadWritePaths=/mnt/development/services/lorvex-cloud/data
 LimitNOFILE=1024
 
 [Install]

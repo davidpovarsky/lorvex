@@ -8,8 +8,8 @@ import tempfile
 import time
 
 root=Path(os.getenv("LORVEX_CLOUD_HOME","/home/ubuntu/lorvex-cloud"))
-src=root/"data"/"lorvex.sqlite"
-target=root/"backups"
+src=Path(os.getenv("LORVEX_CLOUD_DB",str(root/"data"/"lorvex.sqlite")))
+target=Path(os.getenv("LORVEX_CLOUD_BACKUP_DIR",str(root/"backups")))
 if not src.is_file():
     raise SystemExit("No Lorvex Cloud database exists")
 target.mkdir(mode=0o700,parents=True,exist_ok=True)
@@ -27,10 +27,14 @@ with tempfile.TemporaryDirectory(dir=target,prefix=".backup-") as tmp:
     finally:
         destination.close()
         source.close()
-    with snapshot.open("rb") as inp,gzip.open(output,"wb",compresslevel=5) as gz:
+    compressed=Path(tmp)/output.name
+    with snapshot.open("rb") as inp,gzip.open(compressed,"wb",compresslevel=5) as gz:
         for block in iter(lambda:inp.read(1024*1024),b""):
             gz.write(block)
-output.chmod(0o600)
+    compressed.chmod(0o600)
+    with compressed.open("rb") as verified:
+        os.fsync(verified.fileno())
+    os.replace(compressed,output)
 all_files=sorted(target.glob("lorvex-cloud-*.sqlite.gz"),reverse=True)
 for old in all_files[7:]:
     old.unlink()

@@ -44,6 +44,15 @@ Custom MCP URL:
 
 WARNING: The initial signup flow is self-service, so only add real data after
 the user creates their account. Never use sample credentials outside tests.
+The production SQLite data and snapshots live under
+/mnt/development/services/lorvex-cloud/{data,backups}. Both units require the
+mounted volume and restrict writes to their respective directory. Create these
+directories as ubuntu with mode 0700 before installing the units. When moving an
+existing database, stop the writer, use SQLite online backup, compare integrity
+and table counts, copy/verify backups, and retain the originals for rollback
+before changing LORVEX_CLOUD_DB and LORVEX_CLOUD_BACKUP_DIR. Never raw-copy a live
+WAL database. This separates service persistence from the root filesystem but
+does not resolve host-wide free-space pressure; monitor both volumes.
 Daily online-safe SQLite snapshots use backup.py and the backup timer.
 At-rest backups must be protected like user data and never committed.
 
