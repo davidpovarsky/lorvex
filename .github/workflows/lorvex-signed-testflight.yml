@@ -262,8 +262,31 @@ jobs:
           test -d "$app"
           codesign --verify --deep --strict --verbose=2 "$app"
           python3 lorvex/apps/apple/script/verify_macho_closure.py "$app"
-          python3 lorvex/apps/apple/script/verify_ios_ipa.py \
-            --platform ios --distribution-method app-store-connect "$app"
+          # Native TestFlight distribution is com.itorah.lorvex / build 171.
+          # Generic app_metadata.sh deliberately describes the older com.lorvex.apple / 168 product.
+          # Override only this check's expectations in memory; retain the full signed-profile audit.
+          python3 - "$app" <<'PY'
+          import os,sys
+          from pathlib import Path
+          sys.path.insert(0,str(Path("lorvex/apps/apple/script").resolve()))
+          from metadata_env import load_metadata
+          from verify_ios_ipa import verify_payload_app,IPHONE_PLATFORM
+          metadata=load_metadata()
+          metadata.update({"MARKETING_VERSION":"1.0.0",
+           "BUILD_VERSION":os.environ["EXPECTED_BUILD"],
+           "MOBILE_BUNDLE_ID":"com.itorah.lorvex",
+           "WIDGET_BUNDLE_ID":"com.itorah.lorvex.widgets",
+           "FOCUS_FILTER_BUNDLE_ID":"com.itorah.lorvex.focusfilter",
+           "WATCH_BUNDLE_ID":"com.itorah.lorvex.watchkitapp",
+           "WATCH_COMPLICATION_BUNDLE_ID":"com.itorah.lorvex.watchkitapp.widgets"})
+          errors=verify_payload_app(Path(sys.argv[1]),metadata,
+           expected_team=os.environ["APPLE_TEAM_ID"],platform=IPHONE_PLATFORM,
+           require_app_store_profile=True)
+          if errors:
+              for error in errors: print("SIGNED_IPA_VERIFY_FAILED",error,file=sys.stderr)
+              raise SystemExit(1)
+          print("SIGNED_IPA_RECURSIVE_VERIFY_PASS",len(IPHONE_PLATFORM.bundle_id_keys))
+          PY
 
       - name: Validate signed IPA with Apple transport
         shell: bash
