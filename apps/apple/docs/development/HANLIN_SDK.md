@@ -108,3 +108,9 @@ static tier, attempts a Swift build and cannot complete on this Linux host; its
 new disposable cache was removed. No native acceptance is inferred from these
 checks. The scoped macOS/iPad workflow owns compilation and live UI evidence for
 the committed source and exact SDK lock.
+
+## Native acceptance correction (2026-11-23)
+
+Run [45108101654](https://github.com/davidpovarsky/lorvex/actions/runs/45108101654) installed and verified the exact canonical SDK selection on macOS, including its zero-binary receipt. It stopped before source compilation: Lorvex required swift-markdown >=0.8 while the preserved Hanlin streaming renderer requires exactly 0.7.3; an existing Focus Filter XcodeGen runpath setting was incorrectly placed under `configs`. No UI test executed in that run.
+
+The host minimum now admits 0.7.3, and both existing lockfiles select its upstream tag commit `7d9a5ce307528578dfa777d505496bd5f544ad94`. The host's unchanged AST usage (Document, Markup, list checkbox/start index, table head/body/cells, inline nodes and PlainTextConvertibleMarkup) exists in that upstream version. The canonical renderer constraint and implementation are unchanged. The native retry compiles the actual Lorvex markdown module against the shared dependency. The Focus Filter runpaths now belong to `settings.base` for both configurations, preserving their literal values and Release signing configuration.

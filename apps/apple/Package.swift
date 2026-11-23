@@ -35,7 +35,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.12.1"),
-        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0"),
+        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.7.3"),
         // The pure-Swift core (LorvexDomain/Store/Workflow/Sync/Runtime). The app
         // talks to it through LorvexCoreServicing, implemented by
         // SwiftLorvexCoreService.
