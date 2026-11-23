@@ -71,6 +71,20 @@ final class HanlinSDKIntegrationTests: XCTestCase {
         app.buttons["hanlin.model.settings"].tap()
         XCTAssertTrue(app.navigationBars["הגדרות מודל Hanlin"].waitForExistence(timeout: 5))
         attach(app, "Lorvex - Hebrew provider settings")
+        let provider = app.buttons["hanlin.model.provider"]
+        XCTAssertTrue(provider.waitForExistence(timeout: 5))
+        provider.tap()
+        let chatGPT = app.buttons["חשבון ChatGPT"]
+        XCTAssertTrue(chatGPT.waitForExistence(timeout: 5))
+        chatGPT.tap()
+        let manage = app.buttons["hanlin.chatgpt.settings"]
+        XCTAssertTrue(manage.waitForExistence(timeout: 5))
+        manage.tap()
+        XCTAssertTrue(app.navigationBars["חשבון ChatGPT"].waitForExistence(timeout: 5))
+        let add = app.buttons["chatgpt.accounts.add"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5))
+        XCTAssertTrue(add.isHittable)
+        attach(app, "Lorvex - Hebrew ChatGPT account management")
     }
 
     @MainActor

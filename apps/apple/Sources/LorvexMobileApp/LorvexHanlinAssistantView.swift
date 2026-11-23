@@ -44,7 +44,7 @@ struct LorvexHanlinAssistantView: View {
             Group {
                 #if canImport(UIKit)
                 LorvexHanlinChatWorkspace(assistant: assistant, draft: composerDraft,
-                    modelName: modelID,
+                    modelName: provider == "ChatGPT" ? chatGPTAccount.selectedModelID : modelID,
                     showModelSettings: { showModelSettings = true },
                     showRemoteBridgeSettings: { showRemoteBridgeSettings = true },
                     send: send)
@@ -75,8 +75,8 @@ struct LorvexHanlinAssistantView: View {
                 }
             }
             .onAppear(perform: loadCredential)
-            .onChange(of: chatGPTAccount.canUsePlan) { _, allowed in
-                guard provider == "ChatGPT", !allowed else { return }
+            .onChange(of: chatGPTAccount.sessionRevision) { _, _ in
+                guard provider == "ChatGPT" else { return }
                 pendingSend?.cancel(); pendingSend = nil; isPreparingRequest = false
                 _Concurrency.Task { await assistant.cancel() }
             }
@@ -97,7 +97,9 @@ struct LorvexHanlinAssistantView: View {
             }
             #if canImport(UIKit)
             .sheet(isPresented: $showChatGPTAccountSettings) {
-                LorvexChatGPTPlanSettingsView(account: chatGPTAccount)
+                NavigationStack {
+                    LorvexChatGPTPlanSettingsView(account: chatGPTAccount)
+                }
             }
             #endif
         }
@@ -122,12 +124,14 @@ struct LorvexHanlinAssistantView: View {
                         Text("Google").tag("Google")
                         Text("Other compatible").tag("Other")
                     }
+                    .accessibilityIdentifier("hanlin.model.provider")
                     if draftProvider == "ChatGPT" {
                         #if canImport(UIKit)
                         Label(chatGPTAccount.status, systemImage:"person.crop.circle")
                         NavigationLink("Connect / manage ChatGPT account") {
                             LorvexChatGPTPlanSettingsView(account: chatGPTAccount)
                         }
+                        .accessibilityIdentifier("hanlin.chatgpt.settings")
                         if chatGPTAccount.canUsePlan {
                             Text("Selected: " + chatGPTAccount.selectedModelID)
                                 .font(.caption).foregroundStyle(.secondary)
