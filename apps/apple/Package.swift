@@ -40,7 +40,10 @@ let package = Package(
         // talks to it through LorvexCoreServicing, implemented by
         // SwiftLorvexCoreService.
         .package(path: "core"),
-        .package(path: "../../Vendor/HanlinSDK")
+        .package(path: "../../Vendor/HanlinSDK"),
+        // Direct test dependency for the immutable canonical SDK integration suite.
+        .package(url: "https://github.com/davidpovarsky/swift-ai-sdk.git",
+                 revision: "e7bf34111e603ca977becd007dd4e5bb109af857")
     ],
     targets: [
         .target(
@@ -253,7 +256,8 @@ let package = Package(
                 .product(name: "HanlinHostContracts", package: "HanlinSDK"),
                 .product(name: "HanlinAgentCore", package: "HanlinSDK"),
                 .product(name: "HanlinPlatformContracts", package: "HanlinSDK"),
-                .product(name: "HanlinChatCore", package: "HanlinSDK")
+                .product(name: "HanlinChatCore", package: "HanlinSDK"),
+                .product(name: "AISDKProviderUtils", package: "swift-ai-sdk")
             ]
         ),
         .testTarget(

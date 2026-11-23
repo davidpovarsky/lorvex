@@ -54,6 +54,12 @@ jobs:
                   data=response.read(1000001)
               if len(data)>1000000: raise SystemExit("Unexpected SDK contract source size")
               (dest/pathlib.Path(path).name).write_bytes(data)
+          test_path="Packages/HanlinPlatform/Tests/HanlinChatCoreTests/HanlinChatGPTPlanTests.swift"
+          with urllib.request.urlopen(f"https://raw.githubusercontent.com/davidpovarsky/hanlin-ai/{pin}/{test_path}",timeout=45) as response:
+              test_source=response.read(1000001)
+          if len(test_source)>1000000: raise SystemExit("Unexpected SDK integration test source size")
+          host_test=pathlib.Path("apps/apple/Tests/LorvexHanlinAgentTests/HanlinChatGPTPlanTests.swift")
+          host_test.write_bytes(test_source)
           print("CANONICAL_SDK_CONTRACT_PIN",pin)
           PY
           swiftc -swift-version 6 -parse-as-library \
@@ -67,7 +73,7 @@ jobs:
         run: |
           set -o pipefail
           swift test --package-path apps/apple \
-            --filter 'LorvexCloudAccountSyncTests|LorvexHanlin(Agent|PresentationState)Tests' \
+            --filter 'LorvexCloudAccountSyncTests|LorvexHanlin(Agent|PresentationState)Tests|HanlinChatGPTPlanTests' \
             -j 3 2>&1 | tee cloud-and-hanlin-tests.log
       - name: Compile and exercise the original native iPad UI in English and Hebrew
         shell: bash
