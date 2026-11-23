@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "baselineRun": "https://github.com/davidpovarsky/lorvex/actions/runs/45119218473",
+  "consumerRevision": "09307ef346eb12be2bcb25141d4b76bc9beb6ed6",
+  "sdkRevision": "d49a4fd4115b8335105d2991bf74ab4d7f6aad2d",
+  "sourceInputs": {
+    "HanlinSDK.lock.json": "ac137eaa589ce84e24723b2bddf75e5f7673dce3",
+    "apps/apple/Package.swift": "1b3c04826d59188fcf15035e95c73a21c93d0c7c",
+    "apps/apple/Package.resolved": "fe7ac5e918b90090788f10f62cbd1297e8f88ed3",
+    "apps/apple/Sources": "23b4455541b6038357af5361bbeb761e823aefde",
+    "apps/apple/Tests": "fed8be9a8638b76c5037164337c06bd02a8b1ce4",
+    "apps/apple/core": "50f810cd0282b602e0c1eabd2aef9ed45fbd8fb3",
+    "apps/apple/Config": "8cd58e95af4666e02cbf4c33b93c016ef190c3b5",
+    "apps/apple/script": "66e366d79b2339927fc0f9a07123c8ad1ecf083d"
+  },
+  "nativeAgentTests": {
+    "status": "PASS",
+    "passed": 6,
+    "failed": 0,
+    "durationSeconds": 13.081,
+    "suite": "LorvexHanlinAgentTests",
+    "artifactID": 14794586293,
+    "zipSHA256": "a71498ac5400f691532a88363941218cf8bbd451c90965a6550dc556ac081af9"
+  },
+  "deviceBuild": {
+    "status": "BUILD SUCCEEDED",
+    "architecture": "arm64",
+    "configuration": "Debug",
+    "bundleID": "com.itorah.lorvex",
+    "version": "1.0.0",
+    "build": "171",
+    "ipaBytes": 73455146,
+    "ipaSHA256": "50dbf86e408ab0131db85ea8cac0051ed45a80e946fa13dc5d8fbbaf5c2397c7",
+    "ipaUploaded": false,
+    "signed": false,
+    "diagnosticArtifactID": 14794868870,
+    "diagnosticZIP_SHA256": "261bbc54ac385219b3bbb104cc0161f66c61c9c134f156e38b6e297a7c15a3ab"
+  },
+  "ui": {
+    "status": "CANCELLED_WITHOUT_TEST_EVIDENCE",
+    "selector": "HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex",
+    "jobConclusion": "cancelled",
+    "annotation": "The operation was canceled.",
+    "configuredJobTimeoutMinutes": 150,
+    "jobElapsedSeconds": 2538,
+    "cancelledStepAt": "2026-11-23T06:31:53Z",
+    "simulatorBootCompletedAt": "2026-11-23T06:23:44Z",
+    "xcodebuildProcessObservedAtCleanup": true,
+    "uiLogBytes": 0,
+    "xcresultRetained": false,
+    "screenshotsRetained": false,
+    "cancellationOrigin": "Not exposed by the GitHub annotation; workflow timeout is not established as the cause."
+  },
+  "continuation": {
+    "scope": "ui",
+    "reuse": "Only the six native Agent cases and actual device build are reused. Exact source objects and SDK lock must match before the unchanged original UI test script can run. The earlier five state cases retain their separate source-bound receipt.",
+    "noRepeatedAgentTests": true,
+    "noRepeatedDeviceBuild": true,
+    "assertionsAndTestTimeoutsUnchanged": true
+  }
+}

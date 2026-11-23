@@ -173,10 +173,50 @@ Agent tests must run against this new pin, followed by the actual arm64 iPad
 build and `HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex`.
 The workflow's default `unit_scope=all` still runs all 11 tests. This corrective
 run uses `unit_scope=agent` and an explicit PresentationState suite exclusion;
-SwiftPM target names alone would otherwise match that suite too. Native outcome
-and UI acceptance remain pending until this corrective run finishes.
+SwiftPM target names alone would otherwise match that suite too. The native outcome of this corrective run is recorded below; UI acceptance
+remains outstanding after the workflow cancellation.
 
 Neither host's current chat composition instantiates Hanlin's extension stores
 or CompactAgentClient. Their existing App Groups remain owned by each host; this
 pin does not require an invented Hanlin App Group entitlement or Info.plist
 dictionary in Lorvex.
+
+
+## Native result at the coherent pin and UI-only continuation
+
+Run [45119218473](https://github.com/davidpovarsky/lorvex/actions/runs/45119218473)
+on consumer `09307ef346eb12be2bcb25141d4b76bc9beb6ed6` and SDK `d49a4fd4`
+completed all six `LorvexHanlinAgentTests` successfully: catalog/schema validation,
+deny-by-default reads, approved writes/idempotent replay, stale-context refusal,
+live remote-bridge approval/idempotency, and malformed/unknown remote-tool refusal.
+The six tests ran in 13.081 seconds after actual macOS compilation. The earlier
+five state tests were deliberately not rerun.
+
+The actual Debug arm64 iPad application also built and exported an unsigned IPA:
+`Lorvex-Hanlin-iPad-1.0.0+171-UNSIGNED.ipa`, 73,455,146 bytes, SHA-256
+`50dbf86e408ab0131db85ea8cac0051ed45a80e946fa13dc5d8fbbaf5c2397c7`.
+The pipeline log retains the build and export manifest. The IPA was not uploaded:
+the upload step followed the UI phase and was skipped when the workflow was
+cancelled. This is build/export evidence, not an available binary download,
+device installation or signed release acceptance.
+
+The UI step booted its owned iPad Simulator, then received GitHub's
+`The operation was canceled.` annotation. The job conclusion is `cancelled`,
+not a completed failing assertion. The configured job timeout was 150 minutes;
+the annotation does not identify the origin of cancellation. Its UI log is empty,
+and no `xcresult` or screenshot was retained. No native UI execution or visual
+acceptance is inferred from this run.
+
+[HANLIN_NATIVE_ACCEPTANCE_20261123.json](HANLIN_NATIVE_ACCEPTANCE_20261123.json)
+records the source objects, exact native outcomes and artifact SHA-256 values.
+The bounded `validation_scope=ui` continuation first verifies those original
+source objects and the immutable SDK lock, then invokes the unchanged
+`verify_hanlin_host_ui.sh` and original test selector. It does not repeat the
+six Agent tests or the successful device build, and changes no UI assertion or
+test timeout. Default `validation_scope=full` retains normal validation; successful
+full-run device artifacts are now preserved before beginning the separate UI gate.
+
+| Retained artifact | GitHub ID | ZIP SHA-256 |
+| --- | --- | --- |
+| Six native Agent tests | 14794586293 | `a71498ac5400f691532a88363941218cf8bbd451c90965a6550dc556ac081af9` |
+| Device build and cancelled-UI diagnostics | 14794868870 | `261bbc54ac385219b3bbb104cc0161f66c61c9c134f156e38b6e297a7c15a3ab` |
