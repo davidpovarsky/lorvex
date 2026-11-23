@@ -1,0 +1,120 @@
+name: Lorvex - Resume already signed TestFlight IPA
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        required: true
+        default: "45124295172"
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: lorvex-signed-testflight
+  cancel-in-progress: false
+jobs:
+  upload-existing-ipa:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      LORVEX_APP_ID: "6838139212"
+      EXPECTED_BUILD: "171"
+    steps:
+      - name: Checkout exact source of signed build
+        uses: actions/checkout@v4
+        with:
+          repository: davidpovarsky/lorvex
+          ref: 7c870454c76d976da35ecf2418f32dd06a82b888
+          path: lorvex
+      - name: Download existing signed IPA; do not compile or sign again
+        uses: actions/download-artifact@v4
+        with:
+          name: Lorvex-signed-TestFlight-${{ inputs.artifact_run_id }}
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/lorvex-reuse
+      - name: Prepare App Store Connect API authentication
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$APPLE_TEAM_ID" && test -n "$ASC_KEY_P8" && test -n "$ASC_KEY_ID" && test -n "$ASC_ISSUER_ID"
+          mkdir -p "$HOME/.appstoreconnect/private_keys" "$HOME/.private_keys"
+          key="$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8"
+          printf '%s' "$ASC_KEY_P8" | base64 --decode > "$key"
+          chmod 600 "$key"
+          cp "$key" "$HOME/.private_keys/AuthKey_$ASC_KEY_ID.p8"
+          mkdir -p "$RUNNER_TEMP/lorvex-resume-logs"
+      - name: Verify SHA256, signed contents, five App Store profiles and build 171
+        shell: bash
+        run: |
+          set -euo pipefail
+          ipa="$(find "$RUNNER_TEMP/lorvex-reuse" -name 'Lorvex-AI-1.0.0-171-signed-TestFlight.ipa' -type f -print -quit)"
+          test -s "$ipa" && test -s "$ipa.sha256"
+          expected="$(awk 'NR==1{print $1}' "$ipa.sha256")"
+          actual="$(shasum -a 256 "$ipa" | awk '{print $1}')"
+          test "$expected" = "$actual" || { echo SIGNED_IPA_SHA256_MISMATCH; exit 1; }
+          echo "REUSED_SIGNED_IPA_SHA256_VERIFIED $actual"
+          echo "IPA_PATH=$ipa" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/lorvex-unpacked"
+          ditto -x -k "$ipa" "$RUNNER_TEMP/lorvex-unpacked"
+          app="$(find "$RUNNER_TEMP/lorvex-unpacked/Payload" -maxdepth 1 -name '*.app' -type d -print -quit)"
+          test -d "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          python3 lorvex/apps/apple/script/verify_macho_closure.py "$app"
+          python3 - "$app" <<'PY'
+          import os,sys
+          from pathlib import Path
+          sys.path.insert(0,str(Path("lorvex/apps/apple/script").resolve()))
+          from metadata_env import load_metadata
+          from verify_ios_ipa import verify_payload_app,IPHONE_PLATFORM
+          m=load_metadata()
+          m.update({"MARKETING_VERSION":"1.0.0","BUILD_VERSION":"171",
+           "MOBILE_BUNDLE_ID":"com.itorah.lorvex",
+           "WIDGET_BUNDLE_ID":"com.itorah.lorvex.widgets",
+           "FOCUS_FILTER_BUNDLE_ID":"com.itorah.lorvex.focusfilter",
+           "WATCH_BUNDLE_ID":"com.itorah.lorvex.watchkitapp",
+           "WATCH_COMPLICATION_BUNDLE_ID":"com.itorah.lorvex.watchkitapp.widgets"})
+          errors=verify_payload_app(Path(sys.argv[1]),m,
+             expected_team=os.environ["APPLE_TEAM_ID"],platform=IPHONE_PLATFORM,
+             require_app_store_profile=True)
+          if errors:
+              for error in errors: print("IPA_VERIFY_FAILED",error,file=sys.stderr)
+              raise SystemExit(1)
+          print("ALL_FIVE_SIGNED_APPSTORE_BUNDLES_VERIFIED")
+          PY
+      - name: Apple Transporter validate signed IPA
+        shell: bash
+        run: |
+          set -o pipefail
+          xcrun altool --validate-app -f "$IPA_PATH" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee "$RUNNER_TEMP/lorvex-resume-logs/apple-validate.log"
+      - name: Upload existing signed IPA to Apple
+        shell: bash
+        run: |
+          set -o pipefail
+          xcrun altool --upload-app -f "$IPA_PATH" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee "$RUNNER_TEMP/lorvex-resume-logs/apple-upload.log"
+      - name: Verify build 171 VALID via Apple App Store Connect API
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/lorvex-asc-venv"
+          "$RUNNER_TEMP/lorvex-asc-venv/bin/pip" install -q 'PyJWT[crypto]==2.10.1'
+          "$RUNNER_TEMP/lorvex-asc-venv/bin/python" lorvex/apps/apple/script/ci_appstore_connect.py verify-upload --build 171 --timeout-seconds 1100 2>&1 | tee "$RUNNER_TEMP/lorvex-resume-logs/apple-verify.log"
+      - name: Publish Apple evidence (no IPA duplication)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorvex-resume-Apple-evidence-${{ inputs.artifact_run_id }}
+          path: ${{ runner.temp }}/lorvex-resume-logs/*.log
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Remove temporary API authentication key
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8"
+          rm -f "$HOME/.private_keys/AuthKey_$ASC_KEY_ID.p8"
