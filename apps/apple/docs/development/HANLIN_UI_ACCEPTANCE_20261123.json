@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-23T10:11:27.227504+00:00",
+  "status": "PASS",
+  "run": {
+    "id": 45148401438,
+    "url": "https://github.com/davidpovarsky/lorvex/actions/runs/45148401438",
+    "consumerRevision": "2e6a5e202262250281b55f2c6418dc1737c7b65f",
+    "sdkRevision": "0dae98f7b44b3cb4ee4d8dacd1913f2ed317a965",
+    "jobID": 137603310142,
+    "jobStartedAt": "2026-11-23T09:35:35Z",
+    "jobCompletedAt": "2026-11-23T10:05:12Z",
+    "jobDurationSeconds": 1777,
+    "validationScope": "ui",
+    "unitScope": "agent"
+  },
+  "toolchain": {
+    "xcode": "27.2",
+    "xcodeBuild": "27B52",
+    "sdkVersion": "27.2",
+    "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+    "runtimeVersion": "27.2",
+    "runtimeBuild": "24B8117",
+    "device": {
+      "bundlePath": "/Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPad Pro 13-inch (M4).simdevicetype",
+      "name": "iPad Pro 13-inch (M4)",
+      "productFamily": "iPad",
+      "identifier": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M4-8GB"
+    }
+  },
+  "test": {
+    "selector": "LorvexMobileUITests/HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex",
+    "passed": 1,
+    "failed": 0,
+    "durationSeconds": 74.62,
+    "assertionsChanged": false,
+    "testTimeoutsChanged": false,
+    "result": "TEST SUCCEEDED",
+    "coverage": [
+      "Open the actual Lorvex assistant",
+      "Original native multiline editor exists and is hittable",
+      "Type the original two-line draft and enable Send",
+      "Open original Morph panel and real host tool catalog",
+      "Close the panel and retain original draft text",
+      "Dismiss and reopen the actual assistant and use its editor"
+    ],
+    "liveProviderSendExecuted": false
+  },
+  "sourceInputs": {
+    "HanlinSDK.lock.json": "9c115140a59dbb67a4866fb1acf4a66daf85f31c",
+    "apps/apple/Sources": "80475a7e64297cd15ba93ec2b9406c83e8c10adb",
+    "apps/apple/Sources/LorvexHanlinAgent": "cf9b005dd448bf8b8ae5cdf4ddfc42f2102a77fa",
+    "apps/apple/Tests": "fed8be9a8638b76c5037164337c06bd02a8b1ce4",
+    "apps/apple/Config": "8cd58e95af4666e02cbf4c33b93c016ef190c3b5",
+    "apps/apple/Package.swift": "1b3c04826d59188fcf15035e95c73a21c93d0c7c",
+    "apps/apple/Package.resolved": "fe7ac5e918b90090788f10f62cbd1297e8f88ed3",
+    "apps/apple/script/verify_hanlin_host_ui.sh": "b096e8241cdea43ef1542815d2456781e05ff5cd",
+    ".github/workflows/lorvex-hanlin-ipad-ipa.yml": "e8e9f3b89a58ad7a4a3ae289b59a610741b49dc4"
+  },
+  "canonicalProfile": {
+    "receipt": "apps/apple/docs/development/HANLIN_DRAFT_UI_REPAIR_20261123.json",
+    "unchangedOriginalSelectedEntries": 534,
+    "addedSelectedEntries": 1,
+    "addedSourcePath": "Packages/HanlinPresentationSDK/Sources/HanlinChatUI/Composer/HanlinComposerDraft.swift",
+    "addedBlob": "23002e64c4491cd3278f4cb5e7ab630cdd4492f3",
+    "generatedSHA256": {
+      "Package.swift": "29c126b9305e88bbcaed57512374e986f7225a0c87d332950f6ba3deda9bca26",
+      "docs/agent-sdk/unified-package-manifest.json": "aff3413c7bdaf1e9e889cc157ef45e9bb9d7f747fdc5ff33d47bb771fe7cce9f"
+    },
+    "binaryTargets": [],
+    "nativeWorkflowSourceAndProfileGuards": "PASS"
+  },
+  "artifact": {
+    "id": 14806473186,
+    "node_id": "MDg6QXJ0aWZhY3QxNDgwNjQ3MzE4Ng==",
+    "name": "Lorvex-Hanlin-iPad-evidence-45148401438",
+    "size_in_bytes": 8620741,
+    "url": "https://api.github.com/repos/davidpovarsky/lorvex/actions/artifacts/14806473186",
+    "archive_download_url": "https://api.github.com/repos/davidpovarsky/lorvex/actions/artifacts/14806473186/zip",
+    "expired": false,
+    "digest": "sha256:6a6732ca29d962c6832e319aed63ad4a36d57a2fb05f9347e1f3c24e37efcc32",
+    "created_at": "2026-11-23T10:05:02Z",
+    "updated_at": "2026-11-23T10:05:02Z",
+    "expires_at": "2026-12-14T10:05:00Z",
+    "workflow_run": {
+      "id": 45148401438,
+      "repository_id": 1467918433,
+      "head_repository_id": 1467918433,
+      "head_branch": "codex/lorvex-shared-sdk-20261123",
+      "head_sha": "2e6a5e202262250281b55f2c6418dc1737c7b65f"
+    }
+  },
+  "retainedLog": {
+    "path": "apps/apple/dist/hanlin-local/live-draft-repair/evidence/job.log",
+    "bytes": 9497800,
+    "sha256": "597be9263a7dde4739d87c75742551e62a111dd5950729e03a9553d9309f804d"
+  },
+  "screenshots": [
+    {
+      "label": "Original Composer",
+      "path": "apps/apple/docs/development/evidence/hanlin-ui-20261123/E8743CF6-3393-4817-BE5B-C159612AC3DB.png",
+      "originalExportedFileName": "E8743CF6-3393-4817-BE5B-C159612AC3DB.png",
+      "sha256": "a9ee5d5275c8c4aa96f63944e08f537279a23ae725ac0bf3348360e6dd5ae21a",
+      "bytes": 907710,
+      "xcresultAttachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "851E6AB6-D4B6-4B9C-9DC1-80440C9EC5CC",
+        "deviceName": "Lorvex-Hanlin-6ad2ebde",
+        "exportedFileName": "E8743CF6-3393-4817-BE5B-C159612AC3DB.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Lorvex - original Hanlin Composer_0_FBC7BFB6-191E-4AF8-9DB8-7A88C74B9A08.png",
+        "timestamp": 1795428221.073
+      },
+      "visualReview": {
+        "result": "PASS",
+        "observation": "The actual Lorvex task workspace surrounds the Hanlin assistant. The original empty Composer, native entry surface, model control and disabled Send control are visible."
+      }
+    },
+    {
+      "label": "Native multiline draft",
+      "path": "apps/apple/docs/development/evidence/hanlin-ui-20261123/8DB65F77-4F6D-40E3-BAA0-1D987CABCD65.png",
+      "originalExportedFileName": "8DB65F77-4F6D-40E3-BAA0-1D987CABCD65.png",
+      "sha256": "3c2128e11370da0407ac8da82d46261a1401a1b1f3fc6082929cfcdc52e1cf32",
+      "bytes": 865862,
+      "xcresultAttachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "851E6AB6-D4B6-4B9C-9DC1-80440C9EC5CC",
+        "deviceName": "Lorvex-Hanlin-6ad2ebde",
+        "exportedFileName": "8DB65F77-4F6D-40E3-BAA0-1D987CABCD65.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Lorvex - native multiline draft and keyboard_0_50E065C4-98EE-4458-85D6-985670077F2B.png",
+        "timestamp": 1795428232.547
+      },
+      "visualReview": {
+        "result": "PASS",
+        "observation": "The native iPad keyboard is visible. Both lines read exactly Plan this week / Keep time for reading and rest. The initial P remains at the beginning and Send is enabled. The reported text-order defect is absent in this capture."
+      }
+    },
+    {
+      "label": "Original Morph panel and real host tools",
+      "path": "apps/apple/docs/development/evidence/hanlin-ui-20261123/0DD100DD-AE8B-4AF2-A6BF-AAFEAA666B4C.png",
+      "originalExportedFileName": "0DD100DD-AE8B-4AF2-A6BF-AAFEAA666B4C.png",
+      "sha256": "20e4fc8bf2c29f1dad1aa5ab67ee22e986cd1bb5418ae70c4fcf103f795e29b4",
+      "bytes": 1108760,
+      "xcresultAttachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "851E6AB6-D4B6-4B9C-9DC1-80440C9EC5CC",
+        "deviceName": "Lorvex-Hanlin-6ad2ebde",
+        "exportedFileName": "0DD100DD-AE8B-4AF2-A6BF-AAFEAA666B4C.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Lorvex - original Morph panel and real host tools_0_92ECB9D5-1E64-4EB4-BE07-0A4D8D2F15B0.png",
+        "timestamp": 1795428243.739
+      },
+      "visualReview": {
+        "result": "PASS",
+        "observation": "The original expanded Morph panel shows the real Lorvex task/list/calendar tool catalog. The same complete multiline draft remains visible below the scrollable tool list."
+      }
+    },
+    {
+      "label": "Reopened actual assistant",
+      "path": "apps/apple/docs/development/evidence/hanlin-ui-20261123/CC056835-E054-4407-B469-FA95DE5219EC.png",
+      "originalExportedFileName": "CC056835-E054-4407-B469-FA95DE5219EC.png",
+      "sha256": "5cacb8bf0a652a084cd5fc0d0efe76e882de55df4c27f3acc746bccfc42f215c",
+      "bytes": 907508,
+      "xcresultAttachment": {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "851E6AB6-D4B6-4B9C-9DC1-80440C9EC5CC",
+        "deviceName": "Lorvex-Hanlin-6ad2ebde",
+        "exportedFileName": "CC056835-E054-4407-B469-FA95DE5219EC.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "Lorvex - reopened actual assistant_0_A0C0FBF4-AACB-4614-ABE3-1DB8A249E4BA.png",
+        "timestamp": 1795428254.391
+      },
+      "visualReview": {
+        "result": "PASS",
+        "observation": "The actual assistant was closed and reopened. The original empty Composer is visible and the unchanged XCTest confirmed the native editor is hittable. This does not claim persistence of an unsent draft across dismissal."
+      }
+    }
+  ],
+  "previousFailure": {
+    "runID": 45133684085,
+    "consumerRevision": "e00fc6059d5d8108311c8e263462fe4400335a1f",
+    "sdkRevision": "d49a4fd4115b8335105d2991bf74ab4d7f6aad2d",
+    "diagnosis": "Initial P was already at the end of the text before Morph opened. The host adapter read captured Binding state instead of the original retained live draft owner. Exact delegate/render interleaving was not traced."
+  },
+  "retainedEvidence": {
+    "sixAgentTests": {
+      "runID": 45119218473,
+      "consumerRevision": "09307ef346eb12be2bcb25141d4b76bc9beb6ed6",
+      "sdkRevision": "d49a4fd4115b8335105d2991bf74ab4d7f6aad2d",
+      "receipt": "apps/apple/docs/development/HANLIN_NATIVE_ACCEPTANCE_20261123.json",
+      "reexecuted": false
+    },
+    "deviceBuildExport": {
+      "runID": 45119218473,
+      "consumerRevision": "09307ef346eb12be2bcb25141d4b76bc9beb6ed6",
+      "reexecuted": false,
+      "repairedCurrentDeviceBinaryClaimed": false,
+      "ipaUploaded": false
+    },
+    "fivePresentationStateCases": {
+      "receipt": "apps/apple/docs/development/HANLIN_SDK_STATE_REUSE_20261123.json",
+      "reexecuted": false
+    }
+  },
+  "limits": [
+    "Native UI acceptance is bound to consumer2e6a5e20 and SDK0dae98f7 only; later SDK commits are not silently included.",
+    "The fresh run compiled and launched the repaired simulator app. It did not rebuild or export a new device IPA.",
+    "No live provider Send, physical-device installation, signed distribution or OAuth pairing was exercised in this UI selector.",
+    "Historical acceptance and source-repair receipts remain unchanged."
+  ]
+}
