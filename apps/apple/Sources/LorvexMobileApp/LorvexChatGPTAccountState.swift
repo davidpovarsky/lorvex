@@ -125,8 +125,9 @@ final class LorvexChatGPTAccountState {
       }
       // A crash after the durable copy must not replace a newer rotating token.
       let credentials = destination ?? legacy
+      let next = try updatingAccounts(with: credentials)
       if destination == nil { try LorvexChatGPTPlanKeychain.save(credentials) }
-      accounts = try updatingAccounts(with: credentials)
+      accounts = next
       if let index = accounts.firstIndex(where: { $0.id == credentials.clientID }),
          accounts[index].modelID.isEmpty {
         accounts[index].modelID = defaults.string(forKey: Keys.legacyModel) ?? ""
@@ -389,19 +390,11 @@ final class LorvexChatGPTAccountState {
     status = String(localized: "Signing out of ChatGPT…")
     let generation = sessionGeneration
     let authorizationID = authorizationGeneration
-    _Concurrency.Task { [weak self, client] in
-      // Stop requests immediately, then revoke before clearing this session.
+    _Concurrency.Task { [weak self, client = self.client] in
+      // The shared client retries with the same resolved replacement token.
       var confirmed = false
-      for attempt in 0..<2 {
-        do { try await client.revoke(accountToRevoke); confirmed = true; break }
-        catch {
-          let shouldRetry: Bool
-          if case HanlinChatGPTPlanError.server(let code) = error { shouldRetry = code >= 500 }
-          else { shouldRetry = error is URLError }
-          guard attempt == 0 && shouldRetry else { break }
-          try? await _Concurrency.Task<Never, Never>.sleep(for: .seconds(1))
-        }
-      }
+      do { try await client.revoke(accountToRevoke); confirmed = true }
+      catch { confirmed = false }
       var deletionError: Error?
       do { try LorvexChatGPTPlanKeychain.delete(accountToRevoke) }
       catch { deletionError = error }
