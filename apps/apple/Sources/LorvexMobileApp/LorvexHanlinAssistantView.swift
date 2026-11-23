@@ -75,6 +75,11 @@ struct LorvexHanlinAssistantView: View {
                 }
             }
             .onAppear(perform: loadCredential)
+            .onChange(of: chatGPTAccount.canUsePlan) { _, allowed in
+                guard provider == "ChatGPT", !allowed else { return }
+                pendingSend?.cancel(); pendingSend = nil; isPreparingRequest = false
+                _Concurrency.Task { await assistant.cancel() }
+            }
             .onDisappear {
                 pendingSend?.cancel(); pendingSend = nil; isPreparingRequest = false
                 _Concurrency.Task { await assistant.cancel() }
