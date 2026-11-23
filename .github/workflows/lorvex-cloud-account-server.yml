@@ -26,6 +26,7 @@ jobs:
         run: node --test bridge/server.test.mjs
       - name: Static JavaScript syntax check
         run: |
+          node --check cloud/canonical.mjs
           node --check cloud/payload.mjs
           node --check cloud/store.mjs
           node --check cloud/tools.mjs

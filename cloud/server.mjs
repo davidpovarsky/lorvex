@@ -201,7 +201,7 @@ export function createCloudServer({
               try{store.authenticate(bearer(req),'lorvex.write');}
               catch(e){return json(res,e.status,{error:e.code},challenge('lorvex.read lorvex.write',e.code));}
             }
-            const result=invokeCloudTool(store,session.account_id,p.params?.name,p.params?.arguments??{});
+            const result=await invokeCloudTool(store,session.account_id,p.params?.name,p.params?.arguments??{});
             return json(res,200,oauthReply(p.id,result));
           }catch(error){
             return json(res,200,oauthReply(p.id,{isError:true,content:[{type:'text',text:
@@ -232,7 +232,7 @@ export function createCloudServer({
       if(method==='POST'&&pathname===PREFIX+'/v1/tools/call'){
         const p=await parseBody(req);
         if(CLOUD_TOOLS.find(t=>t.name===p.name)?.writes)store.authenticate(bearer(req),'lorvex.write');
-        return json(res,200,invokeCloudTool(store,accountId,p.name,p.arguments));
+        return json(res,200,await invokeCloudTool(store,accountId,p.name,p.arguments));
       }
       return json(res,404,{error:'not_found'});
     }catch(error){

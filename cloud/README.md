@@ -31,7 +31,7 @@ Oracle server. The old bridge continues to serve legacy clients unchanged.
 Run `node --test cloud/*.test.mjs` before rollout.
 Copy the canonical `schema/sync_payload/004.json` to the runtime directory as
 `sync-payload-004.json` (or point LORVEX_CLOUD_CONTRACT_PATH at it).
-Copy payload.mjs, store.mjs, tools.mjs and server.mjs into
+Copy canonical.mjs, payload.mjs, store.mjs, tools.mjs and server.mjs into
 /home/ubuntu/lorvex-cloud, install lorvex-cloud.service with systemd,
 and mount the public /cloud prefix through the existing localhost Lorvex MCP
 relay on port 8767. The new service itself listens only at 127.0.0.1:8769.
@@ -55,6 +55,24 @@ WAL database. This separates service persistence from the root filesystem but
 does not resolve host-wide free-space pressure; monitor both volumes.
 Daily online-safe SQLite snapshots use backup.py and the backup timer.
 At-rest backups must be protected like user data and never committed.
+
+## Canonical recurring task transitions
+
+Recurring completion and related lifecycle actions invoke the shared Swift Core
+through cloud/native. Set LORVEX_CANONICAL_CORE_EXECUTABLE to the deployed
+lorvex-cloud-native binary and keep its Swift resource bundles adjacent. Each
+request hydrates an ephemeral in-memory database from the account snapshot,
+runs existing lifecycle and recurrence operations, and returns canonical outbox
+envelopes. The Node service compares the account change cursor before committing
+all emitted entities, audit and idempotency receipt in one transaction; up to
+three bounded attempts preserve concurrent edits. No other persistent store or
+recurrence implementation is introduced. Missing or failed native execution
+leaves data unchanged. Process execution is limited to 15 seconds and 32 MiB
+of input/output, with a maximum 50,000 snapshot entities. The stored account
+timezone is passed as the fallback for the native preference snapshot.
+
+get_today and omitted-date list_habits use the stored account timezone; habit
+completion writes require an explicit local civil date.
 
 ## Test limits
 

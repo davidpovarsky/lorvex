@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { CloudError } from './store.mjs';
+import {executeCanonicalTransition} from './canonical.mjs';
 
 const field=(type,more={})=>({type,...more});
 const str=max=>field('string',{maxLength:max,minLength:1});
@@ -69,6 +70,10 @@ function validDay(day) {
   if(typeof day!=='string'||!dayPattern.test(day)||Number.isNaN(Date.parse(day+'T00:00:00Z'))||new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day)throw new CloudError(422,'invalid_date');
   return day;
 }
+function accountDay(store,accountId){
+  const account=store.get('SELECT timezone FROM accounts WHERE id=?',accountId);
+  return new Intl.DateTimeFormat('en-CA',{timeZone:account?.timezone||'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(store.clock()));
+}
 const now=()=>new Date().toISOString().replace(/\.\d{3}Z$/,'.000Z');
 const paginate=(list,args)=>{const offset=args.offset??0,limit=args.limit??100;return {
   tasks:list.slice(offset,offset+limit).map(taskFor),totalMatching:list.length,
@@ -118,10 +123,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
   } else if(name==='get_summary') {
     answer=store.summary(accountId);
   } else if(name==='get_today'){
-    const user=store.get('SELECT timezone FROM accounts WHERE id=?',accountId);
-    let date;
-    try{date=new Intl.DateTimeFormat('en-CA',{timeZone:user?.timezone||'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
-    catch{date=new Date().toISOString().slice(0,10);}
+    const date=accountDay(store,accountId);
     const relevant=tasks().filter(t=>!['completed','cancelled'].includes(t.status)&&(t.planned_date===date||t.due_date===date));
     answer={summary:String(relevant.length)+' tasks scheduled today',briefing:null,logicalDay:date,tasks:relevant.map(taskFor)};
   } else if(name==='list_lists'){
@@ -139,7 +141,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
     if(!event)throw new CloudError(404,'event_not_found');
     answer={event};
   } else if(name==='list_habits'){
-    const day=validDay(args.date??new Date().toISOString().slice(0,10));
+    const day=validDay(args.date??accountDay(store,accountId));
     const records=store.list(accountId,'habit_completion');
     answer={date:day,habits:habits().map(h=>({...h,completed:records.some(c=>c.habit_id===h.id&&(c.completed_date??c.date)===day)}))};
   } else if(name==='create_task'){
@@ -159,7 +161,13 @@ export function invokeCloudTool(store,accountId,name,args={}) {
   } else if(name==='update_task'||['complete_task','reopen_task','start_task','pause_task','cancel_task','plan_task'].includes(name)){
     const old=store.entity(accountId,'task',args.id);
     if(!old)throw new CloudError(404,'task_not_found');
-    if(old.recurrence&&['complete_task','reopen_task','start_task','pause_task','cancel_task'].includes(name))throw new CloudError(422,'recurring_transition_requires_canonical_core');
+    if((old.recurrence||(old.recurrence_rollover_state&&old.recurrence_rollover_state!=='none')||old.recurrence_successor_id)&&
+       ['complete_task','reopen_task','start_task','pause_task','cancel_task'].includes(name)){
+      if(!process.env.LORVEX_CANONICAL_CORE_EXECUTABLE)throw new CloudError(503,'recurring_transition_requires_canonical_core');
+      return executeCanonicalTransition(store,accountId,name,args).then(task=>({
+        content:[{type:'text',text:JSON.stringify({task:taskFor(hydrateTask(task))})}],isError:false
+      }));
+    }
     const patch={};
     if(name==='update_task'){
       for(const key of ['title','priority','estimated_minutes'])if(key in args)patch[key]=args[key];

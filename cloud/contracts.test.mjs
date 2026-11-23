@@ -129,3 +129,11 @@ test('same payload under another schema is reconciled instead of acknowledged as
  assert.equal(s.receive(a,{...envelope,payload_schema_version:104}).status,'stale');
  assert.equal(s.push(a,[{...envelope,payload_schema_version:104}],'schema-replay-check-0001',{['task:'+task.id]:envelope.version}).results[0].status,'stale');
 }));
+
+test('today and default habit day respect the same stored account timezone',()=>fixture((s,a)=>{
+ s.clock=()=>Date.parse('2026-11-23T22:30:00Z');
+ s.run('UPDATE accounts SET timezone=? WHERE id=?','Asia/Hebron',a);
+ assert.equal(decode(invokeCloudTool(s,a,'get_today',{})).logicalDay,'2026-11-24');
+ assert.equal(decode(invokeCloudTool(s,a,'list_habits',{})).date,'2026-11-24');
+ assert.equal(decode(invokeCloudTool(s,a,'list_habits',{date:'2026-11-23'})).date,'2026-11-23');
+}));
