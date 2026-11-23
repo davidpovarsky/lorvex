@@ -107,7 +107,10 @@ def install(client):
         if role == "main":
             if ICLOUD not in ent.get("com.apple.developer.icloud-container-identifiers", []):
                 raise RuntimeError("Main profile missing CloudKit container")
-            if "CloudKit" not in ent.get("com.apple.developer.icloud-services", []):
+            icloud_services = ent.get("com.apple.developer.icloud-services", [])
+            if isinstance(icloud_services, str):
+                icloud_services = [icloud_services]
+            if not any(service in icloud_services for service in ("CloudKit", "*")):
                 raise RuntimeError("Main profile missing CloudKit service")
             if ent.get("aps-environment") != "production":
                 raise RuntimeError("Main profile missing production push")
