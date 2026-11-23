@@ -81,3 +81,22 @@ test('canonical process boundary enforces timeout and output cap',async()=>{
    assert.throws(()=>runCanonicalProcess({value:'x'.repeat(2048)},{executable,maxBytes:1024}),/canonical_snapshot_too_large/);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
+
+test('configured canonical helper owns ordinary task lifecycle actions',()=>fixture(async(s,a,t)=>{
+ const dir=mkdtempSync(join(tmpdir(),'lorvex-canonical-route-'));
+ const configured=process.env.LORVEX_CANONICAL_CORE_EXECUTABLE;
+ try{
+   const executable=join(dir,'helper');
+   const body='#!/usr/bin/env node\nconst response='+response.toString()+';\n'+
+     'let data="";process.stdin.on("data",b=>data+=b);process.stdin.on("end",()=>{const out=response(JSON.parse(data));out.envelopes[0].device_id="canonical-route-test";process.stdout.write(JSON.stringify(out));});\n';
+   writeFileSync(executable,body);chmodSync(executable,0o700);
+   process.env.LORVEX_CANONICAL_CORE_EXECUTABLE=executable;
+   const task=decode(await invokeCloudTool(s,a,'complete_task',{id:t.id,request_id:'ordinary-route-0001'})).task;
+   assert.equal(task.status,'completed');
+   assert.equal(s.get('SELECT device_id FROM entities WHERE account_id=? AND entity_type=? AND entity_id=?',a,'task',t.id).device_id,'canonical-route-test');
+ }finally{
+   if(configured===undefined)delete process.env.LORVEX_CANONICAL_CORE_EXECUTABLE;
+   else process.env.LORVEX_CANONICAL_CORE_EXECUTABLE=configured;
+   rmSync(dir,{recursive:true,force:true});
+ }
+}));

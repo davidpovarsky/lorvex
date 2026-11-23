@@ -60,7 +60,7 @@ At-rest backups must be protected like user data and never committed.
 
 ## Canonical recurring task transitions
 
-Recurring completion and related lifecycle actions invoke the shared Swift Core
+When configured, all five task lifecycle actions (ordinary and recurring) invoke the shared Swift Core
 through cloud/native. Set LORVEX_CANONICAL_CORE_EXECUTABLE to the deployed
 lorvex-cloud-native binary and keep its Swift resource bundles adjacent. After
 installing and verifying the native bundle, install lorvex-cloud-canonical.conf
@@ -71,8 +71,10 @@ runs existing lifecycle and recurrence operations, and returns canonical outbox
 envelopes. The Node service compares the account change cursor before committing
 all emitted entities, audit and idempotency receipt in one transaction; up to
 three bounded attempts preserve concurrent edits. No other persistent store or
-recurrence implementation is introduced. Missing or failed native execution
-leaves data unchanged. Process execution is limited to 15 seconds and 32 MiB
+recurrence implementation is introduced. Failed native execution leaves data unchanged. Without a configured native
+executable, ordinary actions retain the prior basic fallback and recurring
+actions fail closed; production configures the helper to preserve all canonical
+reminder, dependency and recurrence sideeffects. Process execution is limited to 15 seconds and 32 MiB
 of input/output, with a maximum 50,000 snapshot entities. The stored account
 timezone is passed as the fallback for the native preference snapshot.
 

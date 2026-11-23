@@ -167,7 +167,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
   } else if(name==='update_task'||['complete_task','reopen_task','start_task','pause_task','cancel_task','plan_task'].includes(name)){
     const old=store.entity(accountId,'task',args.id);
     if(!old)throw new CloudError(404,'task_not_found');
-    if((old.recurrence||(old.recurrence_rollover_state&&old.recurrence_rollover_state!=='none')||old.recurrence_successor_id)&&
+    if((process.env.LORVEX_CANONICAL_CORE_EXECUTABLE||old.recurrence||(old.recurrence_rollover_state&&old.recurrence_rollover_state!=='none')||old.recurrence_successor_id)&&
        ['complete_task','reopen_task','start_task','pause_task','cancel_task'].includes(name)){
       if(!process.env.LORVEX_CANONICAL_CORE_EXECUTABLE)throw new CloudError(503,'recurring_transition_requires_canonical_core');
       return executeCanonicalTransition(store,accountId,name,args).then(task=>({
