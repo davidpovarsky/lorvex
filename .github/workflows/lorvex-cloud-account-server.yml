@@ -1,0 +1,30 @@
+name: Lorvex Cloud Account Server
+on:
+  push:
+    branches: [codex/lorvex-cloud-20261123]
+    paths:
+      - 'cloud/**'
+      - 'bridge/server.mjs'
+      - '.github/workflows/lorvex-cloud-account-server.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cloud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Native SQLite and account/OAuth/MCP/sync end-to-end tests
+        run: node --test cloud/server.test.mjs
+      - name: Ensure no regression to the paired legacy MCP
+        run: node --test bridge/server.test.mjs
+      - name: Static JavaScript syntax check
+        run: |
+          node --check cloud/store.mjs
+          node --check cloud/tools.mjs
+          node --check cloud/server.mjs
+          node --check bridge/server.mjs

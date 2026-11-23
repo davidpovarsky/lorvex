@@ -150,6 +150,34 @@ export function createBridge({
       const url=new URL(req.url||'/', 'http://localhost');
       const u=url.pathname;
       const method=req.method;
+      // Cloud-first account API and MCP are a separate localhost service.
+      // Preserve the existing legacy device relay untouched while accounts
+      // migrate. Only /cloud paths are forwarded; no app database or tokens
+      // are exposed on arbitrary proxy destinations.
+      if (u==='/cloud' || u.startsWith('/cloud/')) {
+        const upstream=http.request({
+          hostname:'127.0.0.1', port:8769, path:req.url,
+          method, headers:{...req.headers,host:'127.0.0.1:8769'},
+          timeout:35000
+        }, upstreamResponse=>{
+          const permitted=['content-type','cache-control','location','set-cookie',
+            'www-authenticate','content-security-policy','x-content-type-options',
+            'allow','referrer-policy'];
+          const headers={};
+          for (const name of permitted)
+            if (upstreamResponse.headers[name]!==undefined)
+              headers[name]=upstreamResponse.headers[name];
+          res.writeHead(upstreamResponse.statusCode||502,headers);
+          upstreamResponse.pipe(res);
+        });
+        upstream.on('error',()=>{
+          if(!res.headersSent)json(res,502,{error:'cloud_service_unavailable'});
+          else res.end();
+        });
+        upstream.on('timeout',()=>upstream.destroy(new Error('cloud_proxy_timeout')));
+        req.pipe(upstream);
+        return;
+      }
       // Audit only request method/path/HTTP status: NEVER tokens, user IDs,
       // authorization codes, redirect queries, or task contents.
       if (u.startsWith('/oauth/')) {

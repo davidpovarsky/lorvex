@@ -1,0 +1,14 @@
+[Unit]
+Description=Back up Lorvex Cloud SQLite safely
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+Environment=LORVEX_CLOUD_HOME=/home/ubuntu/lorvex-cloud
+ExecStart=/usr/bin/python3 /home/ubuntu/lorvex-cloud/backup.py
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/lorvex-cloud/backups
