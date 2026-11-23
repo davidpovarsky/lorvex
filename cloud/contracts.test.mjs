@@ -143,3 +143,15 @@ test('today and default habit day respect the same stored account timezone',()=>
  assert.equal(decode(invokeCloudTool(s,a,'list_habits',{})).date,'2026-11-24');
  assert.equal(decode(invokeCloudTool(s,a,'list_habits',{date:'2026-11-23'})).date,'2026-11-23');
 }));
+
+test('synced canonical timezone overrides profile without rewriting account settings',()=>fixture((s,a)=>{
+ s.clock=()=>Date.parse('2026-11-23T22:30:00Z');
+ s.run('UPDATE accounts SET timezone=? WHERE id=?','UTC',a);
+ s.writeEntity(a,'preference','timezone',{key:'timezone',value:'Asia/Hebron'});
+ assert.equal(decode(invokeCloudTool(s,a,'get_today',{})).logicalDay,'2026-11-24');
+ assert.equal(decode(invokeCloudTool(s,a,'list_habits',{})).date,'2026-11-24');
+ assert.equal(s.get('SELECT timezone FROM accounts WHERE id=?',a).timezone,'UTC');
+ s.writeEntity(a,'preference','timezone',{},'delete');
+ assert.equal(decode(invokeCloudTool(s,a,'get_today',{})).logicalDay,'2026-11-23');
+ assert.equal(decode(invokeCloudTool(s,a,'list_habits',{})).date,'2026-11-23');
+}));

@@ -72,7 +72,13 @@ function validDay(day) {
 }
 function accountDay(store,accountId){
   const account=store.get('SELECT timezone FROM accounts WHERE id=?',accountId);
-  return new Intl.DateTimeFormat('en-CA',{timeZone:account?.timezone||'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(store.clock()));
+  // PreferenceKeys.prefTimezone is the canonical entity id/key "timezone".
+  const preference=store.entity(accountId,'preference','timezone');
+  const timezone=preference?preference.value:(account?.timezone||'Asia/Jerusalem');
+  if(typeof timezone!=='string')throw new CloudError(422,'invalid_timezone_preference');
+  try{
+    return new Intl.DateTimeFormat('en-CA',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(store.clock()));
+  }catch{throw new CloudError(422,'invalid_timezone_preference');}
 }
 const now=()=>new Date().toISOString().replace(/\.\d{3}Z$/,'.000Z');
 const paginate=(list,args)=>{const offset=args.offset??0,limit=args.limit??100;return {

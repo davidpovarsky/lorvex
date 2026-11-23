@@ -76,8 +76,10 @@ leaves data unchanged. Process execution is limited to 15 seconds and 32 MiB
 of input/output, with a maximum 50,000 snapshot entities. The stored account
 timezone is passed as the fallback for the native preference snapshot.
 
-get_today and omitted-date list_habits use the stored account timezone; habit
-completion writes require an explicit local civil date.
+get_today and omitted-date list_habits use the canonical timezone preference
+(entity type preference, id/key timezone), with accounts.timezone as the fallback.
+Reading the effective zone does not rewrite account settings. Habit completion
+writes require an explicit local civil date.
 
 ## Test limits
 
