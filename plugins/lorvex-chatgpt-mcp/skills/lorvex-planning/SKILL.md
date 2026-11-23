@@ -13,6 +13,8 @@ Prefer the `lorvex-cloud` connection at `/cloud/mcp` when available and authenti
 
 Cloud tools operate directly on the central account. With the appropriate OAuth permission and a user's requested action, routine task creation, editing, completion and scheduling do not require the iPad to be open or an additional approval on the iPad. Always honor ChatGPT's own approval requirements and any required confirmation for an exceptional or destructive operation.
 
+For Cloud write tools that expose `request_id`, use a unique ID for each logical operation and preserve it when retrying that same operation. Never reuse an ID for a different change. Reconcile an uncertain result before retrying.
+
 Read only the records needed for the request, use their actual identifiers, and inspect the returned result before reporting success. A timeout is an unknown outcome: reread the affected data before retrying a write. Do not repeat a write through another connection or create a second copy merely because a response was lost.
 
 The iPad keeps a local offline database and synchronizes with the same Cloud account when it reconnects. A successful Cloud write is evidence of server persistence, not evidence that an offline iPad has already received it. Verify device synchronization separately when requested.
