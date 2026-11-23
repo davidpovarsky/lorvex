@@ -19,8 +19,10 @@ Oracle server. The old bridge continues to serve legacy clients unchanged.
   not each individual iPad confirmation. Destructive decisions can still be
   governed by ChatGPT's own authorization.
 - SyncEnvelope wire format is shared with LorvexSync: entity_type,
-  entity_id, operation, HLC version, payload_schema_version=4, payload JSON
-  string, and device_id. The client reconciles server winners using the
+  entity_id, operation, HLC version, payload_schema_version, payload JSON
+  string, and device_id. Native output retains its declared canonical schema
+  (current task lifecycle output uses v3; server-created payloads use v4).
+  The client reconciles server winners using the
   native Lorvex sync engine (not an alternate task engine).
 - First account use requires an explicit local data migration/sync on iPad;
   existing device data and legacy paired credentials are NOT silently

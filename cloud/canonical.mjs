@@ -1,5 +1,5 @@
 import {spawn} from 'node:child_process';
-import {CloudError,validateEnvelope} from './store.mjs';
+import {CloudError,validateEnvelope,SCHEMA_VERSION} from './store.mjs';
 
 const MAX_BYTES=32*1024*1024;
 const MAX_ENTITIES=50000;
@@ -83,7 +83,7 @@ export async function executeCanonicalTransition(store,accountId,action,args,{ex
     for(const envelope of result.envelopes){
       validateEnvelope(envelope);
       const key=envelope.entity_type+':'+envelope.entity_id;
-      if(seen.has(key)||envelope.payload_schema_version!==4||
+      if(seen.has(key)||envelope.payload_schema_version>SCHEMA_VERSION||
          JSON.parse(envelope.payload).version!==envelope.version)
         throw new CloudError(502,'invalid_canonical_envelope');
       seen.add(key);

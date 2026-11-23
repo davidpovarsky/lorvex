@@ -100,3 +100,16 @@ test('configured canonical helper owns ordinary task lifecycle actions',()=>fixt
    rmSync(dir,{recursive:true,force:true});
  }
 }));
+
+test('canonical schema3 output is preserved and unknown native schema is rejected',()=>fixture(async(s,a,t)=>{
+ const task=await executeCanonicalTransition(s,a,'complete_task',{id:t.id},{execute:async input=>{
+   const out=response(input);out.envelopes[0].payload_schema_version=3;return out;
+ }});
+ assert.equal(task.status,'completed');
+ const row=s.get('SELECT payload_schema_version,version FROM entities WHERE account_id=? AND entity_type=? AND entity_id=?',a,'task',t.id);
+ assert.equal(row.payload_schema_version,3);
+ await assert.rejects(executeCanonicalTransition(s,a,'complete_task',{id:t.id},{execute:async input=>{
+   const out=response(input);out.envelopes[0].payload_schema_version=5;return out;
+ }}),/invalid_canonical_envelope/);
+ assert.equal(s.entity(a,'task',t.id).version,row.version);
+}));
