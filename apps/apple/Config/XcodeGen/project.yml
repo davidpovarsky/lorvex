@@ -381,14 +381,14 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         APPLICATION_EXTENSION_API_ONLY: YES
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) LORVEX_FOCUS_FILTER_EXTENSION
-      configs:
-        Release:
-          CODE_SIGN_STYLE: Manual
-          PROVISIONING_PROFILE_SPECIFIER: Lorvex_AI_FOCUS_AppStore_20261123
         LD_RUNPATH_SEARCH_PATHS:
           - $(inherited)
           - "@executable_path/Frameworks"
           - "@executable_path/../../Frameworks"
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          PROVISIONING_PROFILE_SPECIFIER: Lorvex_AI_FOCUS_AppStore_20261123
 
   LorvexWidgetIntents:
     type: framework
