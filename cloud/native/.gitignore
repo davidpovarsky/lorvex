@@ -1,0 +1,12 @@
+.build
+.swiftpm/
+.generated/
+.build*.log
+.build*.exit
+.build-run.py
+.test*.log
+.test*.exit
+.test-run.py
+dist/
+.fixtures/
+__pycache__/
