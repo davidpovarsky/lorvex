@@ -76,9 +76,28 @@ extension MobileStore {
   /// spawning its Task, so a deletion accepted meanwhile voids it and delayed
   /// task scheduling cannot resurrect deleted cloud data.
   func setCloudSyncModeFromSettings(_ request: MobileCloudSyncModeRequest) async {
-    guard request.deletionEpoch == cloudDataDeletionEpoch, !isCloudDataDeletionRunning,
-      cloudSyncMode != request.mode
-    else { return }
+    guard request.deletionEpoch == cloudDataDeletionEpoch, !isCloudDataDeletionRunning else { return }
+    if request.mode == .live, let syncStore = core as? any CloudSyncEngineStore {
+      do {
+        if try syncStore.cloudSyncEngineCheckpoint(.oracleCloudAccountID) != nil {
+          MobileSetupPreferences(defaults: defaults).setCloudSyncMode(.off)
+          cloudSyncMode = .off
+          await cloudSyncController?.stop()
+          lastCloudSyncRemoteChangeErrorMessage =
+            "This database syncs with Lorvex Cloud. iCloud sync stays off to keep one account and one outbox."
+          await loadRuntimeDiagnostics()
+          return
+        }
+      } catch {
+        lastCloudSyncRemoteChangeErrorMessage = error.localizedDescription
+        return
+      }
+    }
+    guard cloudSyncMode != request.mode else {
+      // Also supersede any delayed controller start while mode is already off.
+      if request.mode == .off { await cloudSyncController?.stop() }
+      return
+    }
     MobileSetupPreferences(defaults: defaults).setCloudSyncMode(request.mode)
     cloudSyncMode = request.mode
     if let cloudSyncController {

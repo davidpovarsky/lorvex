@@ -97,7 +97,7 @@ public struct MobileStoreFactory {
   public func makeStore(selectedTab: MobileTab = .today) -> MobileStore {
     let prefs = setupPreferencesFactory()
     let containerID = LorvexProductMetadata.cloudKitContainerIdentifier
-    let cloudSyncMode = CloudSyncFactory.resolveMode(
+    let configuredCloudSyncMode = CloudSyncFactory.resolveMode(
       persistedMode: prefs.cloudSyncMode,
       environment: environment
     )
@@ -106,6 +106,13 @@ public struct MobileStoreFactory {
       containerIdentifier: containerID
     )
     let core = coreFactory(environment)
+    // Oracle and CloudKit share one outbox. Keep an account-bound database
+    // out of CloudKit even after logout or when old preferences request live.
+    let isOracleBound = (core as? any CloudSyncEngineStore).flatMap {
+      try? $0.cloudSyncEngineCheckpoint(.oracleCloudAccountID)
+    } != nil
+    let cloudSyncMode: CloudSyncMode = isOracleBound ? .off : configuredCloudSyncMode
+    if isOracleBound { prefs.setCloudSyncMode(.off) }
     // One controller owns the sync-state directory for the store's lifetime,
     // in every mode, so "Delete iCloud Data" works with sync off.
     let cloudSyncController = (core as? any CloudSyncEngineStore).map {

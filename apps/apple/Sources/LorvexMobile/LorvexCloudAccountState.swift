@@ -19,91 +19,137 @@ public final class LorvexCloudAccountState {
   @ObservationIgnored private let disableICloud: @Sendable () async -> Void
   @ObservationIgnored private let didSync: @Sendable () async -> Void
   @ObservationIgnored private var pollingTask: _Concurrency.Task<Void, Never>?
+  @ObservationIgnored private var wantsPolling = false
+  @ObservationIgnored private var pollingGeneration: UInt64 = 0
+  @ObservationIgnored private var accountRevision: UInt64 = 0
 
-  public init(core: any CloudSyncEngineStore,
-              disableICloud: @escaping @Sendable () async -> Void,
-              didSync: @escaping @Sendable () async -> Void) {
-    self.transport = LorvexCloudAccountTransport(core:core)
+  public convenience init(
+    core: any CloudSyncEngineStore,
+    disableICloud: @escaping @Sendable () async -> Void,
+    didSync: @escaping @Sendable () async -> Void
+  ) {
+    self.init(transport: LorvexCloudAccountTransport(core: core),
+              disableICloud: disableICloud, didSync: didSync)
+  }
+
+  init(
+    transport: LorvexCloudAccountTransport,
+    disableICloud: @escaping @Sendable () async -> Void,
+    didSync: @escaping @Sendable () async -> Void
+  ) {
+    self.transport = transport
     self.disableICloud = disableICloud
     self.didSync = didSync
+    let revision = accountRevision
     _Concurrency.Task { [weak self] in
       guard let self else { return }
-      if let current = await self.transport.savedAccount() {
-        self.accountID = current.id
-        self.email = current.email
-        self.status = "Signed in — syncing with Lorvex Cloud"
-      }
+      let current = await self.transport.savedAccount()
+      guard revision == self.accountRevision, let current else { return }
+      self.accountID = current.id
+      self.email = current.email
+      self.status = "Signed in — syncing with Lorvex Cloud"
+      // The scene's first .active event can precede Keychain restoration.
+      // Remember that event and start immediately once the account is ready.
+      self.beginPollingIfReady()
     }
   }
 
   public func signIn(email: String, password: String, register: Bool) async {
     guard !isSigningIn else { return }
+    accountRevision &+= 1
+    let revision = accountRevision
     isSigningIn = true
     defer { isSigningIn = false }
     status = "Connecting securely…"
     do {
       await disableICloud()
+      guard revision == accountRevision else { return }
       let session = try await transport.signIn(email: email, password: password,
                                                register: register)
+      guard revision == accountRevision else { return }
       accountID = session.accountID
       self.email = session.email
       status = "Connected — syncing with Lorvex Cloud"
       await syncNow()
-      startPolling()
+      beginPollingIfReady()
     } catch {
+      guard revision == accountRevision else { return }
       status = error.localizedDescription
     }
   }
 
   public func syncNow() async {
-    guard !isSyncing else { return }
-    guard accountID != nil else { return }
+    guard !isSyncing, let accountID else { return }
+    let revision = accountRevision
     isSyncing = true
     defer { isSyncing = false }
     do {
       await disableICloud()
+      guard revision == accountRevision, self.accountID == accountID else { return }
       let result = try await transport.sync()
+      guard revision == accountRevision, self.accountID == result.accountID else { return }
       lastSent = result.sent
       lastReceived = result.received
       lastConflicts = result.serverConflicts
       lastSync = Date()
       status = "Synced with Lorvex Cloud"
       await didSync()
+    } catch is CancellationError {
+      // Scene suspension cancels a poll; durable outbox work resumes later.
     } catch {
+      guard revision == accountRevision else { return }
       status = "Sync paused: " + error.localizedDescription
     }
   }
 
   public func signOut() async {
-    stopPolling()
-    await transport.signOut()
+    accountRevision &+= 1
+    let revision = accountRevision
+    cancelPolling()
     email = ""
     accountID = nil
     status = "Signed out. Local tasks are unchanged."
     lastSync = nil
     lastSent = 0
     lastReceived = 0
+    lastConflicts = 0
+    await transport.signOut()
+    guard revision == accountRevision else { return }
   }
 
-  /// Server actions never require this loop: they are committed directly
-  /// to the account database. The loop only drains local changes and imports
-  /// server changes while the iPad is available, including after an offline day.
+  /// Server writes do not need this loop or an open iPad. This client drains
+  /// the durable local outbox and imports server changes while foregrounded.
   public func startPolling() {
-    guard accountID != nil, pollingTask == nil else { return }
+    wantsPolling = true
+    beginPollingIfReady()
+  }
+
+  private func beginPollingIfReady() {
+    guard wantsPolling, accountID != nil, pollingTask == nil else { return }
+    pollingGeneration &+= 1
+    let generation = pollingGeneration
     pollingTask = _Concurrency.Task { [weak self] in
       guard let self else { return }
-      await self.syncNow()
-      while !_Concurrency.Task<Never, Never>.isCancelled {
-        try? await _Concurrency.Task.sleep(for: .seconds(20))
-        if _Concurrency.Task<Never, Never>.isCancelled { break }
+      while !(_Concurrency.Task<Never, Never>.isCancelled),
+            self.wantsPolling, generation == self.pollingGeneration {
         await self.syncNow()
+        do {
+          try await _Concurrency.Task.sleep(for: .seconds(20))
+        } catch { break }
       }
-      self.pollingTask = nil
+      // A cancelled old loop must not clear a newer foreground loop.
+      if generation == self.pollingGeneration { self.pollingTask = nil }
     }
   }
 
-  public func stopPolling() {
+  private func cancelPolling() {
+    pollingGeneration &+= 1
     pollingTask?.cancel()
     pollingTask = nil
+  }
+
+  public func stopPolling() {
+    wantsPolling = false
+    cancelPolling()
   }
 }
