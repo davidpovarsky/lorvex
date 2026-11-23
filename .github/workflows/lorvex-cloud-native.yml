@@ -20,7 +20,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          xcodebuild -version | grep -q '^Xcode 27'
+          xcode_version="$(xcodebuild -version)"
+          printf '%s\n' "$xcode_version" | grep '^Xcode 27'
           if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
       - name: Install pinned canonical Hanlin SDK from HanlinSDK.lock.json
         shell: bash
