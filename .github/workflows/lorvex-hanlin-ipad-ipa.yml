@@ -55,21 +55,36 @@ jobs:
           import json, pathlib, subprocess
           root = pathlib.Path('.')
           receipt = json.loads((root / 'apps/apple/docs/development/HANLIN_NATIVE_ACCEPTANCE_20261123.json').read_text())
-          assert receipt['schemaVersion'] == 1
+          assert receipt['schemaVersion'] == 2
           assert receipt['nativeAgentTests']['status'] == 'PASS' and receipt['nativeAgentTests']['passed'] == 6
           assert receipt['deviceBuild']['status'] == 'BUILD SUCCEEDED'
           assert json.loads((root / 'HanlinSDK.lock.json').read_text())['revision'] == receipt['sdkRevision']
           for path, expected in receipt['sourceInputs'].items():
               actual = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + path], text=True).strip()
               assert actual == expected, 'Native evidence does not match the current source: ' + path
-          print('Exact source inputs match native run 45119218473; continuing only its original UI gate.')
+          scripts = receipt['nativeScriptInputs']
+          assert scripts['root'] == 'apps/apple/script'
+          assert scripts['excludedUISetupPath'] == 'apps/apple/script/verify_hanlin_host_ui.sh'
+          current_scripts = {}
+          rows = subprocess.check_output(['git', 'ls-tree', '-rz', 'HEAD', '--', scripts['root']])
+          for row in rows.split(b'\0'):
+              if not row:
+                  continue
+              metadata, name = row.split(b'\t', 1)
+              mode, kind, blob = metadata.decode().split()
+              current_scripts[name.decode()] = {'mode': mode, 'type': kind, 'object': blob}
+          current_ui = current_scripts.pop(scripts['excludedUISetupPath'])
+          assert current_scripts == scripts['entries'], 'Native build or test script inputs changed'
+          assert current_ui == receipt['uiSetupContinuation']['currentScript'], 'UI setup delta changed'
+          print('Exact product, test and native script inputs match run 45119218473; continuing its original UI gate with the recorded simulator setup correction.')
           PY
       - name: Confirm Xcode 27 and prepare XcodeGen
         shell: bash
         run: |
           set -euo pipefail
-          xcodebuild -version
-          if ! xcodebuild -version | grep -q '^Xcode 27'; then
+          xcode_version="$(xcodebuild -version)"
+          printf '%s\n' "$xcode_version"
+          if ! grep -q '^Xcode 27' <<<"$xcode_version"; then
             selected="$(find /Applications -maxdepth 1 -type d -name 'Xcode*27*.app' -print | sort -V | tail -1)"
             [[ -n "$selected" ]]
             sudo xcode-select -s "$selected/Contents/Developer"
