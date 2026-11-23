@@ -32,7 +32,7 @@ struct LorvexCloudAccountSettingsView: View {
               .disabled(cloud.isSigningIn || email.isEmpty || password.isEmpty)
             Button("Create Lorvex account") { authenticate(register:true) }
               .disabled(cloud.isSigningIn || email.isEmpty || password.count<12)
-            if cloud.isSigningIn { ProgressView("Connecting…") }
+            if cloud.isSigningIn { ProgressView("Connectingâ€¦") }
           }
         } else {
           Section("Connected account") {
@@ -45,9 +45,9 @@ struct LorvexCloudAccountSettingsView: View {
               LabeledContent("Conflicts reconciled",value:String(cloud.lastConflicts))
             }
             Button {
-              Task { await cloud.syncNow() }
+              _Concurrency.Task { await cloud.syncNow() }
             } label: {
-              Label(cloud.isSyncing ? "Synchronizing…" : "Sync now",
+              Label(cloud.isSyncing ? "Synchronizingâ€¦" : "Sync now",
                     systemImage:"arrow.triangle.2.circlepath")
             }
             .disabled(cloud.isSyncing)
@@ -71,7 +71,7 @@ struct LorvexCloudAccountSettingsView: View {
       .confirmationDialog("Sign out of Lorvex Cloud?",
                           isPresented:$showSignOut,titleVisibility:.visible) {
         Button("Sign out",role:.destructive) {
-          Task {await cloud.signOut()}
+          _Concurrency.Task {await cloud.signOut()}
         }
         Button("Cancel",role:.cancel){}
       } message: {
@@ -87,7 +87,7 @@ struct LorvexCloudAccountSettingsView: View {
     let enteredEmail=email
     let enteredPassword=password
     password = ""
-    Task {
+    _Concurrency.Task {
       await cloud.signIn(email:enteredEmail,password:enteredPassword,register:register)
     }
   }

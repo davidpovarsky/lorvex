@@ -181,6 +181,7 @@ let package = Package(
                 "LorvexMobile",
                 "LorvexHanlinAgent",
                 .product(name: "HanlinChatUI", package: "HanlinSDK"),
+                .product(name: "HanlinChatCore", package: "HanlinSDK"),
                 .product(name: "HanlinPresentationKit", package: "HanlinSDK"),
                 "LorvexCloudSync",
                 "LorvexSystemIntents",
@@ -188,7 +189,8 @@ let package = Package(
                 // visual QA (simctl can't screenshot live widgets; ImageRenderer
                 // can't materialize their Link/Button(intent:) rows).
                 "LorvexWidgetViews"
-            ]
+            ],
+            resources: [.process("Resources")]
         ),
         .executableTarget(
             name: "LorvexWidgetBundle",

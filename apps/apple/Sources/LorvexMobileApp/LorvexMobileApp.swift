@@ -16,6 +16,7 @@ struct LorvexMobileApp: App {
   @State private var store: MobileStore
   @State private var remoteBridge: LorvexRemoteBridgeState
   @State private var cloudAccount: LorvexCloudAccountState?
+  @State private var chatGPTAccount: LorvexChatGPTAccountState
   @State private var hanlinAssistant: LorvexHanlinAssistantState
   @State private var showHanlinAssistant = false
 
@@ -56,6 +57,7 @@ struct LorvexMobileApp: App {
         })
     }
     _cloudAccount = State(initialValue: cloud)
+    _chatGPTAccount = State(initialValue: LorvexChatGPTAccountState())
     _hanlinAssistant = State(initialValue: LorvexHanlinAssistantState(
       core: builtStore.assistantCore,
       didWrite: { [weak builtStore] in _ = await builtStore?.refresh() }))
@@ -112,7 +114,7 @@ struct LorvexMobileApp: App {
       .sheet(isPresented: $showHanlinAssistant) {
         LorvexHanlinAssistantView(
           assistant: hanlinAssistant, remoteBridge: remoteBridge,
-          cloudAccount: cloudAccount)
+          cloudAccount: cloudAccount, chatGPTAccount: chatGPTAccount)
       }
       .overlay(alignment: .bottomTrailing) {
         Button {

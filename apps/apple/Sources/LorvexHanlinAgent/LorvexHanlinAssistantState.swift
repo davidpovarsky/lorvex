@@ -80,6 +80,7 @@ public final class LorvexHanlinAssistantState {
     guard sessionID == session, activeRunID != nil,
           pendingApproval == nil, approval == nil,
           !_Concurrency.Task<Never, Never>.isCancelled else { return false }
+    if LorvexHanlinWritePolicy.mayAutomaticallyAuthorize(request.tool) { return true }
     let requestID = UUID()
     return await withTaskCancellationHandler {
       await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
@@ -174,11 +175,14 @@ public final class LorvexHanlinAssistantState {
         if let previous { await previous.agent.invalidate() }
         try _Concurrency.Task<Never, Never>.checkCancellation()
         guard activeRunID == runID else { return }
+        let fromChatGPTPlan = provider == "ChatGPT"
         let configuration = HanlinChatModelConfiguration(
-          modelID: modelID, company: provider,
-          apiType: provider == "Anthropic" ? "Anthropic" :
+          modelID: modelID, company: fromChatGPTPlan ? "OpenAI" : provider,
+          apiType: fromChatGPTPlan ? "openai-chatgpt-plan" :
+                   provider == "Anthropic" ? "Anthropic" :
                    provider == "Google" ? "Gemini" : "OpenAI",
-          endpoint: url, apiKey: credential, supportsToolUse: true)
+          endpoint: url, apiKey: credential,
+          supportsToolUse: true)
         guard let support = FileManager.default.urls(
           for: .applicationSupportDirectory, in: .userDomainMask).first else {
           throw CocoaError(.fileNoSuchFile)
@@ -202,8 +206,11 @@ public final class LorvexHanlinAssistantState {
       let events = try await bundle.agent.stream(
         messages: history,
         systemPrompt: "You are the personal planning assistant inside Lorvex. "
-          + "Use only exposed Lorvex tools. Ask for consent for every write. "
-          + "Report data faithfully; do not claim a change before host confirmation.",
+          + "Use the exposed Lorvex tools to read and manage the user's real planning data. "
+          + "Routine task, list, habit and calendar changes are authorized by the user's request. "
+          + "Ask for consent for destructive writes. "
+          + "Report data faithfully; do not claim a change before the tool confirms it. "
+          + "Respond in the user's language, including Hebrew.",
         modelReference: .init(provider: provider, modelID: modelID), maxSteps: 8)
       guard activeRunID == runID else { return }
       for try await item in events {

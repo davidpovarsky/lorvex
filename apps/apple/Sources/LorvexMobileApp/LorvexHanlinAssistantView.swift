@@ -1,4 +1,5 @@
 import Security
+import LorvexMobile
 import SwiftUI
 import LorvexCore
 import LorvexHanlinAgent
@@ -10,6 +11,8 @@ struct LorvexHanlinAssistantView: View {
     private let assistant: LorvexHanlinAssistantState
     private let remoteBridge: LorvexRemoteBridgeState
     private let cloudAccount: LorvexCloudAccountState?
+    private let chatGPTAccount: LorvexChatGPTAccountState
+    @State private var showChatGPTAccountSettings = false
     @State private var showCloudAccountSettings = false
     @State private var showRemoteBridgeSettings = false
     @State private var showModelSettings = false
@@ -23,14 +26,17 @@ struct LorvexHanlinAssistantView: View {
     @State private var draftModelID = ""
     @State private var draftEndpoint = ""
     @State private var isSavingSettings = false
+    @State private var isPreparingRequest = false
+    @State private var pendingSend: _Concurrency.Task<Void, Never>?
     @AppStorage("lorvex.hanlin.provider") private var provider = "OpenRouter"
     @AppStorage("lorvex.hanlin.model") private var modelID = ""
     @AppStorage("lorvex.hanlin.endpoint") private var endpoint = "https://openrouter.ai/api/v1"
 
     init(assistant: LorvexHanlinAssistantState, remoteBridge: LorvexRemoteBridgeState,
-         cloudAccount: LorvexCloudAccountState?) {
+         cloudAccount: LorvexCloudAccountState?,
+         chatGPTAccount: LorvexChatGPTAccountState) {
         self.assistant = assistant; self.remoteBridge = remoteBridge
-        self.cloudAccount = cloudAccount
+        self.cloudAccount = cloudAccount; self.chatGPTAccount = chatGPTAccount
     }
 
     var body: some View {
@@ -69,7 +75,10 @@ struct LorvexHanlinAssistantView: View {
                 }
             }
             .onAppear(perform: loadCredential)
-            .onDisappear { _Concurrency.Task { await assistant.cancel() } }
+            .onDisappear {
+                pendingSend?.cancel(); pendingSend = nil; isPreparingRequest = false
+                _Concurrency.Task { await assistant.cancel() }
+            }
             .sheet(isPresented: $showModelSettings) {
                 settings.onAppear(perform: prepareSettings)
             }
@@ -81,6 +90,11 @@ struct LorvexHanlinAssistantView: View {
                     LorvexCloudAccountSettingsView(cloud: cloudAccount)
                 }
             }
+            #if canImport(UIKit)
+            .sheet(isPresented: $showChatGPTAccountSettings) {
+                LorvexChatGPTPlanSettingsView(account: chatGPTAccount)
+            }
+            #endif
         }
         .chatMotionPreferences()
     }
@@ -98,18 +112,34 @@ struct LorvexHanlinAssistantView: View {
                     Picker("Provider", selection: $draftProvider) {
                         Text("OpenRouter").tag("OpenRouter")
                         Text("OpenAI").tag("OpenAI")
+                        Text("ChatGPT account").tag("ChatGPT")
                         Text("Anthropic").tag("Anthropic")
                         Text("Google").tag("Google")
                         Text("Other compatible").tag("Other")
                     }
-                    TextField("Model identifier", text: $draftModelID)
-                        .autocorrectionDisabled()
-                    TextField("HTTPS API base URL", text: $draftEndpoint)
-                        .autocorrectionDisabled()
-                    SecureField("API key", text: $apiToken)
-                        .autocorrectionDisabled()
-                    Text("The API key is saved only in your device Keychain. An API provider may charge for usage. This is not ChatGPT account sign-in.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    if draftProvider == "ChatGPT" {
+                        #if canImport(UIKit)
+                        Label(chatGPTAccount.status, systemImage:"person.crop.circle")
+                        NavigationLink("Connect / manage ChatGPT account") {
+                            LorvexChatGPTPlanSettingsView(account: chatGPTAccount)
+                        }
+                        if chatGPTAccount.canUsePlan {
+                            Text("Selected: " + chatGPTAccount.selectedModelID)
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        #else
+                        Text("ChatGPT account login is available in Lorvex on iPad.")
+                        #endif
+                    } else {
+                        TextField("Model identifier", text: $draftModelID)
+                            .autocorrectionDisabled()
+                        TextField("HTTPS API base URL", text: $draftEndpoint)
+                            .autocorrectionDisabled()
+                        SecureField("API key", text: $apiToken)
+                            .autocorrectionDisabled()
+                        Text("Your API key is stored only in the iPad Keychain.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
                 if let configurationError {
                     Text(configurationError).foregroundStyle(.red)
@@ -138,9 +168,27 @@ struct LorvexHanlinAssistantView: View {
     }
 
     private func saveSettings() {
+        if draftProvider == "ChatGPT" {
+            guard !isSavingSettings, chatGPTAccount.canUsePlan,
+                  !chatGPTAccount.selectedModelID.isEmpty else {
+                configurationError = String(localized: "Sign in and select an eligible ChatGPT model first.")
+                return
+            }
+            isSavingSettings = true
+            _Concurrency.Task {
+                await assistant.cancel()
+                provider = "ChatGPT"
+                modelID = chatGPTAccount.selectedModelID
+                endpoint = "https://api.openai.com/v1"
+                configurationError = nil
+                isSavingSettings = false
+                showModelSettings = false
+            }
+            return
+        }
         guard !isSavingSettings, let url = URL(string: draftEndpoint),
               url.scheme == "https", url.host != nil, !draftModelID.isEmpty else {
-            configurationError = "Enter an HTTPS endpoint and a model identifier."
+            configurationError = String(localized: "Enter an HTTPS endpoint and a model identifier.")
             return
         }
         do {
@@ -156,14 +204,42 @@ struct LorvexHanlinAssistantView: View {
                 isSavingSettings = false; showModelSettings = false
             }
         } catch {
-            configurationError = "Keychain could not securely store this credential."
+            configurationError = String(localized: "Keychain could not securely store this credential.")
         }
     }
 
     #if canImport(UIKit)
     private func send() {
         let text = composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !assistant.isRunning else { return }
+        guard !text.isEmpty, !assistant.isRunning, !isPreparingRequest else { return }
+        if provider == "ChatGPT" {
+            guard chatGPTAccount.canUsePlan else {
+                showChatGPTAccountSettings = true
+                return
+            }
+            isPreparingRequest = true
+            pendingSend = _Concurrency.Task {
+                defer { isPreparingRequest = false; pendingSend = nil }
+                do {
+                    let credential = try await chatGPTAccount.accessForInference()
+                    try _Concurrency.Task<Never, Never>.checkCancellation()
+                    if composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines) == text {
+                        composerDraft.text = ""
+                    }
+                    modelID = credential.modelID
+                    await assistant.send(text, modelID: credential.modelID,
+                        endpoint: "https://api.openai.com/v1",
+                        credential: credential.token, provider: "ChatGPT")
+                } catch is CancellationError {
+                    // Preserve the unsent draft when the user closes the assistant.
+                } catch {
+                    configurationError = error.localizedDescription
+                    chatGPTAccount.reportConnectionError(error)
+                    showChatGPTAccountSettings = true
+                }
+            }
+            return
+        }
         guard !modelID.isEmpty, !configuredToken.isEmpty else {
             showModelSettings = true
             return
