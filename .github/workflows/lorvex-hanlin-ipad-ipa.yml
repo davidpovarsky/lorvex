@@ -3,6 +3,14 @@ name: Lorvex Hanlin - iPad Agent and IPA
 on:
   workflow_dispatch:
     inputs:
+      validation_scope:
+        description: 'Full validation or the source-bound original UI continuation'
+        required: true
+        type: choice
+        default: full
+        options:
+          - full
+          - ui
       unit_scope:
         description: 'Agent-only may reuse recorded presentation-state evidence when its inputs are unchanged'
         required: true
@@ -39,6 +47,23 @@ jobs:
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
+      - name: Verify existing native evidence for the UI-only continuation
+        if: inputs.validation_scope == 'ui'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, subprocess
+          root = pathlib.Path('.')
+          receipt = json.loads((root / 'apps/apple/docs/development/HANLIN_NATIVE_ACCEPTANCE_20261123.json').read_text())
+          assert receipt['schemaVersion'] == 1
+          assert receipt['nativeAgentTests']['status'] == 'PASS' and receipt['nativeAgentTests']['passed'] == 6
+          assert receipt['deviceBuild']['status'] == 'BUILD SUCCEEDED'
+          assert json.loads((root / 'HanlinSDK.lock.json').read_text())['revision'] == receipt['sdkRevision']
+          for path, expected in receipt['sourceInputs'].items():
+              actual = subprocess.check_output(['git', 'rev-parse', 'HEAD:' + path], text=True).strip()
+              assert actual == expected, 'Native evidence does not match the current source: ' + path
+          print('Exact source inputs match native run 45119218473; continuing only its original UI gate.')
+          PY
       - name: Confirm Xcode 27 and prepare XcodeGen
         shell: bash
         run: |
@@ -61,6 +86,7 @@ jobs:
           python3 apps/apple/script/install_hanlin_sdk.py
           python3 apps/apple/script/install_hanlin_sdk.py --check > lorvex-hanlin-sdk-installation.json
       - name: Validate Hanlin tool catalog, consent and persistence
+        if: inputs.validation_scope != 'ui'
         id: test
         shell: bash
         env:
@@ -74,7 +100,7 @@ jobs:
           esac
           swift test --package-path apps/apple "${test_arguments[@]}" -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
       - name: Preserve unit-test log immediately
-        if: always()
+        if: always() && inputs.validation_scope != 'ui'
         uses: actions/upload-artifact@v4
         with:
           name: Lorvex-Hanlin-unit-test-evidence-${{ github.run_id }}
@@ -82,19 +108,14 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Build iPad app and export unsigned IPA
-        if: success() || failure()
+        if: (success() || failure()) && inputs.validation_scope != 'ui'
         id: build
         shell: bash
         run: |
           set -o pipefail
           bash apps/apple/script/build_hanlin_ipad_ipa.sh 2>&1 | tee lorvex-hanlin-ipad-pipeline.log
-      - name: Validate original SDK UI in the real Lorvex iPad app
-        if: steps.build.outcome == 'success'
-        id: ui
-        shell: bash
-        run: bash apps/apple/script/verify_hanlin_host_ui.sh
       - name: Package sideload IPA without nested app extensions
-        if: steps.build.outcome == 'success'
+        if: always() && steps.build.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -105,7 +126,7 @@ jobs:
           python3 apps/apple/script/package_sideload_compat_ipa.py             --source "$ipa" --output "$output"             --manifest "$d/Lorvex-iPad-sideload-compat-manifest.json"
 
       - name: Upload real iPad IPA and verifiable manifest
-        if: steps.build.outcome == 'success'
+        if: always() && steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: Lorvex-Hanlin-iPad-IPA-UNSIGNED-${{ github.run_id }}
@@ -116,6 +137,11 @@ jobs:
             apps/apple/dist/hanlin-ipad-ipa/ipa-zip-validation.txt
           if-no-files-found: error
           retention-days: 30
+      - name: Validate original SDK UI in the real Lorvex iPad app
+        if: inputs.validation_scope == 'ui' || steps.build.outcome == 'success'
+        id: ui
+        shell: bash
+        run: bash apps/apple/script/verify_hanlin_host_ui.sh
       - name: Preserve diagnostics independently of outcome
         if: always()
         uses: actions/upload-artifact@v4
