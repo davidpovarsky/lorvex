@@ -28,13 +28,17 @@ jobs:
                   with urllib.request.urlopen(req,timeout=30) as resp:return json.load(resp)
               except urllib.error.HTTPError as ex:
                   print('APPLE_HTTP_ERROR',path.split('?')[0],ex.code)
+                  try:
+                      errors=json.loads(ex.read(2500)).get('errors',[])
+                      print('APPLE_ERROR_DETAILS',[(e.get('code'),e.get('title'),str(e.get('detail',''))[:160]) for e in errors])
+                  except Exception: pass
                   raise
           response=request('bundleIds?'+urllib.parse.urlencode({'filter[identifier]':'com.itorah.lorvex','limit':10}))
           matching=[b for b in response['data'] if b['attributes'].get('identifier')=='com.itorah.lorvex']
           if len(matching)!=1:raise RuntimeError('main bundle id not uniquely found')
           bundle=matching[0]
           print('MAIN_BUNDLE_ID_FOUND',bundle['id'],bundle['attributes'].get('identifier'))
-          caps=request('bundleIds/'+bundle['id']+'/bundleIdCapabilities?limit=200')
+          caps=request('bundleIds/'+bundle['id']+'/bundleIdCapabilities?limit=50')
           for cap in caps.get('data',[]):
               attrs=cap.get('attributes',{})
               if attrs.get('capabilityType') in ('ICLOUD','APP_GROUPS','PUSH_NOTIFICATIONS'):
