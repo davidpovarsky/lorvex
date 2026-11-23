@@ -1,0 +1,62 @@
+{
+  "binaryTargets": [],
+  "checkoutMode": "sparse",
+  "generatedSHA256": {
+    "Package.swift": "29c126b9305e88bbcaed57512374e986f7225a0c87d332950f6ba3deda9bca26",
+    "docs/agent-sdk/unified-package-manifest.json": "aff3413c7bdaf1e9e889cc157ef45e9bb9d7f747fdc5ff33d47bb771fe7cce9f"
+  },
+  "hostRelativePath": "Vendor/HanlinSDK",
+  "managedNativeTargets": [],
+  "packageName": "HanlinSDK",
+  "products": [
+    "HanlinAgentCore",
+    "HanlinHostContracts",
+    "HanlinPersistenceAdapters",
+    "HanlinPlatformContracts",
+    "HanlinChatCore",
+    "HanlinChatUI",
+    "HanlinPresentationKit"
+  ],
+  "repository": "https://github.com/davidpovarsky/hanlin-ai.git",
+  "revision": "32da9e314e22bbf22391fcf8902302acfbb281e2",
+  "schemaVersion": 1,
+  "sourcePaths": [
+    "Packages/HanlinAgentSDK/Sources/HanlinAgentCore",
+    "Packages/HanlinAgentSDK/Sources/HanlinHostContracts",
+    "Packages/HanlinAgentSDK/Sources/HanlinPersistenceAdapters",
+    "Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSON",
+    "Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONRegexRuntime",
+    "Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONSchema",
+    "Packages/HanlinPlatform/Sources/HanlinChatCore",
+    "Packages/HanlinPlatform/Sources/HanlinPlatformContracts",
+    "Packages/HanlinPresentationSDK/Sources/HanlinChatUI",
+    "Packages/HanlinPresentationSDK/Sources/HanlinLocalization",
+    "Packages/HanlinPresentationSDK/Sources/HanlinPresentationKit",
+    "Packages/HanlinPresentationSDK/Sources/HanlinRichUI"
+  ],
+  "sparsePatterns": [
+    "/.gitignore",
+    "/.gitattributes",
+    "/Package.swift",
+    "/Scripts/SDK/",
+    "/Scripts/CI/IntegrationValidation/project_graph.py",
+    "/Packages/*/Package.swift",
+    "/AI_HLY.xcodeproj/project.pbxproj",
+    "/AI_HLY.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved",
+    "/docs/agent-sdk/unified-package-manifest.json",
+    "/docs/native-artifacts.json",
+    "/Packages/HanlinAgentSDK/Sources/HanlinAgentCore/",
+    "/Packages/HanlinAgentSDK/Sources/HanlinHostContracts/",
+    "/Packages/HanlinAgentSDK/Sources/HanlinPersistenceAdapters/",
+    "/Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSON/",
+    "/Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONRegexRuntime/",
+    "/Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONSchema/",
+    "/Packages/HanlinPlatform/Sources/HanlinChatCore/",
+    "/Packages/HanlinPlatform/Sources/HanlinPlatformContracts/",
+    "/Packages/HanlinPresentationSDK/Sources/HanlinChatUI/",
+    "/Packages/HanlinPresentationSDK/Sources/HanlinLocalization/",
+    "/Packages/HanlinPresentationSDK/Sources/HanlinPresentationKit/",
+    "/Packages/HanlinPresentationSDK/Sources/HanlinRichUI/"
+  ],
+  "state": "installed"
+}

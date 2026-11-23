@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "observedAtUTC": "2026-11-23T11:37:37.155855+00:00",
+  "status": "PASS_CANONICAL_INSTALLATION_AND_SELECTED_SOURCE_ONLY",
+  "host": "Lorvex",
+  "baselineConsumerCommit": "a51b048d33e8e377ea589692d9fe9f87489c7b83",
+  "candidateCodeCommit": "0ad4c5b1c5b28f9d8abf82481bbf2e2431cfbb07",
+  "baselineSDKRevision": "0dae98f7b44b3cb4ee4d8dacd1913f2ed317a965",
+  "sdkRevision": "32da9e314e22bbf22391fcf8902302acfbb281e2",
+  "products": [
+    "HanlinAgentCore",
+    "HanlinHostContracts",
+    "HanlinPersistenceAdapters",
+    "HanlinPlatformContracts",
+    "HanlinChatCore",
+    "HanlinChatUI",
+    "HanlinPresentationKit"
+  ],
+  "destination": "Vendor/HanlinSDK",
+  "sourcePaths": [
+    "Packages/HanlinAgentSDK/Sources/HanlinAgentCore",
+    "Packages/HanlinAgentSDK/Sources/HanlinHostContracts",
+    "Packages/HanlinAgentSDK/Sources/HanlinPersistenceAdapters",
+    "Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSON",
+    "Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONRegexRuntime",
+    "Packages/HanlinAgentSDK/Vendor/Swift-JSON/Sources/JSONSchema",
+    "Packages/HanlinPlatform/Sources/HanlinChatCore",
+    "Packages/HanlinPlatform/Sources/HanlinPlatformContracts",
+    "Packages/HanlinPresentationSDK/Sources/HanlinChatUI",
+    "Packages/HanlinPresentationSDK/Sources/HanlinLocalization",
+    "Packages/HanlinPresentationSDK/Sources/HanlinPresentationKit",
+    "Packages/HanlinPresentationSDK/Sources/HanlinRichUI"
+  ],
+  "sourceEntryCount": 535,
+  "selectedPathModeBlobRecordsSHA256": "162b5bf52c15afa65e1f4f582e791f5947a5ba1651228430bbecf7aad3991ab8",
+  "selectedManifestSHA256": "29c126b9305e88bbcaed57512374e986f7225a0c87d332950f6ba3deda9bca26",
+  "generatedInventorySHA256": "aff3413c7bdaf1e9e889cc157ef45e9bb9d7f747fdc5ff33d47bb771fe7cce9f",
+  "installationReceiptSHA256": "5c0ee266e1f8e3d00191c9bb82716dbbe35d6f78e1682d62090dcebbb6fc4aa8",
+  "binaryTargets": [],
+  "managedNativeTargets": [],
+  "allSelectedActualFileBytesModesAndMembershipVerified": true,
+  "bootstrapInputs": {
+    "Scripts/SDK/install.py": {
+      "gitObject": "c12b6a78e04657e11bb6f695591d9af5f0697036",
+      "sha256": "12c414e91f33df22f7cdb1660108a0a11684551219fee1c71724bb2057e62dd3"
+    },
+    "Scripts/SDK/generate_manifest.py": {
+      "gitObject": "95a00985ed085e7fbd12108e03ddfdd09680b82a",
+      "sha256": "10e6ce09e056e13f9ed22d2f5946d851239c1d1cfca6e331c566fc178bd25c7f"
+    }
+  },
+  "deltaFromInstalled": {
+    "Packages/HanlinPlatform/Sources/HanlinChatCore/HanlinAISDKProviderFactory.swift": {
+      "before": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "08d6e5c8a5bcf4143e9ad5f29298a353034924dd"
+      },
+      "after": {
+        "mode": "100644",
+        "type": "blob",
+        "object": "61be72ea58eddc736b843cf5a84228f16c719ce7"
+      },
+      "beforeContentSHA256": "37040bbbf933960cb47046fbedaeaad953b59371607b0ec3062cbbefb1ee1c1a",
+      "afterContentSHA256": "48fb93718f2eb30a0b947aceabb37f2b2b4f0ffaa79bb75c77cafa400401fcc9"
+    }
+  },
+  "profileQualificationCommit": "b6a278531b5bfbc7246b4f5fec7d676750c645a5",
+  "originalHostApplicationSourcesChanged": false,
+  "nativeTestsExecuted": 0,
+  "hostTestsExecuted": 0,
+  "newBinaryClaimed": false,
+  "execution": {
+    "rawExecutionReceiptSHA256": "eebe1c78d236074dddaa9e686d69b8bebd199276d0f108c3fb556439d4bfe0a4",
+    "commands": [
+      {
+        "stage": "install",
+        "displayCommand": [
+          "python3",
+          "apps/apple/script/install_hanlin_sdk.py",
+          "--source-cache",
+          "<canonical-source-cache>"
+        ],
+        "exitCode": 0,
+        "seconds": 3.028,
+        "stdoutSHA256": "5c0ee266e1f8e3d00191c9bb82716dbbe35d6f78e1682d62090dcebbb6fc4aa8"
+      },
+      {
+        "stage": "check",
+        "displayCommand": [
+          "python3",
+          "apps/apple/script/install_hanlin_sdk.py",
+          "--check"
+        ],
+        "exitCode": 0,
+        "seconds": 0.265,
+        "stdoutSHA256": "5c0ee266e1f8e3d00191c9bb82716dbbe35d6f78e1682d62090dcebbb6fc4aa8"
+      }
+    ],
+    "scope": "Actual new-revision canonical installation and check only. No host test, Apple build, native artifact preparation, live request or workflow dispatch.",
+    "argumentDisplayPolicy": "Only the external canonical cache and workspace root are replaced with relative/display names. Original command/result bytes remain in the local execution receipt identified by SHA256."
+  },
+  "canonicalInstallationReceipt": "canonical-installation.json",
+  "hostSourceAndTestTrees": {
+    "apps/apple/Sources": {
+      "before": "80475a7e64297cd15ba93ec2b9406c83e8c10adb",
+      "after": "80475a7e64297cd15ba93ec2b9406c83e8c10adb",
+      "unchanged": true
+    },
+    "apps/apple/Tests": {
+      "before": "fed8be9a8638b76c5037164337c06bd02a8b1ce4",
+      "after": "fed8be9a8638b76c5037164337c06bd02a8b1ce4",
+      "unchanged": true
+    },
+    "apps/apple/core": {
+      "before": "50f810cd0282b602e0c1eabd2aef9ed45fbd8fb3",
+      "after": "50f810cd0282b602e0c1eabd2aef9ed45fbd8fb3",
+      "unchanged": true
+    },
+    "apps/apple/Config": {
+      "before": "8cd58e95af4666e02cbf4c33b93c016ef190c3b5",
+      "after": "8cd58e95af4666e02cbf4c33b93c016ef190c3b5",
+      "unchanged": true
+    },
+    "apps/apple/Package.swift": {
+      "before": "1b3c04826d59188fcf15035e95c73a21c93d0c7c",
+      "after": "1b3c04826d59188fcf15035e95c73a21c93d0c7c",
+      "unchanged": true
+    },
+    "apps/apple/Package.resolved": {
+      "before": "fe7ac5e918b90090788f10f62cbd1297e8f88ed3",
+      "after": "fe7ac5e918b90090788f10f62cbd1297e8f88ed3",
+      "unchanged": true
+    },
+    "apps/apple/script": {
+      "before": "fbde15af08b0b00d9e1b8a9865aeb2e9bdb7f09a",
+      "after": "fbde15af08b0b00d9e1b8a9865aeb2e9bdb7f09a",
+      "unchanged": true
+    }
+  },
+  "unchangedHistoricalReceiptsAndPolicy": {
+    "apps/apple/docs/development/HANLIN_DRAFT_UI_REPAIR_20261123.json": {
+      "sha256": "6b24c91da4efa98892ca27bb20e032b57353f68358a18379461c9e0a5c1e30e8",
+      "gitObject": "11a5d47e87f9accda4a1d56a72fc753c4c57b0d2",
+      "unchanged": true
+    },
+    "apps/apple/docs/development/HANLIN_UI_ACCEPTANCE_20261123.json": {
+      "sha256": "823302f5879847a533f1a516e06539dfe0140e535cc58c2b92fb1af11eb2c1e1",
+      "gitObject": "21cee778b16e3ace7acc520e9a5e68e49aac4ac8",
+      "unchanged": true
+    },
+    "apps/apple/docs/development/HANLIN_NATIVE_ACCEPTANCE_20261123.json": {
+      "sha256": "3ec453604fcdbe159b07bba2cd5d9f77335d0a1e9ee01112babbb201e04d9632",
+      "gitObject": "4eefea488185f3b795f0c8361515fc2a650a6dd6",
+      "unchanged": true
+    },
+    ".github/workflows/lorvex-hanlin-ipad-ipa.yml": {
+      "sha256": "9b74b9f05274288ed6a373b4766496dd783d0df23cb821e75ae47112d6cafe8b",
+      "gitObject": "e8e9f3b89a58ad7a4a3ae289b59a610741b49dc4",
+      "unchanged": true
+    }
+  },
+  "historicalAcceptance": {
+    "uiRun": 45148401438,
+    "uiConsumerCommit": "2e6a5e202262250281b55f2c6418dc1737c7b65f",
+    "uiSDKRevision": "0dae98f7b44b3cb4ee4d8dacd1913f2ed317a965",
+    "uiCases": 1,
+    "reviewedFrames": 4,
+    "agentAndDeviceRun": 45119218473,
+    "agentAndDeviceConsumerCommit": "09307ef346eb12be2bcb25141d4b76bc9beb6ed6",
+    "agentAndDeviceSDKRevision": "d49a4fd4115b8335105d2991bf74ab4d7f6aad2d",
+    "agentCases": 6,
+    "presentationCases": 5,
+    "presentationRun": 45109608536,
+    "reexecuted": false,
+    "newPinNativeAcceptanceClaimed": false
+  },
+  "uiContinuationBoundary": "The unchanged historical UI-only lane still requires its exact0dae repair inputs. This SDK update does not rewrite that receipt, widen that guard or dispatch that lane. Future changed-scope execution must receive its own source-bound admission; old native results are not relabeled.",
+  "sharedQualification": {
+    "repository": "davidpovarsky/hanlin-ai",
+    "commit": "b6a278531b5bfbc7246b4f5fec7d676750c645a5",
+    "path": "docs/agent-sdk/evidence/consumer-upgrade-20261123/qualification.json"
+  }
+}
