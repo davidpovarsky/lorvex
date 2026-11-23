@@ -102,3 +102,15 @@ test('conditional outbox protects newer server groups even when the offline HLC 
  const replay=s.push(a,[merged],'cas-replay-request-0003',{[key]:current.version});
  assert.equal(replay.results[0].status,'duplicate');
 }));
+
+test('task updates reject date-times without poisoning native change pages',()=>fixture((s,a)=>{
+ const task=decode(invokeCloudTool(s,a,'create_task',{title:'Native dates'})).task;
+ const cursor=s.changes(a,0).cursor;
+ for(const field of ['due_date','planned_date']){
+   assert.throws(()=>invokeCloudTool(s,a,'update_task',{id:task.id,[field]:'2026-12-01T10:30:00Z'}));
+   assert.throws(()=>invokeCloudTool(s,a,'update_task',{id:task.id,[field]:'2026-02-30'}));
+ }
+ assert.equal(s.changes(a,cursor).envelopes.length,0);
+ invokeCloudTool(s,a,'update_task',{id:task.id,due_date:'2026-12-01',planned_date:'2026-11-30'});
+ for(const e of s.changes(a,cursor).envelopes)contractCheck(e);
+}));

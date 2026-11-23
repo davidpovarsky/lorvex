@@ -4,7 +4,7 @@ import { CloudError } from './store.mjs';
 const field=(type,more={})=>({type,...more});
 const str=max=>field('string',{maxLength:max,minLength:1});
 const nullable=max=>field('string',{maxLength:max});
-const date=str(35);
+const date=str(10);
 const int=(min,max)=>field('integer',{minimum:min,maximum:max});
 const commonID={id:str(128)};
 const definitions=[
@@ -165,9 +165,9 @@ export function invokeCloudTool(store,accountId,name,args={}) {
       if('notes' in args)patch.body=args.notes;
       if('tags' in args)patch.tags=args.tags;
       if(args.clear_due)patch.due_date=null;
-      else if(args.due_date){validDay(args.due_date.slice(0,10));patch.due_date=args.due_date;}
+      else if(args.due_date){validDay(args.due_date);patch.due_date=args.due_date;}
       if(args.clear_planned)patch.planned_date=null;
-      else if(args.planned_date){validDay(args.planned_date.slice(0,10));patch.planned_date=args.planned_date;}
+      else if(args.planned_date){validDay(args.planned_date);patch.planned_date=args.planned_date;}
     }
     if(name==='complete_task')Object.assign(patch,{status:'completed',completed_at:now()});
     if(name==='reopen_task')Object.assign(patch,{status:'open',completed_at:null,cancelled_at:null});
