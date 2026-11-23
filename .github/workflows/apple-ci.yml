@@ -95,6 +95,8 @@ jobs:
         env:
           HOMEBREW_NO_AUTO_UPDATE: "1"
         run: brew install xcodegen
+      - name: Install pinned canonical Hanlin SDK
+        run: python3 apps/apple/script/install_hanlin_sdk.py
       - name: Run Apple verification gate (no signing/notarize)
         working-directory: apps/apple
         env:
