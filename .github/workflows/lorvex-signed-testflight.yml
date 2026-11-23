@@ -133,7 +133,9 @@ jobs:
         run: |
           set -euo pipefail
           root="$GITHUB_WORKSPACE/lorvex/apps/apple"
-          dir="$OUTPUT/XcodeProject"
+          # The project spec resolves entitlements as $(SRCROOT)/../../Config.
+          # Generate under apps/apple/dist/<subdir> so SRCROOT resolves correctly.
+          dir="$root/dist/testflight"
           mkdir -p "$dir"
           xcodegen --spec "$root/Config/XcodeGen/project.yml" \
             --project "$dir" --project-root "$root" --quiet
