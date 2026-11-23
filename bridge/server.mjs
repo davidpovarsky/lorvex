@@ -145,6 +145,13 @@ export function createBridge({
       const url=new URL(req.url||'/', 'http://localhost');
       const u=url.pathname;
       const method=req.method;
+      // Audit only request method/path/HTTP status: NEVER tokens, user IDs,
+      // authorization codes, redirect queries, or task contents.
+      if (u.startsWith('/oauth/')) {
+        res.once('finish',()=>{
+          console.info('OAUTH_HTTP', method, u, res.statusCode);
+        });
+      }
       if (u==='/health' && method==='GET') {
         return json(res,200,{ok:true,name:'Lorvex Remote MCP Bridge',version:'0.1.0',
           pairedDevices:Object.values(store.devices).filter(x=>x.linked).length});
@@ -200,23 +207,40 @@ export function createBridge({
         const body=new URLSearchParams(await readBody(req));
         const uid=body.get('request');
         const auth=store.authCodes[uid];
-        if (!auth||auth.type!=='pending'||auth.expires<=clock()) return html(res,400,'<h2>Expired sign-in</h2>');
+        if (!auth||!['pending','approved'].includes(auth.type)||auth.expires<=clock()) {
+          return html(res,400,'<h2>Expired sign-in</h2>');
+        }
         const pair=(body.get('pair')||'').toUpperCase().replace(/[^A-Z2-9]/g,'');
-        const device=Object.entries(store.devices).find(([,d])=>
-          d.pairCode && safeEqual(d.pairCode,pair) && d.pairExpires>clock() && !d.pairUsed);
+        const replay=auth.type==='approved';
+        // Browsers or users can submit the approval form twice in quick
+        // succession. Do not discard a valid, user-approved OAuth link.
+        // Reuse requires the SAME original pairing code, SAME device, and a
+        // 30-second time window; no new user/device can authorize via the
+        // request identifier alone.
+        const device=Object.entries(store.devices).find(([id,d])=>
+          d.pairCode && safeEqual(d.pairCode,pair) &&
+          (replay
+            ? id===auth.deviceId && d.pairUsed &&
+              auth.approvedAt>clock()-30_000 && (auth.repeats||0)<2
+            : d.pairExpires>clock() && !d.pairUsed));
         if (!device) {
           auth.failures=(auth.failures||0)+1;
           if (auth.failures>=5) delete store.authCodes[uid];
           persist();
           return auth.failures>=5? html(res,429,'<h2>Too many attempts</h2>') : renderAuthForm(res,uid,'bad_code');
         }
-        device[1].pairUsed=true;
-        device[1].linked=true;
-        auth.type='code';
-        auth.deviceId=device[0];
+        if (!replay) {
+          device[1].pairUsed=true;
+          device[1].linked=true;
+          auth.deviceId=device[0];
+          auth.approvedAt=clock();
+          auth.type='approved';
+          auth.repeats=0;
+        } else {
+          auth.repeats+=1;
+        }
         const code=random(30);
-        store.authCodes[sha(code)]=auth;
-        delete store.authCodes[uid];
+        store.authCodes[sha(code)]={...auth,type:'code'};
         persist();
         const callback=new URL(auth.redirect);
         callback.searchParams.set('code',code);

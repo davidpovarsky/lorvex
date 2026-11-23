@@ -70,12 +70,21 @@ test('OAuth pairing, MCP auth and real device tool round trip without storing ta
     const location=new URL(approve.headers.get('location'));
     assert.equal(location.searchParams.get('state'),'opaque-state');
     const code=location.searchParams.get('code');
-    const deniedReuse=await client('/oauth/approve',{
-      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    const allowedSameFormRetry=await client('/oauth/approve',{
+      method:'POST',redirect:'manual',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body:new URLSearchParams({request,pair:enrolled.json.pairingCode})});
-    assert.equal(deniedReuse.status,400);
+    assert.equal(allowedSameFormRetry.status,302);
+    const replayCode=new URL(allowedSameFormRetry.headers.get('location'))
+      .searchParams.get('code');
+    assert.ok(replayCode && replayCode!==code);
+    const invalidPair=await client('/oauth/approve',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({request,pair:'ABCDEFGH'})});
+    assert.equal(invalidPair.status,200);
+    assert.match(invalidPair.json,/Invalid or expired code/);
     const form=new URLSearchParams({
-      grant_type:'authorization_code',code,client_id:clientId,
+      grant_type:'authorization_code',code:replayCode,client_id:clientId,
       redirect_uri:callback,code_verifier:verifier
     });
     const token=await client('/oauth/token',{
