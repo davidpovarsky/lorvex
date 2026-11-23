@@ -11,8 +11,9 @@ struct LorvexHanlinAssistantView: View {
     private let remoteBridge: LorvexRemoteBridgeState
     @State private var showRemoteBridgeSettings = false
     @State private var showModelSettings = false
-    @State private var prompt = ""
-    @State private var promptRevision = UUID()
+    #if canImport(UIKit)
+    @State private var composerDraft = HanlinComposerDraft()
+    #endif
     @State private var apiToken = ""
     @State private var configuredToken = ""
     @State private var configurationError: String?
@@ -32,8 +33,8 @@ struct LorvexHanlinAssistantView: View {
         NavigationStack {
             Group {
                 #if canImport(UIKit)
-                LorvexHanlinChatWorkspace(assistant: assistant, prompt: $prompt,
-                    promptRevision: $promptRevision, modelName: modelID,
+                LorvexHanlinChatWorkspace(assistant: assistant, draft: composerDraft,
+                    modelName: modelID,
                     showModelSettings: { showModelSettings = true },
                     showRemoteBridgeSettings: { showRemoteBridgeSettings = true },
                     send: send)
@@ -143,19 +144,21 @@ struct LorvexHanlinAssistantView: View {
         }
     }
 
+    #if canImport(UIKit)
     private func send() {
-        let text = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !assistant.isRunning else { return }
         guard !modelID.isEmpty, !configuredToken.isEmpty else {
             showModelSettings = true
             return
         }
-        prompt = ""; promptRevision = UUID()
+        composerDraft.text = ""
         _Concurrency.Task {
             await assistant.send(text, modelID: modelID, endpoint: endpoint,
                                  credential: configuredToken, provider: provider)
         }
     }
+    #endif
 }
 
 private enum LorvexHanlinKeychain {

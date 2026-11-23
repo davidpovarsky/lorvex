@@ -9,9 +9,7 @@ import LorvexHanlinAgent
 /// own draft, model choice and tools; the SDK owns material, layout and motion.
 @MainActor
 struct LorvexHanlinComposer: View {
-    @Binding var text: String
-    @Binding var revision: UUID
-    let ownerID: UUID
+    let draft: HanlinComposerDraft
     let availableHeight: CGFloat
     let modelName: String
     let isRunning: Bool
@@ -33,8 +31,8 @@ struct LorvexHanlinComposer: View {
             naturalEditorHeight: naturalEditorHeight, toolbarHeight: toolbarHeight,
             isPanelExpanded: isExpanded, isEditorExpanded: false)
     }
-    private var draft: Binding<String> {
-        Binding(get: { text }, set: { text = $0; revision = UUID() })
+    private var text: Binding<String> {
+        Binding(get: { [draft] in draft.text }, set: { [draft] in draft.text = $0 })
     }
 
     var body: some View {
@@ -74,7 +72,7 @@ struct LorvexHanlinComposer: View {
                 .accessibilityIdentifier("hanlin.composer.toolCatalog")
             } input: {
                 VStack(spacing: HanlinMorphStyle.inputControlsSpacing) {
-                    NativeMultilineTextEditor(text: draft, textHeight: $naturalEditorHeight,
+                    NativeMultilineTextEditor(text: text, textHeight: $naturalEditorHeight,
                         placeholderText: String(localized: "Ask Hanlin…"),
                         minHeight: HanlinMorphStyle.editorMinimumHeight,
                         maxHeight: layout.editorMaximumHeight, usesAutomaticLineLimits: true,
@@ -86,9 +84,7 @@ struct LorvexHanlinComposer: View {
                             case .focusChanged: break
                             }
                         },
-                        readCurrentTextState: {
-                            .init(ownerID: ownerID, revision: revision, text: text)
-                        })
+                        readCurrentTextState: { [draft] in draft.snapshot })
                         .frame(height: layout.editorHeight)
                         .padding(.horizontal, HanlinMorphStyle.modelSourceHorizontalInset)
                     HStack(spacing: 8) {
@@ -110,7 +106,7 @@ struct LorvexHanlinComposer: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .disabled(!isRunning && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(!isRunning && draft.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .accessibilityLabel(isRunning ? String(localized: "Stop") : String(localized: "Send"))
                         .accessibilityIdentifier(isRunning ? "hanlin.composer.stop" : "hanlin.composer.send")
                     }

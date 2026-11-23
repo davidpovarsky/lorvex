@@ -11,8 +11,7 @@ import HanlinPresentationKit
 @MainActor
 struct LorvexHanlinChatWorkspace: View {
     let assistant: LorvexHanlinAssistantState
-    @Binding var prompt: String
-    @Binding var promptRevision: UUID
+    let draft: HanlinComposerDraft
     let modelName: String
     let showModelSettings: () -> Void
     let showRemoteBridgeSettings: () -> Void
@@ -96,8 +95,7 @@ struct LorvexHanlinChatWorkspace: View {
                     .accessibilityIdentifier("hanlin.transcript")
                 }
             } composer: {
-                LorvexHanlinComposer(text: $prompt, revision: $promptRevision,
-                    ownerID: assistant.conversationID, availableHeight: geometry.size.height,
+                LorvexHanlinComposer(draft: draft, availableHeight: geometry.size.height,
                     modelName: modelName, isRunning: assistant.isRunning,
                     showModelSettings: showModelSettings,
                     showRemoteBridgeSettings: showRemoteBridgeSettings,
