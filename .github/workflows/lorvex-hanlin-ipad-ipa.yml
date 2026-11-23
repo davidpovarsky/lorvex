@@ -68,11 +68,11 @@ jobs:
         run: |
           set -euo pipefail
           case "$HANLIN_UNIT_SCOPE" in
-            all) test_filter='LorvexHanlin(Agent|PresentationState)Tests' ;;
-            agent) test_filter='LorvexHanlinAgentTests' ;;
+            all) test_arguments=(--filter 'LorvexHanlin(Agent|PresentationState)Tests') ;;
+            agent) test_arguments=(--filter 'LorvexHanlinAgentTests' --skip 'LorvexHanlinPresentationStateTests') ;;
             *) echo "Unknown Hanlin unit scope: $HANLIN_UNIT_SCOPE" >&2; exit 2 ;;
           esac
-          swift test --package-path apps/apple --filter "$test_filter" -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
+          swift test --package-path apps/apple "${test_arguments[@]}" -j 3 2>&1 | tee lorvex-hanlin-agent-tests.log
       - name: Preserve unit-test log immediately
         if: always()
         uses: actions/upload-artifact@v4
