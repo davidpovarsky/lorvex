@@ -38,7 +38,7 @@ jobs:
           if len(matching)!=1:raise RuntimeError('main bundle id not uniquely found')
           bundle=matching[0]
           print('MAIN_BUNDLE_ID_FOUND',bundle['id'],bundle['attributes'].get('identifier'))
-          caps=request('bundleIds/'+bundle['id']+'/bundleIdCapabilities?limit=50')
+          caps=request('bundleIds/'+bundle['id']+'/bundleIdCapabilities')
           for cap in caps.get('data',[]):
               attrs=cap.get('attributes',{})
               if attrs.get('capabilityType') in ('ICLOUD','APP_GROUPS','PUSH_NOTIFICATIONS'):
