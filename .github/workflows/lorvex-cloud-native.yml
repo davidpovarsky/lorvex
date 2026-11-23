@@ -11,8 +11,14 @@ on:
       - 'HanlinSDK.lock.json'
       - '.github/workflows/lorvex-cloud-native.yml'
   workflow_dispatch:
+    inputs:
+      verified_sdk_contract_run:
+        description: Optional prior native SDK contract proof; all three source hashes must match
+        type: string
+        default: ""
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: lorvex-cloud-native-${{ github.ref }}
   cancel-in-progress: false
@@ -37,6 +43,9 @@ jobs:
           python3 apps/apple/script/install_hanlin_sdk.py --check
       - name: Verify canonical ChatGPT plan OAuth and streaming contracts
         shell: bash
+        env:
+          SDK_PROOF_RUN: ${{ inputs.verified_sdk_contract_run }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -60,14 +69,48 @@ jobs:
           if len(test_source)>1000000: raise SystemExit("Unexpected SDK integration test source size")
           host_test=pathlib.Path("apps/apple/Tests/LorvexHanlinAgentTests/HanlinChatGPTPlanTests.swift")
           host_test.write_bytes(test_source)
+          reuse_marker=dest/"reuse-verified"
+          reuse_marker.unlink(missing_ok=True)
+          proof=os.environ.get("SDK_PROOF_RUN","").strip()
+          if proof:
+              import hashlib,re
+              if not re.fullmatch(r"[0-9]+",proof): raise SystemExit("Invalid evidence run")
+              def github(path):
+                  req=urllib.request.Request("https://api.github.com/repos/davidpovarsky/lorvex/"+path,
+                      headers={"Authorization":"Bearer "+os.environ["GH_TOKEN"],"Accept":"application/vnd.github+json"})
+                  with urllib.request.urlopen(req,timeout=45) as res: return json.load(res)
+              run=github("actions/runs/"+proof)
+              if run.get("path")!=".github/workflows/lorvex-cloud-native.yml":
+                  raise SystemExit("Evidence must come from the native workflow")
+              jobs=github("actions/runs/"+proof+"/jobs?per_page=100")
+              if not any(step.get("name")=="Verify canonical ChatGPT plan OAuth and streaming contracts"
+                         and step.get("conclusion")=="success"
+                         for job in jobs.get("jobs",[]) for step in job.get("steps",[])):
+                  raise SystemExit("The SDK contract did not pass in the referenced run")
+              old_sha=run["head_sha"]
+              if not re.fullmatch(r"[a-f0-9]{40}",old_sha): raise SystemExit("Invalid evidence source")
+              with urllib.request.urlopen(f"https://raw.githubusercontent.com/davidpovarsky/lorvex/{old_sha}/HanlinSDK.lock.json",timeout=45) as res:
+                  old_pin=json.load(res)["revision"]
+              if not re.fullmatch(r"[a-f0-9]{40}",old_pin): raise SystemExit("Invalid evidence SDK pin")
+              for path in paths:
+                  with urllib.request.urlopen(f"https://raw.githubusercontent.com/davidpovarsky/hanlin-ai/{old_pin}/{path}",timeout=45) as res:
+                      previous=res.read(1000001)
+                  current=(dest/pathlib.Path(path).name).read_bytes()
+                  if hashlib.sha256(previous).digest()!=hashlib.sha256(current).digest():
+                      raise SystemExit("SDK contract source changed; run the full contract again")
+              reuse_marker.write_text(f"REUSED_SDK_NATIVE_CONTRACTS https://github.com/davidpovarsky/lorvex/actions/runs/{proof} source_hashes_verified=3\n")
           print("CANONICAL_SDK_CONTRACT_PIN",pin)
           PY
-          swiftc -swift-version 6 -parse-as-library \
-            "$RUNNER_TEMP/lorvex-siwc-contract/HanlinChatGPTPlanClient.swift" \
-            "$RUNNER_TEMP/lorvex-siwc-contract/HanlinChatGPTPlanWire.swift" \
-            "$RUNNER_TEMP/lorvex-siwc-contract/verify_chatgpt_plan_contract.swift" \
-            -o "$RUNNER_TEMP/verify-chatgpt-plan"
-          "$RUNNER_TEMP/verify-chatgpt-plan" 2>&1 | tee chatgpt-plan-contract.log
+          if [[ -f "$RUNNER_TEMP/lorvex-siwc-contract/reuse-verified" ]]; then
+            cat "$RUNNER_TEMP/lorvex-siwc-contract/reuse-verified" | tee chatgpt-plan-contract.log
+          else
+            swiftc -swift-version 6 -parse-as-library \
+              "$RUNNER_TEMP/lorvex-siwc-contract/HanlinChatGPTPlanClient.swift" \
+              "$RUNNER_TEMP/lorvex-siwc-contract/HanlinChatGPTPlanWire.swift" \
+              "$RUNNER_TEMP/lorvex-siwc-contract/verify_chatgpt_plan_contract.swift" \
+              -o "$RUNNER_TEMP/verify-chatgpt-plan"
+            "$RUNNER_TEMP/verify-chatgpt-plan" 2>&1 | tee chatgpt-plan-contract.log
+          fi
       - name: Validate account sync and changed Hanlin host boundaries
         shell: bash
         run: |
