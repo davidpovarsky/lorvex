@@ -53,7 +53,9 @@ final class OverviewStreakCache: @unchecked Sendable {
   /// Weakly keyed on the `Database` connection: the slot drops when the
   /// connection deallocates, so a freed store leaves nothing behind for a later
   /// store to inherit.
+#if !os(Linux)
   private let slots = NSMapTable<Database, Entry>.weakToStrongObjects()
+#endif
 
   /// Return the cached streak when the key matches the current connection
   /// state, else `compute()` and store the result. The lock is released before
@@ -64,6 +66,11 @@ final class OverviewStreakCache: @unchecked Sendable {
     _ db: Database, today: String, timezone: String?,
     compute: (Database) throws -> Overview.CompletionStreak
   ) throws -> Overview.CompletionStreak {
+#if os(Linux)
+    // Foundation on Linux has no NSMapTable. Memoization is optional; retain
+    // the exact canonical calculation without a second cache implementation.
+    return try compute(db)
+#else
     let seq =
       try Int64.fetchOne(
         db, sql: "SELECT value FROM local_counters WHERE name = ?1",
@@ -83,6 +90,7 @@ final class OverviewStreakCache: @unchecked Sendable {
     slots.setObject(Entry(key, computed), forKey: db)
     lock.unlock()
     return computed
+#endif
   }
 
   /// Drop this connection's cached streak. Required after a mutation path that
@@ -92,8 +100,10 @@ final class OverviewStreakCache: @unchecked Sendable {
   /// landing via sync would leave the `local_change_seq`-keyed slot unchanged and
   /// the next read would return the pre-sync streak.
   func invalidate(_ db: Database) {
+#if !os(Linux)
     lock.lock()
     slots.removeObject(forKey: db)
     lock.unlock()
+#endif
   }
 }

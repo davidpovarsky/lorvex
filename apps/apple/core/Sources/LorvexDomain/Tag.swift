@@ -61,9 +61,26 @@ public func normalizeLookupKey(_ displayName: String) -> String {
 /// capital sigma always folds to medial `σ` (not the positional final
 /// `ς`), Turkish capital `İ` → `i` + COMBINING DOT ABOVE, etc.
 private func defaultCaseFold(_ s: String) -> String {
+#if os(Linux)
+  // Linux Foundation has no toll-free NSMutableString/CFMutableString bridge.
+  // Preserve the canonical CFStringFold algorithm via its UTF-16 C API.
+  let mutable = CFStringCreateMutable(nil, 0)!
+  Array(s.utf16).withUnsafeBufferPointer {
+    if let base = $0.baseAddress { CFStringAppendCharacters(mutable, base, $0.count) }
+  }
+  CFStringFold(mutable, [.compareCaseInsensitive], nil)
+  var units = [UniChar](repeating: 0, count: CFStringGetLength(mutable))
+  units.withUnsafeMutableBufferPointer {
+    if let base = $0.baseAddress {
+      CFStringGetCharacters(mutable, CFRange(location: 0, length: $0.count), base)
+    }
+  }
+  return String(decoding: units, as: UTF16.self)
+#else
   let mutable = NSMutableString(string: s)
   CFStringFold(mutable as CFMutableString, [.compareCaseInsensitive], nil)
   return mutable as String
+#endif
 }
 
 /// The Unicode `White_Space` property covers ASCII whitespace, NBSP (U+00A0),
