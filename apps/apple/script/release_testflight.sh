@@ -24,6 +24,9 @@
 # failing step; it prints the delivery id of every upload that succeeded, which
 # is what `poll` takes. A step that fails with a transient network error (a lost
 # connection, a 502, 503, or 504) runs once more before its channel gives up.
+# Set LORVEX_RELEASE_MAX_ATTEMPTS=1 for a controlled release that inspects
+# existing artifacts and Apple state before retrying. The default is 2 attempts;
+# zero, empty, negative, or noninteger limits are rejected before a step runs.
 # Bump the build number first (`script/bump_build.py`) and commit it, so the
 # uploaded build matches a commit on main.
 #

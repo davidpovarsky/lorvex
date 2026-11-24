@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import shlex
 import subprocess
 import tempfile
@@ -40,7 +41,11 @@ class RunMaskedTests(unittest.TestCase):
         script.chmod(0o755)
         return script
 
-    def run_masked(self, script: Path) -> int:
+    def run_masked(self, script: Path, attempt_limit: str | None = None) -> int:
+        env = os.environ.copy()
+        env.pop("LORVEX_RELEASE_MAX_ATTEMPTS", None)
+        if attempt_limit is not None:
+            env["LORVEX_RELEASE_MAX_ATTEMPTS"] = attempt_limit
         result = subprocess.run(
             [
                 "bash",
@@ -49,6 +54,7 @@ class RunMaskedTests(unittest.TestCase):
             ],
             capture_output=True,
             text=True,
+            env=env,
         )
         return result.returncode
 
@@ -81,6 +87,27 @@ class RunMaskedTests(unittest.TestCase):
         script = self.step('echo "upload failed: HTTP 504"\nexit 1\n')
         self.assertEqual(self.run_masked(script), 1)
         self.assertEqual(self.attempts(), 2)
+
+    def test_one_attempt_does_not_repeat_an_ambiguous_transient_failure(self) -> None:
+        script = self.step('echo "NSURLErrorDomain error -1005"\nexit 7\n')
+        self.assertEqual(self.run_masked(script, attempt_limit="1"), 7)
+        self.assertEqual(self.attempts(), 1)
+        self.assertNotIn("retrying step", self.log.read_text())
+
+    def test_configured_third_attempt_can_recover(self) -> None:
+        script = self.step(
+            'if [ "$attempt" -lt 3 ]; then echo "HTTP 503"; exit 7; fi\n'
+            'echo "recovered"\nexit 0\n'
+        )
+        self.assertEqual(self.run_masked(script, attempt_limit="3"), 0)
+        self.assertEqual(self.attempts(), 3)
+
+    def test_invalid_attempt_limits_reject_before_the_command_runs(self) -> None:
+        script = self.step('echo "must not run"\nexit 0\n')
+        for value in ("0", "-1", "invalid", "1.5", ""):
+            with self.subTest(value=value):
+                self.assertEqual(self.run_masked(script, attempt_limit=value), 2)
+                self.assertEqual(self.attempts(), 0)
 
     def test_any_other_failure_is_not_retried(self) -> None:
         script = self.step('echo "error: No profiles for bundle id were found"\nexit 65\n')
