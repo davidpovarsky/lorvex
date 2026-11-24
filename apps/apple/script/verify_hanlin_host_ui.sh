@@ -68,7 +68,7 @@ printf '%s\n' "$SIMULATOR_ID" > "$OUT/simulator-id.txt"
 # Compile once with the selected compiler, then execute those exact products.
 # This also avoids booting another simulator while compilation is in progress.
 xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
-  -scheme LorvexMobileUITests -configuration Debug \
+  -scheme LorvexMobileUITests -configuration Debug -jobs "${LORVEX_UI_JOBS:-3}" \
   -destination "generic/platform=iOS Simulator" \
   -derivedDataPath "$DERIVED_DATA" \
   -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
@@ -81,7 +81,7 @@ xcrun simctl boot "$SIMULATOR_ID"
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
 status=0
 xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
-  -scheme LorvexMobileUITests -configuration Debug \
+  -scheme LorvexMobileUITests -configuration Debug -jobs "${LORVEX_UI_JOBS:-3}" \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
   -derivedDataPath "$DERIVED_DATA" \
   -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
