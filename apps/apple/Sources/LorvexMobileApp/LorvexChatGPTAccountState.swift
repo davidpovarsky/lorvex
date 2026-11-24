@@ -1,6 +1,7 @@
 #if canImport(UIKit)
 import Foundation
 import HanlinChatCore
+import LorvexHanlinAgent
 import Network
 import Observation
 import SafariServices
@@ -216,8 +217,8 @@ final class LorvexChatGPTAccountState {
               self.pending = auth
               self.authorizationURL = auth.url
               self.status = String(localized: "Sign in with ChatGPT in the browser")
-            } catch { self.fail(error.localizedDescription) }
-          case .failed(let error): self.fail(error.localizedDescription)
+            } catch { self.fail(LorvexHanlinErrorMessage.description(for: error)) }
+          case .failed(let error): self.fail(LorvexHanlinErrorMessage.description(for: error))
           default: break
           }
         }
@@ -229,7 +230,7 @@ final class LorvexChatGPTAccountState {
           connection.cancel()
           return
         }
-        LorvexChatGPTCallbackReader(connection: connection, port: port.rawValue) { url in
+        LorvexChatGPTCallbackReader(connection: connection, port: port.rawValue) { [weak self, weak server] url in
           _Concurrency.Task { @MainActor [weak self, weak server] in
             guard let self, let server, self.listener === server,
                   self.authorizationGeneration == flowID else { return }
@@ -238,7 +239,7 @@ final class LorvexChatGPTAccountState {
         }.start()
       }
       server.start(queue: queue)
-    } catch { fail(error.localizedDescription) }
+    } catch { fail(LorvexHanlinErrorMessage.description(for: error)) }
   }
 
   private func handleOAuthCallback(_ url: URL) {
@@ -281,7 +282,7 @@ final class LorvexChatGPTAccountState {
         if credentials.canUsePlan { await loadModels() }
       } catch {
         guard self.authorizationGeneration == flowID, self.sessionGeneration == generation else { return }
-        self.fail(error.localizedDescription)
+        self.fail(LorvexHanlinErrorMessage.description(for: error))
       }
     }
   }
@@ -372,7 +373,7 @@ final class LorvexChatGPTAccountState {
   }
 
   func reportConnectionError(_ error: Error) {
-    status = String(localized: "ChatGPT connection failed: ") + error.localizedDescription
+    status = LorvexHanlinErrorMessage.description(for: error)
   }
 
   func signOut() {
@@ -402,7 +403,7 @@ final class LorvexChatGPTAccountState {
       self.revokingAccountIDs.remove(accountToRevoke.clientID)
       let message: String
       if let deletionError {
-        message = String(localized: "Unable to remove the saved ChatGPT session: ") + deletionError.localizedDescription
+        message = String(localized: "Unable to remove the saved ChatGPT session: ") + LorvexHanlinErrorMessage.description(for: deletionError)
       } else if confirmed {
         message = String(localized: "Signed out of ChatGPT in Lorvex")
       } else {
@@ -539,13 +540,27 @@ private final class LorvexChatGPTCallbackReader: @unchecked Sendable {
 }
 
 struct LorvexChatGPTPlanBrowser: UIViewControllerRepresentable {
-  let url:URL
-  func makeUIViewController(context:Context)->SFSafariViewController {
-    let browser=SFSafariViewController(url:url)
+  let url: URL
+  let onFinish: @MainActor () -> Void
+
+  func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+
+  func makeUIViewController(context: Context) -> SFSafariViewController {
+    let browser = SFSafariViewController(url: url)
     browser.dismissButtonStyle = .close
+    browser.delegate = context.coordinator
+    browser.view.accessibilityIdentifier = "chatgpt.authorization.browser"
     return browser
   }
-  func updateUIViewController(_ view:SFSafariViewController,context:Context) {}
+
+  func updateUIViewController(_ view: SFSafariViewController, context: Context) {}
+
+  @MainActor
+  final class Coordinator: NSObject, SFSafariViewControllerDelegate {
+    private let onFinish: @MainActor () -> Void
+    init(onFinish: @escaping @MainActor () -> Void) { self.onFinish = onFinish }
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) { onFinish() }
+  }
 }
 #else
 import Foundation

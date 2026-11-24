@@ -27,7 +27,7 @@ struct LorvexHanlinChatWorkspace: View {
                         LazyVStack(alignment: .leading, spacing: 14) {
                             if assistant.messages.isEmpty {
                                 ContentUnavailableView("Your tasks, with AI", systemImage: "sparkles",
-                                    description: Text("Ask about your day or request changes. Every write asks for your approval."))
+                                    description: Text("Ask about your day or manage tasks, lists, calendar and habits."))
                                     .accessibilityIdentifier("hanlin.empty")
                             }
                             ForEach(assistant.messages) { entry in
@@ -43,7 +43,7 @@ struct LorvexHanlinChatWorkspace: View {
                                let requestID = assistant.pendingApprovalID {
                                 HanlinInlineToolApproval(requestID: requestID.uuidString,
                                     toolName: request.tool, reviewText: request.description,
-                                    displayTitle: "Allow this change?", scopeSummary: request.description,
+                                    displayTitle: String(localized: "Allow this change?"), scopeSummary: request.description,
                                     requiresDetailedReview: false) { allowed in
                                         assistant.resolveApproval(allowed, requestID: requestID)
                                     }
@@ -160,11 +160,11 @@ private struct LorvexHanlinMessageRow: View {
                     if !message.text.isEmpty {
                         HanlinMarkdownView(text: message.text, onRendered: onRendered)
                     } else if message.status == .streaming {
-                        HanlinActivityTitle("Working…", font: HanlinTypography.body, isActive: true)
+                        HanlinActivityTitle(String(localized: "Working…"), font: HanlinTypography.body, isActive: true)
                     } else if message.status == .cancelled {
                         Text("Stopped").font(HanlinTypography.caption).foregroundStyle(.secondary)
                     }
-                    HanlinSourcesButton(sources: sources, title: "Sources") { showsSources = true }
+                    HanlinSourcesButton(sources: sources, title: String(localized: "Sources")) { showsSources = true }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             } else {
@@ -172,7 +172,7 @@ private struct LorvexHanlinMessageRow: View {
             }
         }
         .sheet(isPresented: $showsSources) {
-            HanlinSourcesList(sources: sources, title: "Sources") { source in
+            HanlinSourcesList(sources: sources, title: String(localized: "Sources")) { source in
                 if let url = source.url { openURL(url) }
             }
         }
@@ -190,7 +190,7 @@ private struct LorvexHanlinActivityView: View {
                 DisclosureGroup(isExpanded: $reasoningExpanded) {
                     HanlinMarkdownView(text: message.reasoning)
                 } label: {
-                    HanlinActivityHierarchyHeader(title: "Thinking", symbol: "brain",
+                    HanlinActivityHierarchyHeader(title: String(localized: "Thinking"), symbol: "brain",
                         isExpanded: reasoningExpanded,
                         isActive: message.status == .streaming && message.text.isEmpty)
                 }
@@ -207,7 +207,8 @@ private struct LorvexHanlinToolRow: View {
     @State private var expanded = false
 
     private var title: String {
-        LorvexHanlinToolCatalog.specs.first { $0.alias == activity.name }?.summary ?? activity.name
+        String(localized: String.LocalizationValue(
+            LorvexHanlinToolCatalog.specs.first { $0.alias == activity.name }?.summary ?? activity.name))
     }
     private var status: String {
         switch activity.phase {

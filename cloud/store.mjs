@@ -55,6 +55,7 @@ export class CloudStore {
     // Additive migration preserves existing accounts, sessions and user data.
     for(const table of ['oauth_requests','oauth_codes','tokens']){
       const fields=new Set(this.all('PRAGMA table_info('+table+')').map(c=>c.name));
+      if(table==='oauth_requests'&&!fields.has('language'))this.db.exec('ALTER TABLE oauth_requests ADD COLUMN language TEXT NOT NULL DEFAULT "he"');
       if(!fields.has('resource'))this.db.exec('ALTER TABLE '+table+' ADD COLUMN resource TEXT NOT NULL DEFAULT ""');
       if(table!=='tokens'&&!fields.has('scopes'))this.db.exec('ALTER TABLE '+table+' ADD COLUMN scopes TEXT NOT NULL DEFAULT "lorvex.read lorvex.write offline_access"');
       if(this.resource)this.run('UPDATE '+table+' SET resource=? WHERE resource=?',this.resource,'');
@@ -93,17 +94,25 @@ export class CloudStore {
     this.run('INSERT INTO oauth_clients(id,redirects,name,created) VALUES(?,?,?,?)',id,JSON.stringify(redirects),String(name||'ChatGPT').slice(0,120),this.clock());
     return {client_id:id,client_id_issued_at:Math.floor(this.clock()/1000),redirect_uris:redirects,token_endpoint_auth_method:'none',grant_types:['authorization_code','refresh_token'],response_types:['code']};
   }
-  beginOAuth(clientId,redirect,challenge,state,scopes=DEFAULT_SCOPES,resource=this.resource){
+  beginOAuth(clientId,redirect,challenge,state,scopes=DEFAULT_SCOPES,resource=this.resource,language='he'){
     const client=this.client(clientId);
     if(!client||!JSON.parse(client.redirects).includes(redirect)||typeof challenge!=='string'||
        challenge.length<43||challenge.length>120||typeof state!=='string'||state.length>500)throw new CloudError(400,'invalid_oauth_request');
     const id=randomToken();
     scopes=oauthScopes(scopes);
     if((resource||'')!==(this.resource||''))throw new CloudError(400,'invalid_target');
-    this.run('INSERT INTO oauth_requests(id,client_id,redirect,challenge,state,expires,scopes,resource) VALUES(?,?,?,?,?,?,?,?)',id,clientId,redirect,challenge,state,this.clock()+600000,scopes,resource||'');
+    this.run('INSERT INTO oauth_requests(id,client_id,redirect,challenge,state,expires,scopes,resource,language) VALUES(?,?,?,?,?,?,?,?,?)',id,clientId,redirect,challenge,state,this.clock()+600000,scopes,resource||'',language==='en'?'en':'he');
     return id;
   }
   oauthRequest(id){return this.get('SELECT * FROM oauth_requests WHERE id=? AND expires>?',id,this.clock());}
+  setOAuthLanguage(requestId,language){
+    if(!['he','en'].includes(language))throw new CloudError(400,'invalid_language');
+    const request=this.oauthRequest(requestId);
+    if(!request)throw new CloudError(400,'expired_oauth_request');
+    // Language is display state only: preserve expiry, scope, resource and PKCE.
+    this.run('UPDATE oauth_requests SET language=? WHERE id=?',language,requestId);
+    return {...request,language};
+  }
   approveOAuth(requestId,accountId){
     const req=this.oauthRequest(requestId);
     if(!req)throw new CloudError(400,'expired_oauth_request');

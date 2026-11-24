@@ -7,7 +7,7 @@ import sqlite3
 import tempfile
 import time
 
-root=Path(os.getenv("LORVEX_CLOUD_HOME","/home/ubuntu/lorvex-cloud"))
+root=Path(os.getenv("LORVEX_CLOUD_HOME","/srv/lorvex-cloud"))
 src=Path(os.getenv("LORVEX_CLOUD_DB",str(root/"data"/"lorvex.sqlite")))
 target=Path(os.getenv("LORVEX_CLOUD_BACKUP_DIR",str(root/"backups")))
 if not src.is_file():

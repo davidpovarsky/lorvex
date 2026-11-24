@@ -58,8 +58,8 @@ struct LorvexHanlinComposer: View {
                     ForEach(LorvexHanlinToolCatalog.specs, id: \.alias) { tool in
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(verbatim: tool.summary).font(HanlinTypography.callout)
-                                if tool.writes {
+                                Text(String(localized: String.LocalizationValue(tool.summary))).font(HanlinTypography.callout)
+                                if tool.writes && !LorvexHanlinWritePolicy.mayAutomaticallyAuthorize(tool.alias) {
                                     Text("Asks for your approval").font(HanlinTypography.caption).foregroundStyle(.secondary)
                                 }
                             }

@@ -145,7 +145,8 @@ public final class LorvexHanlinAssistantState {
       messages[index].finish(terminal)
       if messages[index].text.isEmpty, messages[index].status != .cancelled {
         messages[index].text = failure == nil
-          ? "No answer text. Check activity and retry." : "The request failed."
+          ? String(localized: "No answer text. Check activity and retry.")
+          : String(localized: "The request failed.")
       }
     }
     errorMessage = failure
@@ -160,7 +161,7 @@ public final class LorvexHanlinAssistantState {
     guard !isRunning, !prompt.isEmpty else { return }
     guard !modelID.isEmpty, !credential.isEmpty,
           let url = URL(string: endpoint), url.scheme == "https", url.host != nil else {
-      errorMessage = "Configure a model, HTTPS provider endpoint, and API key."
+      errorMessage = String(localized: "Configure a model, HTTPS provider endpoint, and API key.")
       return
     }
     guard let turn = beginResponse(prompt: prompt) else { return }
@@ -224,7 +225,7 @@ public final class LorvexHanlinAssistantState {
       if error is CancellationError || _Concurrency.Task<Never, Never>.isCancelled {
         await cancel()
       } else {
-        finishResponse(runID: runID, responseID: responseID, failure: error.localizedDescription)
+        finishResponse(runID: runID, responseID: responseID, failure: LorvexHanlinErrorMessage.description(for: error))
       }
     }
   }

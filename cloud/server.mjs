@@ -3,13 +3,19 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { CloudStore,CloudError,oauthScopes } from './store.mjs';
 import { CLOUD_TOOLS,invokeCloudTool } from './tools.mjs';
+import {oauthLabels,oauthLanguage,oauthDocument,oauthLoginBody,htmlEscape} from './oauth-page.mjs';
 
 const PREFIX='/cloud';
+const protocolVersion=offered=>['2025-03-26','2025-06-18','2025-11-25'].includes(offered)?offered:'2025-11-25';
+const toolScopes=tool=>tool?.writes?['lorvex.read','lorvex.write']:['lorvex.read'];
+const toolSecurity=tool=>[{type:'oauth2',scopes:toolScopes(tool)}];
 const DEFAULT_ORIGIN='http://127.0.0.1:8769/cloud';
-const ACCOUNT_CSS='body{font:16px system-ui;margin:10vh auto;max-width:480px;padding:20px;color:#20242a}h1{font-size:26px}input{display:block;box-sizing:border-box;width:100%;padding:13px;font-size:17px;margin:10px 0;border:1px solid #aaa;border-radius:9px}button{padding:14px;background:#2563eb;color:white;border:0;border-radius:9px;font-size:16px;cursor:pointer}button+button{margin-left:8px;background:#4b5563}.hint{font-size:13px;color:#666}';
-const htmlEscape=x=>String(x).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const json=(res,status,payload,headers={})=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers});res.end(JSON.stringify(payload));};
-const html=(res,status,body)=>{res.writeHead(status,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'"});res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+ACCOUNT_CSS+'</style>'+body+'</html>');};
+const html=(res,status,body,language='he',title='Lorvex')=>{
+ res.writeHead(status,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
+  'Referrer-Policy':'same-origin','Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'"});
+ res.end(oauthDocument(language==='en'?'en':'he',title,body));
+};
 const oauthReply=(id,result)=>({jsonrpc:'2.0',id,result});
 const oauthError=(id,message,code=-32601)=>({jsonrpc:'2.0',id,error:{code,message}});
 const bearer=req=>{const authorization=req.headers.authorization||'';return authorization.startsWith('Bearer ')?authorization.slice(7):'';};
@@ -52,7 +58,10 @@ export function createCloudServer({
     try{if(new URL(value).toString()===new URL(resource).toString())return resource;}catch{}
     throw new CloudError(400,'invalid_target');
   };
-  const challenge=(scope,error='unauthorized')=>({'WWW-Authenticate':'Bearer resource_metadata="'+origin+'/.well-known/oauth-protected-resource", scope="'+scope+'"'+(error==='insufficient_scope'?', error="insufficient_scope"':'')});
+  const challenge=(scope,error='invalid_token')=>({'WWW-Authenticate':'Bearer resource_metadata="'+origin+'/.well-known/oauth-protected-resource", scope="'+scope+'", error="'+error+'", error_description="'+(error==='insufficient_scope'?'Additional account permission is required.':'Connect your Lorvex account again.')+'"'});
+  const toolAuthError=(scopes,error)=>({isError:true,content:[{type:'text',
+    text:error==='insufficient_scope'?'Connect Lorvex with the required permissions.':'Connect your Lorvex account to use this tool.'}],
+    _meta:{'mcp/www_authenticate':[challenge(scopes.join(' '),error)['WWW-Authenticate']]}});
   const attempts=new Map();
   const throttle=(name)=>{
     const entry=attempts.get(name)||{count:0,until:0};
@@ -71,24 +80,23 @@ export function createCloudServer({
     const account=store.login(email,password);
     return json(res,200,{user:store.publicAccount(account),...store.issueToken(account.id)});
   };
-  const loginForm=(res,requestId,error='')=>html(res,200,[
-    '<title>Lorvex Account</title><h1>Sign in to Lorvex</h1>',
-    '<p>Connect your tasks, lists, calendar and habits to ChatGPT.</p>',
-    '<p class="hint">No iPad pairing code is required. Your Lorvex account is stored on your private server.</p>',
-    error?'<p role="alert" style="color:#b91c1c">Sign-in failed. Check your email and password.</p>':'',
-    '<form action="/cloud/oauth/approve" method="post">',
-    '<input type="hidden" name="request" value="'+htmlEscape(requestId)+'">',
-    '<label>Email<input type="email" name="email" autocomplete="username" maxlength="250" required></label>',
-    '<label>Password<input type="password" name="password" autocomplete="current-password" minlength="12" required></label>',
-    '<button name="mode" value="login" type="submit">Sign in &amp; connect</button>',
-    '<button name="mode" value="register" type="submit">Create account</button>',
-    '</form><p class="hint">Requested permissions: '+htmlEscape(store.oauthRequest(requestId)?.scopes||'')+'. You can disconnect Lorvex in ChatGPT settings.</p>'
-  ].join(''));
+  const oauthFailure=(res,status,language,error)=>{
+    const labels=oauthLabels[language==='en'?'en':'he'];
+    return html(res,status,'<h1>'+labels.errorTitle+'</h1><p role="alert">'+htmlEscape(labels[error])+'</p>',language,labels.errorTitle);
+  };
+  const loginForm=(res,requestId,error='',fallbackLanguage='he')=>{
+    const request=store.oauthRequest(requestId);
+    if(!request)return oauthFailure(res,400,fallbackLanguage,'expired');
+    const language=request.language==='en'?'en':'he';
+    return html(res,200,oauthLoginBody(request,error),language,oauthLabels[language].title);
+  };
 
   const server=http.createServer(async(req,res)=>{
     const url=new URL(req.url||'/', 'http://localhost');
     const pathname=url.pathname;
     const method=req.method||'GET';
+    const browserRoute=['/oauth/authorize','/oauth/approve','/oauth/language'].some(route=>pathname===PREFIX+route);
+    let pageLanguage=oauthLanguage(url.searchParams.get('ui_locales'),req.headers['accept-language']);
     if(pathname.startsWith(PREFIX+'/oauth/'))res.once('finish',()=>{
       console.info('OAUTH_AUDIT',method,pathname,res.statusCode);
     });
@@ -122,13 +130,23 @@ export function createCloudServer({
         const redirect=url.searchParams.get('redirect_uri');
         if(!validRedirect(redirect,allowLocalhostOAuth))throw new CloudError(400,'redirect_not_allowed');
         if(url.searchParams.getAll('resource').length>1)throw new CloudError(400,'invalid_target');
-        const requestId=store.beginOAuth(clientId,redirect,url.searchParams.get('code_challenge'),url.searchParams.get('state')||'',oauthScopes(url.searchParams.get('scope')??undefined),target(url.searchParams.get('resource')));
+        const requestId=store.beginOAuth(clientId,redirect,url.searchParams.get('code_challenge'),url.searchParams.get('state')||'',oauthScopes(url.searchParams.get('scope')??undefined),target(url.searchParams.get('resource')),pageLanguage);
         return loginForm(res,requestId);
       }
-      if(pathname===PREFIX+'/oauth/approve'&&method==='POST'){
-        const form=await parseBody(req);
-        const request=store.oauthRequest(form.request);
-        if(!request)return html(res,400,'<h1>Sign-in expired</h1><p>Return to ChatGPT and reconnect Lorvex.</p>');
+      if([PREFIX+'/oauth/approve',PREFIX+'/oauth/language'].includes(pathname)&&method==='POST'){
+        const form=await parseBody(req),languageOnly=pathname===PREFIX+'/oauth/language';
+        const id=typeof form.request==='string'?form.request:'';
+        const display=store.get('SELECT language FROM oauth_requests WHERE id=?',id);
+        if(display)pageLanguage=display.language==='en'?'en':'he';
+        if((languageOnly||req.headers.origin)&&req.headers.origin!==new URL(origin).origin)
+          return oauthFailure(res,403,pageLanguage,'invalidOrigin');
+        const request=store.oauthRequest(id);
+        if(!request)return oauthFailure(res,400,pageLanguage,'expired');
+        if(languageOnly){
+          store.setOAuthLanguage(id,form.language);
+          return loginForm(res,id,'',pageLanguage);
+        }
+        if(!['login','register'].includes(form.mode))return oauthFailure(res,400,pageLanguage,'invalidRequest');
         let account;
         try {
           if(form.mode==='register'){
@@ -139,10 +157,10 @@ export function createCloudServer({
             account=store.login(form.email,form.password);
           }
         } catch(e) {
-          if(e instanceof CloudError&&[401,409,422].includes(e.status))return loginForm(res,form.request,'invalid');
+          if(e instanceof CloudError&&[401,409,422].includes(e.status))return loginForm(res,id,'invalid',pageLanguage);
           throw e;
         }
-        const grant=store.approveOAuth(form.request,account.id);
+        const grant=store.approveOAuth(id,account.id);
         const callback=new URL(grant.redirect);
         callback.searchParams.set('code',grant.code);
         callback.searchParams.set('iss',origin);
@@ -182,25 +200,27 @@ export function createCloudServer({
         const p=await parseBody(req);
         if(!p||p.jsonrpc!=='2.0')throw new CloudError(400,'invalid_jsonrpc');
         if(p.method==='initialize')return json(res,200,oauthReply(p.id,{
-          protocolVersion:'2025-06-18',capabilities:{tools:{listChanged:false}},
+          protocolVersion:protocolVersion(p.params?.protocolVersion),capabilities:{tools:{listChanged:false}},
           serverInfo:{name:'Lorvex Cloud MCP',version:'1.0.0'}}));
         if(p.method==='ping')return json(res,200,oauthReply(p.id,{}));
         if(p.method?.startsWith('notifications/')){res.writeHead(202);return res.end();}
+        const requestedTool=p.method==='tools/call'?CLOUD_TOOLS.find(t=>t.name===p.params?.name):null;
+        const requiredScopes=toolScopes(requestedTool);
         let session;
-        try{session=store.authenticate(bearer(req),'lorvex.read');}
-        catch(e){
-          return json(res,e.status===403?403:401,{error:e.code},challenge('lorvex.read',e.code));
+        try{
+          session=store.authenticate(bearer(req),'lorvex.read');
+          if(requestedTool?.writes)store.authenticate(bearer(req),'lorvex.write');
+        }catch(e){
+          const error=e.status===403?'insufficient_scope':'invalid_token';
+          if(requestedTool)return json(res,200,oauthReply(p.id,toolAuthError(requiredScopes,error)));
+          return json(res,e.status===403?403:401,{error:e.code},challenge(requiredScopes.join(' '),error));
         }
         if(p.method==='tools/list'){
-          return json(res,200,oauthReply(p.id,{tools:CLOUD_TOOLS.map(({writes,...t})=>t)}));
+          return json(res,200,oauthReply(p.id,{tools:CLOUD_TOOLS.map(({writes,...t})=>({...t,securitySchemes:toolSecurity({writes}),
+            _meta:{...t._meta,securitySchemes:toolSecurity({writes})}}))}));
         }
         if(p.method==='tools/call'){
           try{
-            const spec=CLOUD_TOOLS.find(t=>t.name===p.params?.name);
-            if(spec?.writes){
-              try{store.authenticate(bearer(req),'lorvex.write');}
-              catch(e){return json(res,e.status,{error:e.code},challenge('lorvex.read lorvex.write',e.code));}
-            }
             const result=await invokeCloudTool(store,session.account_id,p.params?.name,p.params?.arguments??{});
             return json(res,200,oauthReply(p.id,result));
           }catch(error){
@@ -238,7 +258,10 @@ export function createCloudServer({
     }catch(error){
       const status=error instanceof CloudError?error.status:500;
       if(status===500)console.error('SERVER_ERROR',String(error?.message||'error').slice(0,150));
-      if(!res.headersSent)return json(res,status,{error:error instanceof CloudError?error.code:'internal_error'});
+      if(!res.headersSent){
+        if(browserRoute)return oauthFailure(res,status,pageLanguage,status===429?'rateLimit':'invalidRequest');
+        return json(res,status,{error:error instanceof CloudError?error.code:'internal_error'});
+      }
       res.end();
     }
   });

@@ -116,7 +116,7 @@ struct LorvexChatGPTPlanSettingsView: View {
       set: { if !$0 { account.cancelSignIn() } }
     )) {
       if let url = account.authorizationURL {
-        LorvexChatGPTPlanBrowser(url: url).ignoresSafeArea()
+        LorvexChatGPTPlanBrowser(url: url, onFinish: account.cancelSignIn).ignoresSafeArea()
       }
     }
   }

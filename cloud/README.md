@@ -33,8 +33,8 @@ Oracle server. The old bridge continues to serve legacy clients unchanged.
 Run `node --test cloud/*.test.mjs` before rollout.
 Copy the canonical `schema/sync_payload/004.json` to the runtime directory as
 `sync-payload-004.json` (or point LORVEX_CLOUD_CONTRACT_PATH at it).
-Copy canonical.mjs, payload.mjs, store.mjs, tools.mjs and server.mjs into
-/home/ubuntu/lorvex-cloud, install lorvex-cloud.service with systemd,
+Copy canonical.mjs, payload.mjs, store.mjs, tools.mjs, oauth-page.mjs and server.mjs into
+/srv/lorvex-cloud, install lorvex-cloud.service with systemd,
 and mount the public /cloud prefix through the existing localhost Lorvex MCP
 relay on port 8767. The new service itself listens only at 127.0.0.1:8769.
 
@@ -93,3 +93,34 @@ not proof of native SyncEnvelope semantic convergence, and the user still
 must sign in and migrate their data. The cloud account endpoint does not grant
 a ChatGPT account plan by itself; that requires the separately documented
 OpenAI Sign in with ChatGPT flow and user eligibility.
+
+## Deployment templates and existing installations
+
+The checked-in service templates use `/srv/lorvex-cloud` for cloud code and
+`/srv/lorvex-mcp-bridge` for the legacy bridge. Set the runtime user/group and
+Node executable to the installed service account and executable before first
+installation. The SQLite and backup volume settings remain explicit.
+
+Existing installations can keep their current code directories. A source-only
+update copies the changed modules into the current unit's WorkingDirectory;
+it does not reinstall the templates, change environment overrides, move data,
+or reset either application's credentials.
+
+If deliberately relocating code, copy all modules, the schema resource, and the
+canonical executable/resources first. Verify the staged tree, preserve the
+existing data and backup environment variables, then update only the unit's code
+paths and restart that service. Keep the previous code directory for rollback.
+The OAuth language migration adds one column to pending requests; it preserves
+account and token records. Rolling back code must not restore a stale database.
+
+## ChatGPT account-linking contract
+
+Every tool advertises its required OAuth scopes. A missing, expired or
+under-scoped credential returns `isError` plus `mcp/www_authenticate` so the
+client can prompt account linking; no task operation executes. Catalog
+discovery and native REST APIs continue to require authorization.
+
+Consent supports Hebrew and English via `ui_locales`, `Accept-Language` and an
+explicit language action. That action only changes the display language and
+preserves the original client, redirect, scopes, resource, PKCE challenge and
+expiration. The selection persists across process restarts.

@@ -28,6 +28,24 @@ class LineFindingsTests(unittest.TestCase):
         self.assertEqual([name for name, _ in found], ["machine temporary path"])
 
 
+    def test_scaled_asset_catalog_filename_is_not_an_email(self):
+        for scale in (2, 3):
+            path = f'"Sources/Assets.xcassets/arxiv.imageset/arxiv-logomark-small@{scale}x.png": {{'
+            self.assertEqual(gate.line_findings(path), [])
+
+    def test_asset_filename_does_not_hide_a_real_email_on_the_same_line(self):
+        line = '"Assets.xcassets/icon.imageset/icon@2x.png" someone@gmail.com'  # public-safety: allow
+        self.assertEqual(gate.line_findings(line), [("email address", "someone@gmail.com")])  # public-safety: allow
+
+    def test_scaled_address_outside_asset_catalog_is_still_reported(self):
+        for line in ("someone@2x.png", '"images/icon@3x.png"'):  # public-safety: allow
+            self.assertEqual([name for name, _ in gate.line_findings(line)], ["email address"])
+
+    def test_asset_path_does_not_hide_an_extended_email_domain(self):
+        line = '"Assets.xcassets/icon.imageset/person@2x.png.com"'  # public-safety: allow
+        self.assertEqual([name for name, _ in gate.line_findings(line)], ["email address"])
+
+
 class PathRulesTests(unittest.TestCase):
     def matches(self, path: str) -> bool:
         return any(rule.search(path) for _, rule in gate.PATH_RULES)

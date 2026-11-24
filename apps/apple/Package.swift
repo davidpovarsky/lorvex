@@ -43,7 +43,7 @@ let package = Package(
         .package(path: "../../Vendor/HanlinSDK"),
         // Direct test dependency for the immutable canonical SDK integration suite.
         .package(url: "https://github.com/davidpovarsky/swift-ai-sdk.git",
-                 revision: "e7bf34111e603ca977becd007dd4e5bb109af857")
+                 revision: "07431abccbfb151ca2dab67bca6cf86fcb2bd3b8")
     ],
     targets: [
         .target(

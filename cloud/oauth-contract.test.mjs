@@ -39,7 +39,7 @@ test('OAuth issuer path discovery exposes the correct independent authorization 
  assert.equal(auth.value.revocation_endpoint,issuer+'/oauth/revoke');
  assert.equal(auth.value.authorization_response_iss_parameter_supported,true);
 }));
-test('OAuth grants only requested scope and emits HTTP403 for unauthorized writes',async()=>fixture(async({request})=>{
+test('OAuth grants only requested scope and prompts reauthorization for unauthorized tools',async()=>fixture(async({request})=>{
  const auth=await authorize(request,{scope:'lorvex.read offline_access'});
  const exchanged=await request('/cloud/oauth/token',auth.exchange);
  assert.equal(exchanged.status,200);assert.equal(exchanged.value.scope,'lorvex.read offline_access');
@@ -47,7 +47,8 @@ test('OAuth grants only requested scope and emits HTTP403 for unauthorized write
  const list=await request('/cloud/mcp',{jsonrpc:'2.0',id:1,method:'tools/list'},token);
  assert.equal(list.status,200);assert.equal(list.value.result.tools.length,22);
  const denied=await request('/cloud/mcp',{jsonrpc:'2.0',id:2,method:'tools/call',params:{name:'create_task',arguments:{title:'Must not exist'}}},token);
- assert.equal(denied.status,403);assert.match(denied.headers.get('www-authenticate'),/insufficient_scope/);
+ assert.equal(denied.status,200);assert.equal(denied.value.result.isError,true);
+  assert.match(denied.value.result._meta['mcp/www_authenticate'][0],/insufficient_scope/);
  assert.equal((await request('/cloud/v1/dashboard',null,token)).value.totalMatching,0);
  const wide=await request('/cloud/oauth/token',{grant_type:'refresh_token',client_id:auth.params.client_id,refresh_token:exchanged.value.refresh_token,resource,scope:'lorvex.read lorvex.write'});
  assert.equal(wide.status,400);assert.equal(wide.value.error,'invalid_scope');

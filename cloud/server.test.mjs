@@ -104,7 +104,7 @@ test('standard OAuth PKCE sign-in uses account password, never device pairing',a
   const verifier=randomBytes(48).toString('base64url');
   const challenge=createHash('sha256').update(verifier).digest('base64url');
   const authorizeURL=new URLSearchParams({
-    client_id:clientId,redirect_uri:redirect,response_type:'code',state:'opaque-sandbox',
+    client_id:clientId,redirect_uri:redirect,response_type:'code',state:'opaque-sandbox',ui_locales:'en',
     code_challenge:challenge,code_challenge_method:'S256'});
   const authorize=await request(base+'/oauth/authorize?'+authorizeURL,'GET');
   assert.equal(authorize.status,200);
@@ -157,6 +157,9 @@ test('authentication and sync validation reject attacks without mutating state',
   assert.equal((await request(base+'/v1/dashboard','GET',null,token)).value.totalMatching,0);
   assert.equal((await request(base+'/oauth/register','POST',{redirect_uris:['https://evil.example/callback']})).status,400);
   const malicious=await request(base+'/mcp','POST',rpc(2,'tools/call',{name:'create_task',arguments:{title:'x'}}));
-  assert.equal(malicious.status,401);
+  assert.equal(malicious.status,200);
+  assert.equal(malicious.value.result.isError,true);
+  assert.match(malicious.value.result._meta['mcp/www_authenticate'][0],/invalid_token/);
+  assert.equal((await request(base+'/v1/dashboard','GET',null,token)).value.totalMatching,0);
  });
 });

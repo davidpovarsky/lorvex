@@ -6,10 +6,10 @@ RequiresMountsFor=/mnt/development/services/lorvex-cloud
 Type=oneshot
 User=ubuntu
 Group=ubuntu
-Environment=LORVEX_CLOUD_HOME=/home/ubuntu/lorvex-cloud
+Environment=LORVEX_CLOUD_HOME=/srv/lorvex-cloud
 Environment=LORVEX_CLOUD_DB=/mnt/development/services/lorvex-cloud/data/lorvex.sqlite
 Environment=LORVEX_CLOUD_BACKUP_DIR=/mnt/development/services/lorvex-cloud/backups
-ExecStart=/usr/bin/python3 /home/ubuntu/lorvex-cloud/backup.py
+ExecStart=/usr/bin/python3 /srv/lorvex-cloud/backup.py
 UMask=0077
 NoNewPrivileges=yes
 ProtectSystem=strict

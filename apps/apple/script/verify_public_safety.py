@@ -52,6 +52,22 @@ def is_placeholder(rule: str, text: str) -> bool:
     return False
 
 
+def is_scaled_asset_filename(line: str, match: re.Match[str]) -> bool:
+    """An @2x/@3x image inside an asset catalog is a file, not a mailbox.
+    Require both the catalog/imageset path and a complete filename boundary;
+    a similar-looking bare address must still be reported.
+    """
+    return (
+        re.fullmatch(r"[A-Za-z0-9._%+-]+@[23]x\.(?:png|jpg|jpeg|webp)", match.group(0)) is not None
+        and re.search(
+            r"""(?:^|["'\s])(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+\.xcassets/"""
+            r"""(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+\.imageset/$""",
+            line[:match.start()],
+        ) is not None
+        and (match.end() == len(line) or line[match.end()] in "\"' \t\r\n")
+    )
+
+
 def line_findings(line: str) -> list[tuple[str, str]]:
     """Every non-placeholder match on `line`, as (rule name, matched text). Every
     match counts: a placeholder earlier on the line must not hide a real one
@@ -59,7 +75,9 @@ def line_findings(line: str) -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     for name, rule in CONTENT_RULES:
         for match in rule.finditer(line):
-            if not is_placeholder(name, match.group(0)):
+            if not is_placeholder(name, match.group(0)) and not (
+                name == "email address" and is_scaled_asset_filename(line, match)
+            ):
                 found.append((name, match.group(0)))
     return found
 

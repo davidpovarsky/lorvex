@@ -8,12 +8,12 @@ RequiresMountsFor=/mnt/development/services/lorvex-cloud/data
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/lorvex-cloud
+WorkingDirectory=/srv/lorvex-cloud
 Environment=LORVEX_CLOUD_HOST=127.0.0.1
 Environment=LORVEX_CLOUD_PORT=8769
 Environment=LORVEX_CLOUD_ORIGIN=https://torah-social.tail0a6c7d.ts.net:10000/cloud
 Environment=LORVEX_CLOUD_DB=/mnt/development/services/lorvex-cloud/data/lorvex.sqlite
-ExecStart=/usr/local/bin/node /home/ubuntu/lorvex-cloud/server.mjs
+ExecStart=/usr/local/bin/node /srv/lorvex-cloud/server.mjs
 Restart=on-failure
 RestartSec=5
 UMask=0077

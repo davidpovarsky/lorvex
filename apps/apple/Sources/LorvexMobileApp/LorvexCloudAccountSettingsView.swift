@@ -7,6 +7,8 @@ import LorvexMobile
 struct LorvexCloudAccountSettingsView: View {
   @Environment(\.dismiss) private var dismiss
   @Bindable var cloud: LorvexCloudAccountState
+  var legacyBridge: LorvexRemoteBridgeState? = nil
+  @State private var showLegacyBridge = false
   @State private var email = ""
   @State private var password = ""
   @State private var showSignOut = false
@@ -36,7 +38,7 @@ struct LorvexCloudAccountSettingsView: View {
             Button("Create Lorvex account") { authenticate(register:true) }
               .accessibilityIdentifier("lorvex.cloud.register")
               .disabled(cloud.isSigningIn || email.isEmpty || password.count<12)
-            if cloud.isSigningIn { ProgressView("ConnectingÃ¢â‚¬Â¦") }
+            if cloud.isSigningIn { ProgressView("Connecting…") }
           }
         } else {
           Section("Connected account") {
@@ -51,7 +53,7 @@ struct LorvexCloudAccountSettingsView: View {
             Button {
               _Concurrency.Task { await cloud.syncNow() }
             } label: {
-              Label(cloud.isSyncing ? "SynchronizingÃ¢â‚¬Â¦" : "Sync now",
+              Label(cloud.isSyncing ? String(localized: "Synchronizing…") : String(localized: "Sync now"),
                     systemImage:"arrow.triangle.2.circlepath")
             }
             .disabled(cloud.isSyncing)
@@ -64,6 +66,12 @@ struct LorvexCloudAccountSettingsView: View {
             .font(.callout)
           Text("Your local database stays available offline. The first synchronization merges your existing tasks into this account. CloudKit sync is disabled while Lorvex Cloud is active to avoid competing sync transports.")
             .font(.caption).foregroundStyle(.secondary)
+        }
+        if legacyBridge != nil {
+          Section {
+            Button("Existing iPad connection") { showLegacyBridge = true }
+              .accessibilityIdentifier("lorvex.cloud.legacy-connection")
+          }
         }
       }
       .navigationTitle("Lorvex Cloud")
@@ -80,6 +88,9 @@ struct LorvexCloudAccountSettingsView: View {
         Button("Cancel",role:.cancel){}
       } message: {
         Text("Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset.")
+      }
+      .sheet(isPresented: $showLegacyBridge) {
+        if let legacyBridge { LorvexRemoteBridgeSettingsView(bridge: legacyBridge) }
       }
       .onAppear {
         if email.isEmpty { email=cloud.email }

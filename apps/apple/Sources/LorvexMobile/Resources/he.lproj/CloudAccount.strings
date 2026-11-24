@@ -1,0 +1,7 @@
+"cloud.account.signed_out" = "לא מחובר";
+"cloud.account.restored" = "החשבון מחובר — מסנכרן עם ענן Lorvex";
+"cloud.account.connecting" = "מתחבר באופן מאובטח…";
+"cloud.account.connected" = "מחובר — מסנכרן עם ענן Lorvex";
+"cloud.account.synced" = "מסונכרן עם ענן Lorvex";
+"cloud.account.sync_paused" = "הסנכרון הושהה: ";
+"cloud.account.disconnected" = "החשבון נותק. המשימות במכשיר נשמרו.";

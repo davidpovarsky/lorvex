@@ -26,7 +26,7 @@ struct LorvexHanlinAssistantView: View {
     @State private var draftModelID = ""
     @State private var draftEndpoint = ""
     @State private var isSavingSettings = false
-    @State private var isPreparingRequest = false
+    @State private var pendingSendID: UUID?
     @State private var pendingSend: _Concurrency.Task<Void, Never>?
     @AppStorage("lorvex.hanlin.provider") private var provider = "OpenRouter"
     @AppStorage("lorvex.hanlin.model") private var modelID = ""
@@ -46,7 +46,7 @@ struct LorvexHanlinAssistantView: View {
                 LorvexHanlinChatWorkspace(assistant: assistant, draft: composerDraft,
                     modelName: provider == "ChatGPT" ? chatGPTAccount.selectedModelID : modelID,
                     showModelSettings: { showModelSettings = true },
-                    showRemoteBridgeSettings: { showRemoteBridgeSettings = true },
+                    showRemoteBridgeSettings: openMCPSettings,
                     send: send)
                 #else
                 ContentUnavailableView("Hanlin AI", systemImage: "ipad",
@@ -66,7 +66,7 @@ struct LorvexHanlinAssistantView: View {
                     .disabled(cloudAccount == nil)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("MCP", systemImage: "network") { showRemoteBridgeSettings = true }
+                    Button("MCP", systemImage: "network", action: openMCPSettings)
                         .accessibilityIdentifier("hanlin.mcp.settings")
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -77,11 +77,11 @@ struct LorvexHanlinAssistantView: View {
             .onAppear(perform: loadCredential)
             .onChange(of: chatGPTAccount.sessionRevision) { _, _ in
                 guard provider == "ChatGPT" else { return }
-                pendingSend?.cancel(); pendingSend = nil; isPreparingRequest = false
+                cancelPendingSend()
                 _Concurrency.Task { await assistant.cancel() }
             }
             .onDisappear {
-                pendingSend?.cancel(); pendingSend = nil; isPreparingRequest = false
+                cancelPendingSend()
                 _Concurrency.Task { await assistant.cancel() }
             }
             .sheet(isPresented: $showModelSettings) {
@@ -92,7 +92,7 @@ struct LorvexHanlinAssistantView: View {
             }
             .sheet(isPresented: $showCloudAccountSettings) {
                 if let cloudAccount {
-                    LorvexCloudAccountSettingsView(cloud: cloudAccount)
+                    LorvexCloudAccountSettingsView(cloud: cloudAccount, legacyBridge: remoteBridge)
                 }
             }
             #if canImport(UIKit)
@@ -104,6 +104,18 @@ struct LorvexHanlinAssistantView: View {
             #endif
         }
         .chatMotionPreferences()
+    }
+
+    private func cancelPendingSend() {
+        // Revoke ownership before cancellation can resume a suspended credential lookup.
+        pendingSendID = nil
+        pendingSend?.cancel()
+        pendingSend = nil
+    }
+
+    private func openMCPSettings() {
+        if cloudAccount != nil { showCloudAccountSettings = true }
+        else { showRemoteBridgeSettings = true }
     }
 
     private func loadCredential() {
@@ -133,7 +145,7 @@ struct LorvexHanlinAssistantView: View {
                         }
                         .accessibilityIdentifier("hanlin.chatgpt.settings")
                         if chatGPTAccount.canUsePlan {
-                            Text("Selected: " + chatGPTAccount.selectedModelID)
+                            Text(String(localized: "Selected: ") + chatGPTAccount.selectedModelID)
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         #else
@@ -185,10 +197,18 @@ struct LorvexHanlinAssistantView: View {
                 return
             }
             isSavingSettings = true
+            cancelPendingSend()
+            let revision = chatGPTAccount.sessionRevision
+            let selectedModel = chatGPTAccount.selectedModelID
             _Concurrency.Task {
                 await assistant.cancel()
+                guard chatGPTAccount.sessionRevision == revision, chatGPTAccount.canUsePlan else {
+                    configurationError = String(localized: "Sign in and select an eligible ChatGPT model first.")
+                    isSavingSettings = false
+                    return
+                }
                 provider = "ChatGPT"
-                modelID = chatGPTAccount.selectedModelID
+                modelID = selectedModel
                 endpoint = "https://api.openai.com/v1"
                 configurationError = nil
                 isSavingSettings = false
@@ -207,10 +227,13 @@ struct LorvexHanlinAssistantView: View {
             // exposed to another send. Cancellation of settings leaves the
             // persisted provider/model/endpoint unchanged.
             isSavingSettings = true
+            cancelPendingSend()
+            let selectedProvider = draftProvider, selectedModel = draftModelID
+            let selectedEndpoint = draftEndpoint, selectedCredential = apiToken
             _Concurrency.Task {
                 await assistant.cancel()
-                provider = draftProvider; modelID = draftModelID; endpoint = draftEndpoint
-                configuredToken = apiToken; configurationError = nil
+                provider = selectedProvider; modelID = selectedModel; endpoint = selectedEndpoint
+                configuredToken = selectedCredential; configurationError = nil
                 isSavingSettings = false; showModelSettings = false
             }
         } catch {
@@ -221,18 +244,22 @@ struct LorvexHanlinAssistantView: View {
     #if canImport(UIKit)
     private func send() {
         let text = composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !assistant.isRunning, !isPreparingRequest else { return }
+        guard !text.isEmpty, !assistant.isRunning, pendingSendID == nil else { return }
         if provider == "ChatGPT" {
             guard chatGPTAccount.canUsePlan else {
                 showChatGPTAccountSettings = true
                 return
             }
-            isPreparingRequest = true
+            let requestID = UUID()
+            pendingSendID = requestID
             pendingSend = _Concurrency.Task {
-                defer { isPreparingRequest = false; pendingSend = nil }
+                defer {
+                    if pendingSendID == requestID { pendingSendID = nil; pendingSend = nil }
+                }
                 do {
                     let credential = try await chatGPTAccount.accessForInference()
                     try _Concurrency.Task<Never, Never>.checkCancellation()
+                    guard pendingSendID == requestID else { return }
                     if composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines) == text {
                         composerDraft.text = ""
                     }
@@ -243,7 +270,8 @@ struct LorvexHanlinAssistantView: View {
                 } catch is CancellationError {
                     // Preserve the unsent draft when the user closes the assistant.
                 } catch {
-                    configurationError = error.localizedDescription
+                    guard pendingSendID == requestID else { return }
+                    configurationError = LorvexHanlinErrorMessage.description(for: error)
                     chatGPTAccount.reportConnectionError(error)
                     showChatGPTAccountSettings = true
                 }
@@ -254,10 +282,20 @@ struct LorvexHanlinAssistantView: View {
             showModelSettings = true
             return
         }
-        composerDraft.text = ""
-        _Concurrency.Task {
-            await assistant.send(text, modelID: modelID, endpoint: endpoint,
-                                 credential: configuredToken, provider: provider)
+        let requestID = UUID()
+        let selectedModel = modelID, selectedEndpoint = endpoint
+        let selectedCredential = configuredToken, selectedProvider = provider
+        pendingSendID = requestID
+        pendingSend = _Concurrency.Task {
+            defer {
+                if pendingSendID == requestID { pendingSendID = nil; pendingSend = nil }
+            }
+            guard pendingSendID == requestID, !_Concurrency.Task<Never, Never>.isCancelled else { return }
+            if composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines) == text {
+                composerDraft.text = ""
+            }
+            await assistant.send(text, modelID: selectedModel, endpoint: selectedEndpoint,
+                                 credential: selectedCredential, provider: selectedProvider)
         }
     }
     #endif
