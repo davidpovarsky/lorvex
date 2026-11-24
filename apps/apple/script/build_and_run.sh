@@ -400,15 +400,15 @@ $LOCALIZATION_PLIST_ENTRIES
   <string>NSApplication</string>
   <key>NSUserActivityTypes</key>
   <array>
-    <string>com.lorvex.apple.openTask</string>
-    <string>com.lorvex.apple.openDestination</string>
-    <string>com.lorvex.apple.openList</string>
+    <string>com.itorah.lorvex.openTask</string>
+    <string>com.itorah.lorvex.openDestination</string>
+    <string>com.itorah.lorvex.openList</string>
   </array>
   <key>UTExportedTypeDeclarations</key>
   <array>
     <dict>
       <key>UTTypeIdentifier</key>
-      <string>com.lorvex.apple.task-ref</string>
+      <string>com.itorah.lorvex.task-ref</string>
       <key>UTTypeDescription</key>
       <string>Lorvex Task Reference</string>
       <key>UTTypeConformsTo</key>
@@ -418,7 +418,7 @@ $LOCALIZATION_PLIST_ENTRIES
     </dict>
     <dict>
       <key>UTTypeIdentifier</key>
-      <string>com.lorvex.apple.checklist-item-ref</string>
+      <string>com.itorah.lorvex.checklist-item-ref</string>
       <key>UTTypeDescription</key>
       <string>Lorvex Checklist Item Reference</string>
       <key>UTTypeConformsTo</key>
@@ -493,7 +493,7 @@ normalize_embedded_bundle_identity() {
 EMPTY_PLIST
   fi
   stamp_toolchain_provenance "$plist"
-  add_plist_string_if_absent "$plist" CFBundleIdentifier "com.lorvex.apple.resource.$slug"
+  add_plist_string_if_absent "$plist" CFBundleIdentifier "com.itorah.lorvex.resource.$slug"
   add_plist_string_if_absent "$plist" CFBundleName "$bundle_name"
   add_plist_string_if_absent "$plist" CFBundlePackageType "BNDL"
   add_plist_string_if_absent "$plist" CFBundleInfoDictionaryVersion "6.0"

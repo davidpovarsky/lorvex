@@ -49,7 +49,7 @@ func appMetadataMatchesAppleDistributionIdentity() {
   #expect(AppMetadata.appGroupIdentifier == "group.com.itorah.lorvex")
   #expect(AppMetadata.cloudKitContainerIdentifier == "iCloud.com.itorah.lorvex")
   #expect(AppMetadata.marketingVersion == "1.0.0")
-  #expect(AppMetadata.buildVersion == "168")
+  #expect(AppMetadata.buildVersion == "172")
   // Derived, not a third literal: the marketing and build values are pinned
   // above, so a build bump must not require editing a duplicate of them here.
   #expect(

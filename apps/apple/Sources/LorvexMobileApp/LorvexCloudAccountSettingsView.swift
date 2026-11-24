@@ -1,5 +1,6 @@
 import SwiftUI
 import LorvexMobile
+import LorvexHanlinAgent
 
 /// A normal Lorvex account replaces iPad pairing codes. Login credentials
 /// are sent only over TLS and the session is retained in the device Keychain.
