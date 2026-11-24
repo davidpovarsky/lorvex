@@ -1,0 +1,604 @@
+{
+  "schemaVersion": 1,
+  "title": "Lorvex Hanlin and Cloud native acceptance, 24 November 2026",
+  "repository": "https://github.com/davidpovarsky/lorvex",
+  "branch": "codex/lorvex-final-20261124",
+  "testedAndReleaseSource": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+  "testedTree": "36c14a4b99dda155d98d7007bef261bdb7f0c9b6",
+  "documentationOnlyFollowup": true,
+  "artifactBase": "apps/apple/dist/native-20261124",
+  "releaseStateAtEvidencePublication": "Signed build 172 release delegated to the release owner and in progress; this evidence does not assert Apple upload, processing or TestFlight availability.",
+  "sdk": {
+    "revision": "bea35c3c2a435d1cc5f7ce93b08a649b104bc10f",
+    "swiftAISDKRevision": "07431abccbfb151ca2dab67bca6cf86fcb2bd3b8",
+    "installerSHA256": "4cf99955317a83e3d882834fe0235f505af41e335fd1e84e475524081d301677",
+    "swiftPackageLockSHA256": "79c1e80b91faf7ddaf36fbc39c39511b8b1bba004efec57ec846efdef69ae078",
+    "xcodePackageLockSHA256": "26607be149a1a6e0ef94d75c9fdcbc469887b3d1286495acb2dbeef65db5d93c",
+    "acknowledgmentSHA256": "0e452d437a861b719d2b9585978c3dbc8c87c050c61afee09c7eec8b0bb7f043",
+    "acknowledgmentScope": "18 external locked packages plus explicit local Hanlin MIT, Swift-JSON Apache and RhoeJSON notice; affected generation, drift and inclusion checks passed."
+  },
+  "finalNative": {
+    "completedUTC": "2026-11-24T18:04:16.492977+00:00",
+    "exitCode": 0,
+    "cleanCheckoutAfter": true,
+    "compiler": "Xcode 27.1 / Swift 6.4",
+    "runtimeDriver": "Xcode 27.0",
+    "simulatorRuntime": "com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+    "simulatorRuntimeBuild": "24B8117",
+    "runtimeMode": "test-without-building against the exact compiler-produced arm64 xctestrun; no project/scheme or package resolution on runtime invocation",
+    "automaticSystemDiagnostics": "-collect-test-diagnostics never; assertions, complete xcresult, logs and explicit screenshots retained",
+    "buildJobs": 3,
+    "testCases": [
+      {
+        "name": "testChatGPTSignInCanBeCancelledAndRestarted",
+        "result": "passed",
+        "seconds": 51.548,
+        "behavior": "Official authorization browser opens and closes twice. The account screen remains visible, shows cancellation, keeps disconnected state, and the actual Continue button is enabled and hittable for retry."
+      },
+      {
+        "name": "testHebrewCloudAndChatGPTSettings",
+        "result": "passed",
+        "seconds": 30.516,
+        "behavior": "Hebrew assistant, Cloud account, provider settings and account management remain navigable with the actual add button hittable."
+      }
+    ],
+    "reusedUICases": [
+      {
+        "name": "testOriginalComposerInsideLorvex",
+        "source": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+        "result": "passed",
+        "seconds": 27.433
+      },
+      {
+        "name": "testMCPConnectionUsesCloudAccount",
+        "source": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+        "result": "passed",
+        "seconds": 15.15
+      }
+    ],
+    "coverageStatement": "Four distinct UI scenarios have accepted evidence across two runs; the final bb05 run contains two cases, not a new four-case run.",
+    "resultBundle": "ui-final-bb05d2e-r2/Lorvex-Hanlin-UI.xcresult",
+    "productAndArtifacts": {
+      "attachments": [
+        {
+          "test": "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted()",
+          "file": "C7D65076-2CAD-4DCF-9864-8DECA5CAE44C.png",
+          "label": "Lorvex - official ChatGPT sign-in cancelled and restarted_0_8753AE8C-E5F8-45D3-976D-FE94F20D2270.png",
+          "sha256": "0f5920ccf445771ab71a5bdebef15f0b8bc3697db017da0c541da2cd460eb2bc",
+          "size": 912483
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted()",
+          "file": "79C23735-55E2-456C-97C3-D221C5D700DC.png",
+          "label": "Lorvex - account after ChatGPT sign-in cancellation_0_E784B904-15B4-4BBB-8892-C0E615558C19.png",
+          "sha256": "0f5920ccf445771ab71a5bdebef15f0b8bc3697db017da0c541da2cd460eb2bc",
+          "size": 912483
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted()",
+          "file": "AFC41D3A-5787-4327-8AAC-10FA83FA5680.txt",
+          "label": "ChatGPT Close control ownership (redacted)_0_81A0FF9F-CCD0-4871-930B-73C83F24D785.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0,
+          "text": ""
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted()",
+          "file": "3A25C27F-734C-4291-AF2E-AB38AE87F606.png",
+          "label": "Lorvex - ChatGPT account before sign-in_0_FDC94E48-9EDB-42B5-BA6A-B90168AC066E.png",
+          "sha256": "0f5920ccf445771ab71a5bdebef15f0b8bc3697db017da0c541da2cd460eb2bc",
+          "size": 912483
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted()",
+          "file": "24B2FD82-14C8-42C9-A815-481E024ACE2C.png",
+          "label": "Lorvex - account after ChatGPT sign-in cancellation_0_2D079260-F9C4-466C-AE8F-9F3F1B4B1E06.png",
+          "sha256": "0f5920ccf445771ab71a5bdebef15f0b8bc3697db017da0c541da2cd460eb2bc",
+          "size": 912483
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted()",
+          "file": "48A6B880-FEE4-45F6-96CD-BE3E75F15C13.txt",
+          "label": "ChatGPT Close control ownership (redacted)_0_75183DCC-A7CA-4379-A4B9-4C00AD6B7103.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0,
+          "text": ""
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted()",
+          "file": "50063B6C-4577-4E4C-AE29-32D6B7CF1482.png",
+          "label": "Lorvex - ChatGPT account before sign-in_0_C35DE206-A094-4426-8D49-4DE0DE976E04.png",
+          "sha256": "156a126abf612e10ce14b4b69c0328197850228e9018ea201fff63cabcc36afc",
+          "size": 911379
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testHebrewCloudAndChatGPTSettings()",
+          "file": "C102A03F-69ED-44D7-B627-501DF847C9E4.png",
+          "label": "Lorvex - Hebrew ChatGPT account management_0_12E6E0A8-360B-4DF3-9081-EC9CC8D4B17F.png",
+          "sha256": "e450d0aae36a77ba455680ca9ef139ad82655614249e3bcb8cec7fbef8738730",
+          "size": 841623
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testHebrewCloudAndChatGPTSettings()",
+          "file": "723D726F-48B8-4390-BB11-FC1950ED2F08.png",
+          "label": "Lorvex - Hebrew provider settings_0_BE15B86F-081F-441A-A012-5BA5D6723E72.png",
+          "sha256": "326d04de361fefcb554578e0772db1e6ceaba755f35edf0d857c11d9de68d750",
+          "size": 769622
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testHebrewCloudAndChatGPTSettings()",
+          "file": "BA52C9AC-F536-4BC4-A92C-DF195EC886F3.png",
+          "label": "Lorvex - Hebrew RTL cloud account_0_ACF007B4-88A0-4845-8054-92086A82F1CA.png",
+          "sha256": "f9c6221678408eeb33bc0a2bd187f67b3f944c78ae58a78d2105269923eb8128",
+          "size": 795191
+        },
+        {
+          "test": "HanlinSDKIntegrationTests/testHebrewCloudAndChatGPTSettings()",
+          "file": "5A023498-78BA-4EC7-BBFF-CB7A911A534E.png",
+          "label": "Lorvex - Hebrew RTL assistant_0_49BF8712-D89E-496D-842E-30829A68305B.png",
+          "sha256": "5973e5821849230aafc1f19d826d6d54234da15116e6a7a079fe65528b1b06ae",
+          "size": 889288
+        }
+      ],
+      "product": {
+        "appName": "LorvexMobileApp.app",
+        "relativeAppPath": "ui-derived-data/Build/Products/Debug-iphonesimulator/LorvexMobileApp.app",
+        "info": {
+          "CFBundleIdentifier": "com.itorah.lorvex",
+          "CFBundleShortVersionString": "1.0.0",
+          "CFBundleVersion": "172",
+          "MinimumOSVersion": "27.0",
+          "DTSDKName": "iphonesimulator27.1",
+          "DTXcodeBuild": "27A9275"
+        },
+        "executableSHA256": "7062e8b673cb8ae1a30eeedb9f9d3d2f17d8aca176ad82aaf0396696ebc93e6c"
+      },
+      "selection": {
+        "path": "apps/apple/dist/native-20261124/ui-derived-data/Build/Products/LorvexMobileUITests_iphonesimulator27.1-arm64.xctestrun",
+        "sha256": "d70184389f4313a8673655bfdbfb16d9d7fbde8928571e131a29aefa4da80eb0",
+        "target": "LorvexMobileUITests"
+      },
+      "logs": {
+        "ui-bb05d2e-r2-status.json": "56a591543496e6e03f7b29ce1d23953bd0f1458ca69d9d6b6b4932c16f15b441",
+        "ui-final-bb05d2e-r2/lorvex-hanlin-ui-build.log": "d2ba3b25aae601c8bd8c9bc9323cec2e2c4fbc6215f4f8d8a49e37367a5902e5",
+        "ui-final-bb05d2e-r2/lorvex-hanlin-ui.log": "1222dd7010a707e1e59f169dcc421f6bc2031673a053f1f2412d41bf6d3968a5",
+        "ui-final-bb05d2e-r2/xctestrun-selection.json": "bf601a806b664f7c340fd8f1dbff498fee7dbe56363872d094ac80cd9d6e4843",
+        "ui-final-bb05d2e-r2/screenshots/manifest.json": "a8236574fbac23edec3d638628d6c99539b5ecea26437e5aea55ff19a57a1c3f",
+        "lifecycle-native-56123a3.log": "9a2f4c94c3775700f46938ba220c6160176dddcc3c80b80f449fa8dc7237d33c"
+      }
+    }
+  },
+  "sourceReuse": {
+    "hanlin17": {
+      "acceptedSource": "93a399b31ade46acb32b6a04c0c72a2d5be979f8",
+      "currentSource": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+      "equal": true,
+      "gitObjectIDs": {
+        "HanlinSDK.lock.json": "ee9b3ae8047fb9339bae5009d956015f09fcc1d5",
+        "apps/apple/Package.swift": "f16b60cfd2b667f213a85f4bd13e2f292fc58248",
+        "apps/apple/Package.resolved": "f38afe0e924eddc9fbec3203a09a2e9bccdb3db2",
+        "apps/apple/Sources/LorvexHanlinAgent": "051f8dee81f094bd75d3a7dbcb3b3b9a8c52e00e",
+        "apps/apple/Tests/LorvexHanlinAgentTests": "a103d3212fb0b7766ada03a3e76f5387cf450254"
+      }
+    },
+    "cloud10": {
+      "acceptedSource": "93a399b31ade46acb32b6a04c0c72a2d5be979f8",
+      "currentSource": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+      "equal": true,
+      "gitObjectIDs": {
+        "apps/apple/Sources/LorvexMobile": "75277fe43c332ae727df19e47310dd48e6bb5616",
+        "apps/apple/core": "bd0f6dd576130f3446c0cf0b894fb627ddce9e8d",
+        "apps/apple/Tests/LorvexAppleTests/LorvexCloudAccountSyncTests.swift": "becc3980c2e15614b8357701a2fb8b306279f64a"
+      },
+      "coreSwiftSourceInventory": {
+        "count": 548,
+        "equal": true,
+        "sha256": "6f0b086fdfb120905fd91d0bb3d2c8e3cc175d309e90b922a61cf3ec854d1bfe"
+      }
+    },
+    "metadata3": {
+      "acceptedSource": "d37dff0a87a2512c981174069bee51eede404ea7",
+      "currentSource": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+      "equal": true,
+      "gitObjectIDs": {
+        "apps/apple/Sources/LorvexCore/Models/ProductMetadata.swift": "45428adfa07be02196c4e8d32833b72e6d6c5a7b",
+        "apps/apple/Sources/LorvexApple/Support/AppMetadata.swift": "db292315d33f5a97a1af08f116a00de98e145bde",
+        "apps/apple/Sources/LorvexMobile/MobileAppMetadata.swift": "3ba406496b8d3021464519272f2d2c82aea94676",
+        "apps/apple/Tests/LorvexAppleTests/AppMetadataTests.swift": "0e6030351c38afdde5df0068b7428b9d51ed9c97"
+      }
+    },
+    "lifecycle4": {
+      "acceptedSource": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+      "currentSource": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+      "equal": true,
+      "gitObjectIDs": {
+        "apps/apple/Sources/LorvexMobileApp/BackgroundDatabaseWork.swift": "11726b2686bdd8ae24e49e2a3b43c1005f63e7ba",
+        "apps/apple/Sources/LorvexMobileApp/BackgroundSyncFlush.swift": "595cced6f92b728b6c99f326c366c4e33c2ff68f",
+        "apps/apple/Sources/LorvexMobileApp/LorvexMobileApp.swift": "bc9573c60b8d0226e83a421b12ffbb27acfd2bf3",
+        "apps/apple/Tests/LorvexAppleTests/NotificationActionsTests.swift": "4b8ed5364ab520f884ac029af3361ad9ac76bf03",
+        "apps/apple/script/test_background_lifecycle_regressions.py": "d6f677b4bf5f0b4ea9f873d4938a0f6777064faf"
+      }
+    },
+    "composerAndCloudUI": {
+      "acceptedSource": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+      "currentSource": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+      "equal": true,
+      "gitObjectIDs": {
+        "apps/apple/Sources/LorvexMobileApp/LorvexHanlinAssistantView.swift": "49a03361aae7494cad7f4d9b0b2c38f36ab64967",
+        "apps/apple/Sources/LorvexMobileApp/LorvexHanlinChatWorkspace.swift": "b5a6f094cb92c2fcbb666c993d3aa969dc6a54d5",
+        "apps/apple/Sources/LorvexMobileApp/LorvexHanlinComposer.swift": "8e85f5546f789870279369ef49cbbe972578b73c",
+        "apps/apple/Sources/LorvexMobileApp/LorvexCloudAccountSettingsView.swift": "5ae06ecbb433d8147210c47870e0865724f6885e",
+        "apps/apple/Sources/LorvexMobile/LorvexCloudAccountState.swift": "2aa8d93bdaaa69b0f3bcd58037a2100c966bb6f9",
+        "apps/apple/Sources/LorvexMobile/LorvexCloudAccountTransport.swift": "99d21e843e85fe5bda401a4c3b9afaef2bcefd2e",
+        "apps/apple/Sources/LorvexHanlinAgent": "051f8dee81f094bd75d3a7dbcb3b3b9a8c52e00e",
+        "HanlinSDK.lock.json": "ee9b3ae8047fb9339bae5009d956015f09fcc1d5",
+        "apps/apple/Config/XcodeGen/Package.resolved": "f808a1775ee56e7e89a8e714dc7832d087404d31",
+        "apps/apple/Package.resolved": "f38afe0e924eddc9fbec3203a09a2e9bccdb3db2"
+      },
+      "unchangedMethodSHA256": {
+        "testOriginalComposerInsideLorvex": "f270d2039c8f467f630c52c33a5336b7d274f0307544c1a8683c6617ba48e5c4",
+        "testMCPConnectionUsesCloudAccount": "97ffe9fe6a0ad9b58cd47fc9000d5a41af9272786934443e3cd5ae5027bda38a",
+        "waitUntilHittable": "3dd9527483856340d24f920a89d04b200de5051d603eb32664c0257798223c37",
+        "elementState": "a9b5cf3667a694c2c816a61bb257225dcc55460c5165c7c1c999851c53f4cbe2",
+        "attach": "bf872984effd25867d415c221ca16e1f2197f4f11b31e707043a6bcf6f93ae53"
+      }
+    },
+    "diff561ToFinal": [
+      "apps/apple/Sources/LorvexMobileApp/LorvexChatGPTAccountState.swift",
+      "apps/apple/Sources/LorvexMobileApp/LorvexChatGPTPlanSettingsView.swift",
+      "apps/apple/Tests/LorvexMobileUITests/HanlinSDKIntegrationTests.swift",
+      "apps/apple/script/verify_hanlin_host_ui.sh"
+    ],
+    "acceptedFullStaticBaseline": {
+      "source": "d37dff0a87a2512c981174069bee51eede404ea7",
+      "testsPassed": 877,
+      "fullSuiteRerunOnFinal": false,
+      "laterChangedPaths": [
+        "apps/apple/Config/XcodeGen/Package.resolved",
+        "apps/apple/Sources/LorvexCore/Resources/ACKNOWLEDGMENTS.md",
+        "apps/apple/Sources/LorvexMobileApp/BackgroundDatabaseWork.swift",
+        "apps/apple/Sources/LorvexMobileApp/BackgroundSyncFlush.swift",
+        "apps/apple/Sources/LorvexMobileApp/LorvexChatGPTAccountState.swift",
+        "apps/apple/Sources/LorvexMobileApp/LorvexChatGPTPlanSettingsView.swift",
+        "apps/apple/Sources/LorvexMobileApp/LorvexHanlinAssistantView.swift",
+        "apps/apple/Sources/LorvexMobileApp/LorvexMobileApp.swift",
+        "apps/apple/Tests/LorvexAppleTests/NotificationActionsTests.swift",
+        "apps/apple/Tests/LorvexMobileUITests/HanlinSDKIntegrationTests.swift",
+        "apps/apple/script/acknowledgments_data.py",
+        "apps/apple/script/archive_ios.sh",
+        "apps/apple/script/test_background_lifecycle_regressions.py",
+        "apps/apple/script/third_party_licenses/HanlinSDK.LICENSE.txt",
+        "apps/apple/script/third_party_licenses/Swift-JSON.LICENSE-NOTICE.txt",
+        "apps/apple/script/verify_hanlin_host_ui.sh",
+        "docs/CLOUD_OPERATIONS_ACCEPTANCE_20261124.md",
+        "docs/evidence/cloud-operations-20261124/operations-readback.json"
+      ],
+      "laterValidation": "Affected acknowledgment/resource gates, Swift parsing, public safety, lifecycle 9-scenario probe and 4 native wiring cases, full iOS/UI compile and focused UI cases were rerun; unchanged baseline results were retained."
+    }
+  },
+  "originalArtifactHashesAndSanitizedReceipts": {
+    "receipts": {
+      "ui-56123a3-status.json": {
+        "sourceSHA": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+        "sourceTree": "0866c7926648b1cfa14db854ff714185ed6e733d",
+        "started": "2026-11-24T17:34:27.565951+00:00",
+        "result": "failed",
+        "steps": [
+          {
+            "name": "ui-source-fetch-56123a3",
+            "command": [
+              "git",
+              "fetch",
+              "https://github.com/davidpovarsky/lorvex.git",
+              "codex/lorvex-final-20261124"
+            ],
+            "started": "2026-11-24T17:34:27.616385+00:00",
+            "log": "apps/apple/dist/native-20261124/ui-source-fetch-56123a3.log",
+            "exit": 0,
+            "finished": "2026-11-24T17:34:28.276540+00:00",
+            "logSHA256": "e08e1abf762597d99c55af5daa1bbd39e59d892da6549c8229b679ab606e7b2d"
+          },
+          {
+            "name": "ui-source-checkout-56123a3",
+            "command": [
+              "git",
+              "checkout",
+              "--detach",
+              "56123a3e2c1883f5d00f6ed93d813f973f4baa2f"
+            ],
+            "started": "2026-11-24T17:34:28.276979+00:00",
+            "log": "apps/apple/dist/native-20261124/ui-source-checkout-56123a3.log",
+            "exit": 0,
+            "finished": "2026-11-24T17:34:28.308326+00:00",
+            "logSHA256": "fedf5b1d4cfe8ab8ed129a779324bbe93b63bd6dde38fdca0121ff370e056bcb"
+          },
+          {
+            "name": "lifecycle-native-56123a3",
+            "command": [
+              "xcrun",
+              "swift",
+              "test",
+              "--package-path",
+              "apps/apple",
+              "--scratch-path",
+              "apps/apple/dist/native-20261124/swift-build",
+              "--disable-automatic-resolution",
+              "--skip-update",
+              "-j",
+              "3",
+              "--filter",
+              "backgroundDatabaseWorkHoldsABackgroundTaskThatSuspendsOnExpiry|backgroundFlushWritesAutosaveDraftsBeforeItsSyncPass|backgroundWakesReachTheStoreAndSyncBeforeReminders|backgroundWakesAdoptWhatTheyApplied"
+            ],
+            "started": "2026-11-24T17:34:28.319648+00:00",
+            "log": "apps/apple/dist/native-20261124/lifecycle-native-56123a3.log",
+            "exit": 0,
+            "finished": "2026-11-24T17:35:41.802899+00:00",
+            "logSHA256": "9a2f4c94c3775700f46938ba220c6160176dddcc3c80b80f449fa8dc7237d33c"
+          },
+          {
+            "name": "ui-final-56123a3",
+            "command": [
+              "bash",
+              "apps/apple/script/verify_hanlin_host_ui.sh"
+            ],
+            "started": "2026-11-24T17:35:41.803491+00:00",
+            "log": "apps/apple/dist/native-20261124/ui-final-56123a3.log",
+            "exit": 65,
+            "finished": "2026-11-24T17:39:15.846887+00:00",
+            "logSHA256": "6293f2460e2ee158272b2440df908d76b86f12da79b45961417c19b94b1dc851"
+          }
+        ],
+        "error": "ui-final-56123a3 failed 65",
+        "finished": "2026-11-24T17:39:15.875183+00:00",
+        "sourceDirtyAfter": ""
+      },
+      "ui-bb05d2e-r2-status.json": {
+        "sourceSHA": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+        "sourceTree": "36c14a4b99dda155d98d7007bef261bdb7f0c9b6",
+        "started": "2026-11-24T18:01:39.788199+00:00",
+        "result": "passed",
+        "steps": [
+          {
+            "name": "ui-source-fetch-bb05d2e-r2",
+            "command": [
+              "git",
+              "fetch",
+              "https://github.com/davidpovarsky/lorvex.git",
+              "codex/lorvex-final-20261124"
+            ],
+            "started": "2026-11-24T18:01:39.846973+00:00",
+            "log": "apps/apple/dist/native-20261124/ui-source-fetch-bb05d2e-r2.log",
+            "exit": 0,
+            "finished": "2026-11-24T18:01:40.234552+00:00",
+            "logSHA256": "e08e1abf762597d99c55af5daa1bbd39e59d892da6549c8229b679ab606e7b2d"
+          },
+          {
+            "name": "ui-source-checkout-bb05d2e-r2",
+            "command": [
+              "git",
+              "checkout",
+              "--detach",
+              "bb05d2ea2303a934a2c968a33a085bd1aebb0e06"
+            ],
+            "started": "2026-11-24T18:01:40.235223+00:00",
+            "log": "apps/apple/dist/native-20261124/ui-source-checkout-bb05d2e-r2.log",
+            "exit": 0,
+            "finished": "2026-11-24T18:01:40.266262+00:00",
+            "logSHA256": "ecab79468ad3f07c7e5da3c3f0bdcd2e296fdccecacbc300b26283efbe8f60b5"
+          },
+          {
+            "name": "ui-final-bb05d2e-r2",
+            "command": [
+              "bash",
+              "apps/apple/script/verify_hanlin_host_ui.sh"
+            ],
+            "started": "2026-11-24T18:01:40.278327+00:00",
+            "log": "apps/apple/dist/native-20261124/ui-final-bb05d2e-r2.log",
+            "exit": 0,
+            "finished": "2026-11-24T18:04:16.491757+00:00",
+            "logSHA256": "0c2a6b31495823506810958a9b9486e80ca1409a6ece6e0e9dfe5fca71084418"
+          }
+        ],
+        "concurrentForeignUI": {
+          "pid": 56164,
+          "simulator": "F94682CB-6741-4E9C-8256-DF986F7B7B76",
+          "memoryFreePercentBefore": 78,
+          "otherCompilerObserved": false,
+          "teamSlotOwner": "Lorvex"
+        },
+        "finished": "2026-11-24T18:04:16.492977+00:00",
+        "sourceDirtyAfter": ""
+      }
+    },
+    "logs": {
+      "host-native-tests-93a399b.log": {
+        "sha256": "2476f141a396a9d2525b1607c727da8c237b82f5652c3d2ce6fceb8dc9327e2a",
+        "summary": [
+          "✔ Suite LorvexHanlinPresentationStateTests passed after 7.026 seconds.",
+          "✔ Suite HanlinChatGPTPlanTests passed after 7.038 seconds.",
+          "✔ Suite LorvexHanlinAgentTests passed after 7.849 seconds.",
+          "✔ Test run with 17 tests in 3 suites passed after 7.849 seconds.",
+          "✔ Suite \"Lorvex Cloud account sync\" passed after 2.264 seconds.",
+          "✘ Test run with 13 tests in 1 suite failed after 2.264 seconds with 1 issue."
+        ]
+      },
+      "metadata-native-d37.log": {
+        "sha256": "d63314d5c73fe1343be3abb319a0a134a0f35516bc3cbd130013a29cf7c8e942",
+        "summary": [
+          "✔ Test run with 3 tests in 0 suites passed after 0.001 seconds."
+        ]
+      },
+      "static-gates-d37.log": {
+        "sha256": "2840a6ae4f1ba71222cfce93135e64f0a33ce6dadbf705400a274bfdd4cc4288",
+        "summary": [
+          "Ran 877 tests in 10.512s",
+          "OK"
+        ]
+      },
+      "lifecycle-native-56123a3.log": {
+        "sha256": "9a2f4c94c3775700f46938ba220c6160176dddcc3c80b80f449fa8dc7237d33c",
+        "summary": [
+          "✔ Test run with 4 tests in 0 suites passed after 0.002 seconds."
+        ]
+      },
+      "ui-final-56123a3/lorvex-hanlin-ui.log": {
+        "sha256": "d20d36387e30b3eedb27226b629bfa9c8e2418353ea93ae2fa1c52651b863af3",
+        "summary": [
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testChatGPTSignInCanBeCancelledAndRestarted]' failed (57.530 seconds).",
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testHebrewCloudAndChatGPTSettings]' passed (36.611 seconds).",
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testMCPConnectionUsesCloudAccount]' passed (15.150 seconds).",
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testOriginalComposerInsideLorvex]' passed (27.433 seconds)."
+        ]
+      },
+      "ui-final-bb05d2e-r2/lorvex-hanlin-ui.log": {
+        "sha256": "1222dd7010a707e1e59f169dcc421f6bc2031673a053f1f2412d41bf6d3968a5",
+        "summary": [
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testChatGPTSignInCanBeCancelledAndRestarted]' passed (51.548 seconds).",
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testHebrewCloudAndChatGPTSettings]' passed (30.516 seconds)."
+        ]
+      },
+      "ui-final-bb05d2e-r2.log": {
+        "sha256": "0c2a6b31495823506810958a9b9486e80ca1409a6ece6e0e9dfe5fca71084418",
+        "summary": [
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testChatGPTSignInCanBeCancelledAndRestarted]' passed (51.548 seconds).",
+          "Test Case '-[LorvexMobileUITests.HanlinSDKIntegrationTests testHebrewCloudAndChatGPTSettings]' passed (30.516 seconds)."
+        ]
+      }
+    }
+  },
+  "closeControlEvidence": {
+    "selector": "browser.buttons[\"Close\"]",
+    "exactIdentifierAssertion": "Close",
+    "observedNativeFrame": [
+      10,
+      35,
+      44,
+      44
+    ],
+    "passes": 2,
+    "outerAssistantCloseIdentifier": "hanlin.close",
+    "semanticEvidence": "After each actual tap the account screen remains, cancellation is visible, and the retry control remains enabled and hittable; the second real browser launch succeeds.",
+    "limitation": "The optional sanitized snapshot ancestry helper produced two empty text attachments under this driver. They are not ancestry evidence. Ownership is supported by the scoped selector, exact identifier assertion, native frame and repeated resulting navigation state."
+  },
+  "visualQA": [
+    {
+      "file": "he-assistant.png",
+      "artifact": "5A023498-78BA-4EC7-BBFF-CB7A911A534E.png",
+      "sha256": "5973e5821849230aafc1f19d826d6d54234da15116e6a7a079fe65528b1b06ae",
+      "reviewer": "Lorvex integrator",
+      "result": "pass",
+      "observation": "Readable Hebrew body, right-aligned title and composer; controls do not overlap or clip text."
+    },
+    {
+      "file": "he-provider.png",
+      "artifact": "723D726F-48B8-4390-BB11-FC1950ED2F08.png",
+      "sha256": "326d04de361fefcb554578e0772db1e6ceaba755f35edf0d857c11d9de68d750",
+      "reviewer": "Lorvex integrator",
+      "result": "pass",
+      "observation": "Save/Cancel and Hebrew title fit; mixed Latin provider and URL remain readable; Keychain explanation visible."
+    },
+    {
+      "file": "he-cloud.png",
+      "artifact": "BA52C9AC-F536-4BC4-A92C-DF195EC886F3.png",
+      "sha256": "f9c6221678408eeb33bc0a2bd187f67b3f944c78ae58a78d2105269923eb8128",
+      "reviewer": "Lorvex integrator",
+      "result": "pass",
+      "observation": "Right-aligned title, disconnected status, explanations and fields; Done on mirrored side. Native Form continues below viewport."
+    },
+    {
+      "file": "en-account-after-cancel.png",
+      "artifact": "C7D65076-2CAD-4DCF-9864-8DECA5CAE44C.png",
+      "sha256": "0f5920ccf445771ab71a5bdebef15f0b8bc3697db017da0c541da2cd460eb2bc",
+      "reviewer": "Independent SDK reviewer",
+      "result": "pass",
+      "observation": "Account screen remains, Sign-in cancelled and Continue with ChatGPT are fully visible with Back/Done; explanation and privacy text fit."
+    },
+    {
+      "file": "he-account.png",
+      "artifact": "C102A03F-69ED-44D7-B627-501DF847C9E4.png",
+      "sha256": "e450d0aae36a77ba455680ca9ef139ad82655614249e3bcb8cec7fbef8738730",
+      "reviewer": "Independent SDK reviewer",
+      "result": "pass",
+      "observation": "Readable disconnected state and Continue row; right-side Back, left-side Done and account icon are correctly mirrored."
+    }
+  ],
+  "acceptedEarlierGates": [
+    {
+      "scope": "Hanlin canonical Plan, agent and presentation state",
+      "source": "93a399b31ade46acb32b6a04c0c72a2d5be979f8",
+      "passed": 17,
+      "log": "host-native-tests-93a399b.log"
+    },
+    {
+      "scope": "Cloud account synchronization with real local database and test transport peer",
+      "source": "93a399b31ade46acb32b6a04c0c72a2d5be979f8",
+      "passed": 10,
+      "log": "host-native-tests-93a399b.log",
+      "qualification": "The combined Cloud+metadata invocation had one outdated metadata expectation; Cloud suite itself passed. Metadata was corrected and all three cases rerun separately."
+    },
+    {
+      "scope": "Distribution metadata",
+      "source": "d37dff0a87a2512c981174069bee51eede404ea7",
+      "passed": 3,
+      "log": "metadata-native-d37.log"
+    },
+    {
+      "scope": "Full static baseline",
+      "source": "d37dff0a87a2512c981174069bee51eede404ea7",
+      "passed": 877,
+      "log": "static-gates-d37.log"
+    },
+    {
+      "scope": "Background lifecycle native wiring",
+      "source": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+      "passed": 4,
+      "log": "lifecycle-native-56123a3.log"
+    },
+    {
+      "scope": "Background lifecycle actual-source deterministic probe",
+      "source": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+      "passed": 9,
+      "command": "python3 -B apps/apple/script/test_background_lifecycle_regressions.py -v",
+      "sensitivity": "Restoring the three reported bugs caused six expected failures."
+    }
+  ],
+  "resolvedDefects": [
+    "SwiftUI Section accessibility identifier propagated to native Form button; move the group identifier to the header and preserve per-control identifiers.",
+    "Present SFSafariViewController through a retained UIKit presenter. Native Close fences only the matching authorization attempt and does not issue a second dismissal. Programmatic dismissal targets only the owned browser with identity-bound completion.",
+    "Prepare provider/model settings once per presentation so returning from authorization preserves the in-progress draft.",
+    "Retain and cancel the owned background flush Task, prevent a late autosave from starting a later sync phase after expiration, and honor cancellation between refresh phases.",
+    "A late background lease expiration checks the current app state before suspension so it does not suspend a newly foregrounded database."
+  ],
+  "priorFailuresAndCorrections": [
+    {
+      "source": "c9700aa8e797b6a6fa72655f50a4edde2f064cf8",
+      "result": "2 of 4 UI cases failed",
+      "cause": "Account add-button accessibility and cancellation/navigation defect; retained as failure evidence."
+    },
+    {
+      "source": "ffd06929b709ac7e36fbb29dacf377f8af9f83f1",
+      "result": "3 of 4 UI cases passed",
+      "remaining": "Cancellation still dismissed outer settings.",
+      "correction": "The delayed exit was automatic simctl diagnose --timeout=600 after assertions finished, not an established package-resolution deadlock. Only the owned diagnostic child was stopped; normal exit65 and complete result followed."
+    },
+    {
+      "source": "56123a3e2c1883f5d00f6ed93d813f973f4baa2f",
+      "result": "3 of 4 UI cases passed; cancellation failed",
+      "remaining": "One-time preparation did not resolve the nested Safari dismissal; final presenter fix addressed it."
+    },
+    {
+      "source": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+      "result": "2 targeted UI cases passed",
+      "note": "The initial passive waiting runner was superseded before native work began; the r2 receipt is the final authoritative run."
+    }
+  ],
+  "limits": [
+    "No personal OAuth grant, account token exchange or subscribed inference completion was performed; native evidence covers the real pre-consent browser opening, cancellation and retry.",
+    "Tests ran on a fresh owned iPad simulator, not a physical iPad.",
+    "Background probes prove ownership and phase boundaries using real Swift Tasks and stub UIKit/database endpoints; they do not claim actual OS expiration or rollback of sync already in progress.",
+    "Static images establish visible layout only; native UI assertions provide actual hit-testing and navigation evidence.",
+    "No private authorization page screenshots, tokens or credentials are included.",
+    "Signed archive/export, Apple validation, delivery and TestFlight processing are separate release-owner evidence."
+  ],
+  "evidenceWrittenUTC": "2026-11-24T18:19:14.618651+00:00"
+}
