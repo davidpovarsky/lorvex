@@ -65,7 +65,6 @@ struct LorvexChatGPTPlanSettingsView: View {
       } footer: {
         Text("Choose a saved account to sign in again, or add another. Each account keeps its own sign-in and model selection.")
       }
-      .accessibilityElement(children: .contain)
       .accessibilityIdentifier("chatgpt.accounts.saved")
 
       if account.canUsePlan {
