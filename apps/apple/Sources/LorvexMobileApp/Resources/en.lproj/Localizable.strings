@@ -166,3 +166,17 @@
 "The conversation changed during saving. Reload it before continuing." = "The conversation changed during saving. Reload it before continuing.";
 "The stored conversation could not be validated. Original data was preserved." = "The stored conversation could not be validated. Original data was preserved.";
 "The conversation exceeds the configured storage limit." = "The conversation exceeds the configured storage limit.";
+
+"Task workspace" = "Task workspace";
+
+"Live task workspace" = "Live task workspace";
+
+"Expand workspace" = "Expand workspace";
+
+"Read real task prerequisites, blockers and parallel branches" = "Read real task prerequisites, blockers and parallel branches";
+
+"Show an interactive live task graph, board, timeline, network or table in this conversation" = "Show an interactive live task graph, board, timeline, network or table in this conversation";
+
+"Make dependent_id wait for prerequisite_id through canonical cycle validation" = "Make dependent_id wait for prerequisite_id through canonical cycle validation";
+
+"Remove this prerequisite relation without changing other task fields" = "Remove this prerequisite relation without changing other task fields";

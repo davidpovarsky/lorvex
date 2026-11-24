@@ -211,6 +211,10 @@ public final class LorvexHanlinAssistantState {
           + "Routine task, list, habit and calendar changes are authorized by the user's request. "
           + "Ask for consent for destructive writes. "
           + "Report data faithfully; do not claim a change before the tool confirms it. "
+          + "Use show_task_workspace to present interactive real tasks after creating or planning related tasks, "
+          + "or when the user asks for a graph, board, timeline, network or table. "
+          + "Use exact task IDs and add_task_dependency/remove_task_dependency for real prerequisites. "
+          + "A task's depends_on IDs identify work that must finish before that task can start. "
           + "Respond in the user's language, including Hebrew.",
         modelReference: .init(provider: provider, modelID: modelID), maxSteps: 8)
       guard activeRunID == runID else { return }

@@ -55,6 +55,30 @@ class PackageLicense:
 # `verify_acknowledgments.py` fails the build — this is the single place a
 # dependency add/bump/removal must be reflected.
 PACKAGE_METADATA: dict[str, PackageLicense] = {
+    "task-visualization-kit": PackageLicense(
+        display_name="TaskVisualizationKit",
+        spdx="MIT",
+        extra_text_file="TaskVisualizationKit.LICENSE.txt",
+        extra_text_label="License",
+    ),
+    "swiftflow": PackageLicense(
+        display_name="SwiftFlow",
+        spdx="MIT",
+        extra_text_file="SwiftFlow.LICENSE.txt",
+        extra_text_label="License and notices",
+    ),
+    "advancedkanban": PackageLicense(
+        display_name="AdvancedKanban",
+        spdx="MIT",
+        extra_text_file="AdvancedKanban.LICENSE.txt",
+        extra_text_label="License and notices",
+    ),
+    "forcegraph": PackageLicense(
+        display_name="ForceGraph",
+        spdx="MIT AND ISC",
+        extra_text_file="ForceGraph.LICENSE-NOTICE.txt",
+        extra_text_label="License and notices",
+    ),
     "equatable": PackageLicense(
         display_name="Equatable",
         spdx="Apache-2.0",

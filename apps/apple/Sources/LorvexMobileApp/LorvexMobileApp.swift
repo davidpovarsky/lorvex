@@ -113,7 +113,7 @@ struct LorvexMobileApp: App {
     LorvexMobileStoreRootView(store: store)
       .sheet(isPresented: $showHanlinAssistant) {
         LorvexHanlinAssistantView(
-          assistant: hanlinAssistant, remoteBridge: remoteBridge,
+          assistant: hanlinAssistant, store: store, remoteBridge: remoteBridge,
           cloudAccount: cloudAccount, chatGPTAccount: chatGPTAccount)
       }
       .overlay(alignment: .bottomTrailing) {

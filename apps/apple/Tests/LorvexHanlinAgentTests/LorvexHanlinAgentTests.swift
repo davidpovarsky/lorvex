@@ -21,13 +21,13 @@ struct LorvexHanlinAgentTests {
     return (core, context, .init(conversationID: UUID(), context: context))
   }
 
-  @Test func catalogValidatesAndIncludes22ScopedTools() throws {
+  @Test func catalogValidatesAndIncludes26ScopedTools() throws {
     let (_, context, _) = try fixture()
     let catalog = try LorvexHanlinToolCatalog.catalog(for: context)
     try catalog.validate()
-    #expect(catalog.tools.count == 22)
-    #expect(Set(catalog.tools.map(\.route.alias)).count == 22)
-    #expect(catalog.tools.filter { $0.writeGuarantee != .readOnly }.count == 12)
+    #expect(catalog.tools.count == 26)
+    #expect(Set(catalog.tools.map(\.route.alias)).count == 26)
+    #expect(catalog.tools.filter { $0.writeGuarantee != .readOnly }.count == 14)
     for spec in LorvexHanlinToolCatalog.specs {
       _ = try HanlinHostSchemaValidation(schemaJSON: spec.schemaJSON())
     }

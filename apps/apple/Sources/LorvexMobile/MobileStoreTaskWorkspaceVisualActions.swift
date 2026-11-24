@@ -1,0 +1,103 @@
+import Foundation
+import LorvexCore
+import TaskVisualizationKit
+
+extension MobileStore {
+  /// Read the bounded canonical graph, then the actual task records. Including
+  /// inactive tasks keeps completed prerequisites visible and enables reopening.
+  public func loadVisualTaskWorkspace(
+    rootTaskID: String? = nil, listID: String? = nil
+  ) async throws -> TaskWorkspaceSnapshot {
+    let rootTitle: String?
+    if let rootTaskID { rootTitle = try await core.loadTask(id: rootTaskID).title }
+    else { rootTitle = nil }
+    if let listID { _ = try await core.loadListDetail(id: listID, limit: 1, offset: 0) }
+    let graph = try await core.getDependencyGraph(
+      rootTaskID: rootTaskID, listID: listID, includeInactive: true)
+    var tasks: [LorvexTask] = []
+    tasks.reserveCapacity(graph.nodes.count)
+    for node in graph.nodes {
+      try Task.checkCancellation()
+      tasks.append(try await core.loadTask(id: node.id))
+    }
+    let blocked = try await core.blockedTaskIDs(in: tasks)
+    try Task.checkCancellation()
+    cacheTasks(tasks)
+    let names = Dictionary((lists?.lists ?? []).map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+    return MobileTaskWorkspaceProjection.snapshot(
+      graph: graph, tasks: tasks, blockedIDs: blocked,
+      title: rootTitle ?? listID.flatMap { names[$0] } ?? MobileTaskWorkspaceCopy.title,
+      listNames: names)
+  }
+
+  /// The component receives success only after the existing mutation pipeline
+  /// confirms the write. Core validation, outbox, reminders and cache invalidation
+  /// are shared with the normal task editor. Never persist a canvas-local model.
+  public func performVisualTaskAction(_ action: TaskWorkspaceAction) async throws {
+    let success: Bool
+    switch action {
+    case .setCompleted(let id, let completed):
+      success = completed ? await completeTask(id) : await reopenTask(id)
+    case .moveTask(let id, let laneID):
+      switch laneID {
+      case "open":
+        let task = try await core.loadTask(id: id)
+        success = task.status == .inProgress ? await pauseTask(id) : await reopenTask(id)
+      case "in_progress":
+        // Preserve the canonical transition: finished/Someday tasks must first
+        // be reopened. A rejected drop never makes a partial two-step mutation.
+        success = await startTask(id)
+      case "someday": success = await markTaskSomeday(id)
+      case "completed": success = await completeTask(id)
+      case "cancelled": success = await cancelTask(id)
+      default: throw MobileTaskWorkspaceActionError(message: MobileTaskWorkspaceCopy.failed)
+      }
+    case .setDueDate(let id, let date):
+      success = await mutateTaskReturningTask(id: id) {
+        try await core.updateTask(TaskUpdateDraft(
+          id: id,
+          dueDate: date.map { .set(PlannedDayBridge.storageDate(forLocalInstant: $0)) } ?? .clear))
+      }
+    case .setPlannedDate(let id, let date):
+      success = await mutateTaskReturningTask(id: id) {
+        try await core.updateTask(TaskUpdateDraft(
+          id: id,
+          plannedDate: date.map { .set(PlannedDayBridge.storageDate(forLocalInstant: $0)) } ?? .clear))
+      }
+    case .addDependency(let prerequisiteID, let dependentID):
+      success = await changeVisualDependency(
+        prerequisiteID: prerequisiteID, dependentID: dependentID, adding: true)
+    case .removeDependency(let prerequisiteID, let dependentID):
+      success = await changeVisualDependency(
+        prerequisiteID: prerequisiteID, dependentID: dependentID, adding: false)
+    case .openTask, .createTask:
+      // Navigation and editor presentation belong to the live view.
+      throw MobileTaskWorkspaceActionError(message: MobileTaskWorkspaceCopy.failed)
+    }
+    guard success else {
+      throw MobileTaskWorkspaceActionError(message: errorMessage ?? MobileTaskWorkspaceCopy.failed)
+    }
+  }
+
+  private func changeVisualDependency(
+    prerequisiteID: String, dependentID: String, adding: Bool
+  ) async -> Bool {
+    await mutateTaskReturningTask(id: dependentID) {
+      // Read fresh inside the mutation operation. Only this field is patched;
+      // title, dates and other metadata edited by a peer remain untouched.
+      let current = try await core.loadTask(id: dependentID)
+      var ids = current.dependsOn
+      if adding {
+        if !ids.contains(prerequisiteID) { ids.append(prerequisiteID) }
+      } else {
+        ids.removeAll { $0 == prerequisiteID }
+      }
+      return try await core.updateTask(TaskUpdateDraft(id: dependentID, dependsOn: ids))
+    }
+  }
+}
+
+struct MobileTaskWorkspaceActionError: LocalizedError {
+  let message: String
+  var errorDescription: String? { message }
+}

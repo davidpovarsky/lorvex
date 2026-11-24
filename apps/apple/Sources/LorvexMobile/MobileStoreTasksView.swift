@@ -64,6 +64,14 @@ public struct MobileStoreTasksView: View {
       .toolbar(isBatchSelecting ? .hidden : .visible, for: .tabBar)
     #endif
     .toolbar {
+      NavigationLink {
+        MobileTaskWorkspaceView(store: store, listID: scope.listID)
+      } label: {
+        Label(MobileTaskWorkspaceCopy.title, systemImage: "point.3.connected.trianglepath.dotted")
+      }
+      .accessibilityIdentifier("lorvex.visual.scoped.open")
+      .disabled(isBatchSelecting)
+
       Button {
         toggleBatchSelectionMode()
       } label: {

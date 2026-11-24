@@ -1,0 +1,114 @@
+import Foundation
+import LorvexCore
+import TaskVisualizationKit
+import Testing
+@testable import LorvexMobile
+
+@MainActor
+struct MobileTaskWorkspaceTests {
+  private func fixture() throws -> (SwiftLorvexCoreService, MobileStore) {
+    let core = try SwiftLorvexCoreService.inMemory()
+    let defaults = UserDefaults(suiteName: "visual-tasks-" + UUID().uuidString)!
+    return (core, MobileStore(core: core, defaults: defaults))
+  }
+
+  @Test func dependenciesUseOriginalIDsAndRejectCyclesWithoutLosingOtherFields() async throws {
+    let (core, store) = try fixture()
+    let first = try await core.createTask(TaskCreateDraft(title: "Prerequisite", notes: "Keep first notes"))
+    let second = try await core.createTask(TaskCreateDraft(title: "Dependent", notes: "Keep second notes"))
+    try await store.performVisualTaskAction(.addDependency(
+      prerequisiteID: first.id, dependentID: second.id))
+
+    let snapshot = try await store.loadVisualTaskWorkspace()
+    let node = try #require(snapshot.tasks.first { $0.id == second.id })
+    #expect(node.dependencyIDs == [first.id])
+    #expect(node.isBlocked)
+    #expect(!node.isReady)
+    #expect(snapshot.tasks.first { $0.id == first.id }?.isReady == true)
+    #expect(Set(snapshot.tasks.map(\.id)) == Set([first.id, second.id]))
+    #expect(try await core.loadTask(id: second.id).notes == "Keep second notes")
+
+    var rejected = false
+    do {
+      try await store.performVisualTaskAction(.addDependency(
+        prerequisiteID: second.id, dependentID: first.id))
+    } catch { rejected = true }
+    #expect(rejected)
+    #expect(try await core.loadTask(id: first.id).dependsOn.isEmpty)
+    #expect(try await core.loadTask(id: second.id).dependsOn == [first.id])
+
+    try await store.performVisualTaskAction(.removeDependency(
+      prerequisiteID: first.id, dependentID: second.id))
+    #expect(try await core.loadTask(id: second.id).dependsOn.isEmpty)
+    #expect(try await core.loadTask(id: second.id).notes == "Keep second notes")
+  }
+
+  @Test func boardUsesCanonicalBlockedStartAndDoesNotPartiallyReopen() async throws {
+    let (core, store) = try fixture()
+    let first = try await core.createTask(TaskCreateDraft(title: "Prepare"))
+    let next = try await core.createTask(TaskCreateDraft(title: "Run", dependsOn: [first.id]))
+    var rejected = false
+    do { try await store.performVisualTaskAction(.moveTask(taskID: next.id, laneID: "in_progress")) }
+    catch { rejected = true }
+    #expect(rejected)
+    #expect(try await core.loadTask(id: next.id).status == .open)
+
+    try await store.performVisualTaskAction(.setCompleted(taskID: first.id, completed: true))
+    try await store.performVisualTaskAction(.moveTask(taskID: next.id, laneID: "in_progress"))
+    #expect(try await core.loadTask(id: next.id).status == .inProgress)
+    try await store.performVisualTaskAction(.setCompleted(taskID: next.id, completed: true))
+    try await store.performVisualTaskAction(.setCompleted(taskID: first.id, completed: false))
+    // Reopening a prerequisite never silently uncompletes downstream work.
+    #expect(try await core.loadTask(id: next.id).status == .completed)
+    rejected = false
+    do { try await store.performVisualTaskAction(.moveTask(taskID: next.id, laneID: "in_progress")) }
+    catch { rejected = true }
+    #expect(rejected)
+    #expect(try await core.loadTask(id: next.id).status == .completed)
+  }
+
+  @Test func cancelledAndSomedayRemainEditableButAreNotReady() async throws {
+    let (core, store) = try fixture()
+    let later = try await core.createTask(TaskCreateDraft(title: "Later"))
+    let cancelled = try await core.createTask(TaskCreateDraft(title: "Cancelled"))
+    _ = try await core.markTaskSomeday(id: later.id)
+    _ = try await core.cancelTask(id: cancelled.id)
+    let snapshot = try await store.loadVisualTaskWorkspace()
+    #expect(snapshot.tasks.count == 2)
+    #expect(snapshot.tasks.allSatisfy { !$0.isReady && !$0.isReadOnly })
+    try await store.performVisualTaskAction(.moveTask(taskID: later.id, laneID: "open"))
+    let reopened = try await store.loadVisualTaskWorkspace()
+    #expect(reopened.tasks.first { $0.id == later.id }?.isReady == true)
+  }
+
+  @Test func workspaceEditsSurviveStoreReopenAndPreserveIndependentDates() async throws {
+    let path = FileManager.default.temporaryDirectory
+      .appending(path: "lorvex-visual-persistence-" + UUID().uuidString + ".sqlite")
+    let core = SwiftLorvexCoreService(databasePath: path.path, writeInitiatorDefault: "user")
+    let store = MobileStore(
+      core: core, defaults: UserDefaults(suiteName: "visual-persistence-" + UUID().uuidString)!)
+    let planned = try #require(LorvexDateFormatters.ymdUTC.date(from: "2026-12-02"))
+    let due = try #require(LorvexDateFormatters.ymdUTC.date(from: "2026-12-08"))
+    let task = try await core.createTask(TaskCreateDraft(
+      title: "Persisted visual task", notes: "Preserve notes", plannedDate: planned))
+    try await store.performVisualTaskAction(.setDueDate(
+      taskID: task.id, date: PlannedDayBridge.displayDate(forStorageDate: due)))
+    try await store.performVisualTaskAction(.setCompleted(taskID: task.id, completed: true))
+
+    let reopened = SwiftLorvexCoreService(databasePath: path.path, writeInitiatorDefault: "user")
+    let saved = try await reopened.loadTask(id: task.id)
+    #expect(saved.id == task.id)
+    #expect(saved.status == .completed)
+    #expect(saved.notes == "Preserve notes")
+    #expect(saved.dueDate == due)
+    #expect(saved.plannedDate == planned)
+    let reopenedStore = MobileStore(
+      core: reopened, defaults: UserDefaults(suiteName: "visual-reopen-" + UUID().uuidString)!)
+    let snapshot = try await reopenedStore.loadVisualTaskWorkspace()
+    #expect(snapshot.tasks.first { $0.id == task.id }?.isCompleted == true)
+    try await reopenedStore.performVisualTaskAction(.setPlannedDate(taskID: task.id, date: nil))
+    let changed = try await reopened.loadTask(id: task.id)
+    #expect(changed.plannedDate == nil)
+    #expect(changed.dueDate == due)
+  }
+}

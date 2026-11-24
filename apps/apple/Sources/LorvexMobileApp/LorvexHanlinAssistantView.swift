@@ -9,6 +9,8 @@ import HanlinChatUI
 struct LorvexHanlinAssistantView: View {
     @Environment(\.dismiss) private var dismiss
     private let assistant: LorvexHanlinAssistantState
+    private let store: MobileStore
+    @State private var showTaskWorkspace = false
     private let remoteBridge: LorvexRemoteBridgeState
     private let cloudAccount: LorvexCloudAccountState?
     private let chatGPTAccount: LorvexChatGPTAccountState
@@ -32,10 +34,10 @@ struct LorvexHanlinAssistantView: View {
     @AppStorage("lorvex.hanlin.model") private var modelID = ""
     @AppStorage("lorvex.hanlin.endpoint") private var endpoint = "https://openrouter.ai/api/v1"
 
-    init(assistant: LorvexHanlinAssistantState, remoteBridge: LorvexRemoteBridgeState,
+    init(assistant: LorvexHanlinAssistantState, store: MobileStore, remoteBridge: LorvexRemoteBridgeState,
          cloudAccount: LorvexCloudAccountState?,
          chatGPTAccount: LorvexChatGPTAccountState) {
-        self.assistant = assistant; self.remoteBridge = remoteBridge
+        self.assistant = assistant; self.store = store; self.remoteBridge = remoteBridge
         self.cloudAccount = cloudAccount; self.chatGPTAccount = chatGPTAccount
     }
 
@@ -43,7 +45,7 @@ struct LorvexHanlinAssistantView: View {
         NavigationStack {
             Group {
                 #if canImport(UIKit)
-                LorvexHanlinChatWorkspace(assistant: assistant, draft: composerDraft,
+                LorvexHanlinChatWorkspace(assistant: assistant, store: store, draft: composerDraft,
                     modelName: provider == "ChatGPT" ? chatGPTAccount.selectedModelID : modelID,
                     showModelSettings: { openModelSettings() },
                     showRemoteBridgeSettings: openMCPSettings,
@@ -57,6 +59,12 @@ struct LorvexHanlinAssistantView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }.accessibilityIdentifier("hanlin.close")
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(String(localized: "Task workspace"), systemImage: "point.3.connected.trianglepath.dotted") {
+                        showTaskWorkspace = true
+                    }
+                    .accessibilityIdentifier("hanlin.workspace.open")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Cloud", systemImage: "icloud") {
@@ -83,6 +91,16 @@ struct LorvexHanlinAssistantView: View {
             .onDisappear {
                 cancelPendingSend()
                 _Concurrency.Task { await assistant.cancel() }
+            }
+            .sheet(isPresented: $showTaskWorkspace) {
+                NavigationStack {
+                    MobileTaskWorkspaceView(store: store)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button(String(localized: "Close")) { showTaskWorkspace = false }
+                            }
+                        }
+                }
             }
             .sheet(isPresented: $showModelSettings) {
                 settings

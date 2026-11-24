@@ -41,6 +41,16 @@ public struct LorvexHanlinArgs: Decodable, Sendable {
   public var endTime: String?
   public var allDay: Bool?
   public var location: String?
+  public var presentation: String?
+  public var rootTaskId: String?
+  public var prerequisiteId: String?
+  public var dependentId: String?
+  public var dependsOn: [String]?
+  public var includeInactive: Bool?
+
+  var targetIDs: [String] {
+    [id, dependentId, prerequisiteId].compactMap { $0 }
+  }
 }
 
 /// Routes Hanlin's existing SDK tool loop through Lorvex's *original* core.
@@ -136,7 +146,7 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
     if spec.writes {
       let approval = LorvexHanlinWriteRequest(
         tool: spec.alias,
-        objectIDs: args.id.map { [$0] } ?? [],
+        objectIDs: args.targetIDs,
         description: "\(spec.summary): \(args.title ?? args.name ?? args.id ?? "current selection")")
       let authorized = await authorizer(approval)
       guard authorized, !cancelled.contains(request.id.rawValue),
@@ -203,7 +213,7 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
     if spec.writes {
       let request = LorvexHanlinWriteRequest(
         tool: name,
-        objectIDs: args.id.map { [$0] } ?? [],
+        objectIDs: args.targetIDs,
         description: spec.summary + ": " +
           (args.title ?? args.name ?? args.id ?? "current selection"))
       guard await authorizer(request), !_Concurrency.Task<Never, Never>.isCancelled else {
@@ -279,6 +289,44 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
         "open": tasks.filter { $0.status.isActionable }.count,
         "completed": tasks.filter { $0.status == .completed }.count
       ])
+    case "show_task_workspace", "get_dependency_graph":
+      if let rootID = a.rootTaskId { _ = try await core.loadTask(id: rootID) }
+      if let listID = a.listId { _ = try await core.loadListDetail(id: listID, limit: 1, offset: 0) }
+      let graph = try await core.getDependencyGraph(
+        rootTaskID: a.rootTaskId, listID: a.listId,
+        includeInactive: tool == "show_task_workspace" ? true : (a.includeInactive ?? true))
+      if tool == "show_task_workspace" {
+        return try Self.encode([
+          "presentation": a.presentation ?? "graph",
+          "rootTaskID": a.rootTaskId as Any? ?? NSNull(),
+          "listID": a.listId as Any? ?? NSNull(),
+          "taskCount": graph.nodes.count, "truncated": graph.truncated
+        ])
+      }
+      return try Self.encode([
+        "nodes": graph.nodes.map { node -> [String: Any] in
+          ["id": node.id, "title": node.title, "status": node.status,
+           "priority": node.priority as Any? ?? NSNull(),
+           "dueDate": node.dueDate as Any? ?? NSNull(),
+           "plannedDate": node.plannedDate as Any? ?? NSNull(), "listID": node.listID]
+        },
+        "edges": graph.edges.map { ["dependentID": $0.from, "prerequisiteID": $0.to] },
+        "roots": graph.roots, "blocked": graph.blocked,
+        "leafBlockers": graph.leafBlockers, "truncated": graph.truncated
+      ])
+    case "add_task_dependency", "remove_task_dependency":
+      guard let dependentID = a.dependentId, let prerequisiteID = a.prerequisiteId else {
+        throw HanlinHostError.invalidArguments
+      }
+      let current = try await core.loadTask(id: dependentID)
+      var ids = current.dependsOn
+      if tool == "add_task_dependency" {
+        if !ids.contains(prerequisiteID) { ids.append(prerequisiteID) }
+      } else {
+        ids.removeAll { $0 == prerequisiteID }
+      }
+      let task = try await core.updateTask(TaskUpdateDraft(id: dependentID, dependsOn: ids))
+      return try Self.encode(["task": Self.taskData(task)])
     case "get_today":
       let today = try await core.loadToday()
       return try Self.encode(["summary": today.summary, "briefing": today.briefing as Any? ?? NSNull(),
@@ -317,13 +365,14 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
         estimatedMinutes: a.estimatedMinutes,
         dueDate: try Self.optionalDate(a.dueDate),
         plannedDate: try Self.optionalDate(a.plannedDate),
-        tags: a.tags))
+        tags: a.tags, dependsOn: a.dependsOn))
       return try Self.encode(["task": Self.taskData(task)])
     case "update_task":
       guard let id = a.id else { throw HanlinHostError.invalidArguments }
       var draft = TaskUpdateDraft(
         id: id, title: a.title, notes: a.notes,
-        priority: a.priority.flatMap(LorvexTask.Priority.init(tier:)), tags: a.tags)
+        priority: a.priority.flatMap(LorvexTask.Priority.init(tier:)),
+        tags: a.tags, dependsOn: a.dependsOn)
       if a.clearDue == true { draft.dueDate = .clear }
       else if let due = a.dueDate { draft.dueDate = .set(try Self.parseDay(due)) }
       if a.clearPlanned == true { draft.plannedDate = .clear }

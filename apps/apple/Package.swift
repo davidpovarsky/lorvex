@@ -40,6 +40,9 @@ let package = Package(
         // talks to it through LorvexCoreServicing, implemented by
         // SwiftLorvexCoreService.
         .package(path: "core"),
+        // Original shared components; app adapters keep task storage in Lorvex.
+        .package(url: "https://github.com/davidpovarsky/task-visualization-kit.git",
+                 revision: "bbec234ce2fc74022226fdf4cdcec3d3ac00fa8a"),
         .package(path: "../../Vendor/HanlinSDK"),
         // Direct test dependency for the immutable canonical SDK integration suite.
         .package(url: "https://github.com/davidpovarsky/swift-ai-sdk.git",
@@ -117,6 +120,7 @@ let package = Package(
         .target(
             name: "LorvexMobile",
             dependencies: [
+                .product(name: "TaskVisualizationKit", package: "task-visualization-kit"),
                 "LorvexCore",
                 "LorvexCloudSync",
                 "LorvexMarkdownUI",
@@ -227,6 +231,7 @@ let package = Package(
         .testTarget(
             name: "LorvexAppleTests",
             dependencies: [
+                .product(name: "TaskVisualizationKit", package: "task-visualization-kit"),
                 "LorvexApple",
                 "LorvexCloudSync",
                 "LorvexCore",

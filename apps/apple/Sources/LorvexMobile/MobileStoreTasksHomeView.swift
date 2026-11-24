@@ -150,6 +150,20 @@ public struct MobileStoreTasksHomeView: View {
   private var overview: some View {
     List {
       Section {
+        NavigationLink {
+          MobileTaskWorkspaceView(store: store)
+        } label: {
+          VStack(alignment: .leading, spacing: 4) {
+            Label(MobileTaskWorkspaceCopy.title, systemImage: "point.3.connected.trianglepath.dotted")
+              .font(.headline)
+            Text(MobileTaskWorkspaceCopy.subtitle)
+              .font(.caption).foregroundStyle(.secondary)
+          }
+          .padding(.vertical, 6)
+        }
+        .accessibilityIdentifier("lorvex.visual.open")
+      }
+      Section {
         if holdsTasks == false {
           firstTaskInvitation
         } else {

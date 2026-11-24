@@ -13,6 +13,7 @@ public struct LorvexHanlinMessage: Identifiable, Sendable {
   public private(set) var status: Status
   public private(set) var activities: [LorvexHanlinToolActivity] = []
   public private(set) var sources: [LorvexHanlinSource] = []
+  public private(set) var workspaces: [LorvexHanlinTaskWorkspace] = []
 
   public init(id: UUID = UUID(), role: Role, text: String, status: Status = .completed) {
     self.id = id; self.role = role; self.text = text; self.status = status
@@ -42,6 +43,11 @@ public struct LorvexHanlinMessage: Identifiable, Sendable {
     case .toolOutputDenied(let id, let name):
       updateTool(id: id, name: name) { $0.phase = .denied; $0.completedAt = Date() }
     case .toolResult(let id, let name, let result, _, let isError):
+      if name == "show_task_workspace", !isError,
+        let request = LorvexHanlinTaskWorkspace(callID: id, resultJSON: result) {
+        workspaces.removeAll { $0.id == id }
+        workspaces.append(request)
+      }
       updateTool(id: id, name: name) {
         $0.result = result; $0.phase = isError ? .failed : .completed
         $0.completedAt = Date()

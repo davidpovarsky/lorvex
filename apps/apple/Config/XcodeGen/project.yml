@@ -41,6 +41,9 @@ packages:
     from: 0.7.3
   HanlinSDK:
     path: ../../Vendor/HanlinSDK
+  TaskVisualizationKit:
+    url: https://github.com/davidpovarsky/task-visualization-kit.git
+    revision: bbec234ce2fc74022226fdf4cdcec3d3ac00fa8a
 targets:
   LorvexCore:
     type: framework
@@ -130,6 +133,8 @@ targets:
     sources:
       - path: Sources/LorvexMobile
     dependencies:
+      - package: TaskVisualizationKit
+        product: TaskVisualizationKit
       - target: LorvexCore
       - target: LorvexCloudSync
       - target: LorvexMarkdownUI

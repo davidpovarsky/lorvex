@@ -2,6 +2,7 @@
 import SwiftUI
 import UIKit
 import LorvexCore
+import LorvexMobile
 import LorvexHanlinAgent
 import HanlinChatUI
 import HanlinPresentationKit
@@ -11,6 +12,7 @@ import HanlinPresentationKit
 @MainActor
 struct LorvexHanlinChatWorkspace: View {
     let assistant: LorvexHanlinAssistantState
+    let store: MobileStore
     let draft: HanlinComposerDraft
     let modelName: String
     let showModelSettings: () -> Void
@@ -35,6 +37,9 @@ struct LorvexHanlinChatWorkspace: View {
                                     requestScroll(proxy)
                                 }
                                 .id(entry.id)
+                                ForEach(entry.workspaces) { request in
+                                    LorvexHanlinTaskWorkspaceCard(request: request, store: store)
+                                }
                             }
                             if let summary = assistant.dashboard {
                                 LorvexHanlinDashboard(summary: summary)

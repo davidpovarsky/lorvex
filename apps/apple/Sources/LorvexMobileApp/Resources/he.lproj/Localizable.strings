@@ -166,3 +166,17 @@
 "The conversation changed during saving. Reload it before continuing." = "השיחה השתנתה במהלך השמירה. טענו אותה מחדש לפני שממשיכים.";
 "The stored conversation could not be validated. Original data was preserved." = "לא ניתן לאמת את השיחה שנשמרה. הנתונים המקוריים נשמרו.";
 "The conversation exceeds the configured storage limit." = "השיחה חורגת ממגבלת האחסון שהוגדרה.";
+
+"Task workspace" = "מרחב משימות";
+
+"Live task workspace" = "מרחב משימות חי";
+
+"Expand workspace" = "הרחבת המרחב";
+
+"Read real task prerequisites, blockers and parallel branches" = "קריאת משימות מקדימות, חסימות ושלבים מקבילים";
+
+"Show an interactive live task graph, board, timeline, network or table in this conversation" = "הצגת המשימות בשיחה כגרף, לוח, ציר זמן, רשת או טבלה אינטראקטיביים";
+
+"Make dependent_id wait for prerequisite_id through canonical cycle validation" = "הוספת קשר תלות בין משימות עם בדיקת תקינות";
+
+"Remove this prerequisite relation without changing other task fields" = "הסרת קשר תלות בלי לשנות שדות אחרים";
