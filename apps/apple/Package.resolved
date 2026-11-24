@@ -1,6 +1,14 @@
 {
-  "originHash" : "5d087e108bb74aa3aef59394eea092f6d78b4700bce9160e32b8cbba4a62176c",
+  "originHash" : "b0b0a27bb6e3e22fa61f90c8728ef125365f7def99773255ac9d09edb1d574e6",
   "pins" : [
+    {
+      "identity" : "advancedkanban",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/NerdSnipe-Inc/AdvancedKanban.git",
+      "state" : {
+        "revision" : "17c093670ca6198c9b86ed22cf9c7b0d5f527df9"
+      }
+    },
     {
       "identity" : "equatable",
       "kind" : "remoteSourceControl",
@@ -17,6 +25,14 @@
       "state" : {
         "revision" : "86b5096ac59ab46e66bd1f6377c604bc1dab0bc2",
         "version" : "1.5.1"
+      }
+    },
+    {
+      "identity" : "forcegraph",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ianleon/ForceGraph.git",
+      "state" : {
+        "revision" : "55354c76d179a3ebbe58199544442d5f5f10765c"
       }
     },
     {
@@ -151,12 +167,28 @@
       }
     },
     {
+      "identity" : "swiftflow",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aaurelions/SwiftFlow.git",
+      "state" : {
+        "revision" : "98ff46633257d188f1819255df8c8453a9b72d8f"
+      }
+    },
+    {
       "identity" : "swiftui-shimmer",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markiv/SwiftUI-Shimmer",
       "state" : {
         "revision" : "0226e21f9bf355d40e07e5f5e1c33679d50e167f",
         "version" : "1.5.1"
+      }
+    },
+    {
+      "identity" : "task-visualization-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/davidpovarsky/task-visualization-kit.git",
+      "state" : {
+        "revision" : "a78c84e1df369ea7c93cf4b23d4f5d8d60e25293"
       }
     }
   ],

@@ -7,8 +7,10 @@ This lane starts from the user's integration branch
 `b0db80213e78e378e9ac9bb367fa7516746cd846`, which includes the signed
 Lorvex 172 source and subsequent cloud throttle fixes. It is implemented in
 `codex/lorvex-visual-tasks-20261125` in an isolated Oracle worktree.
-The upstream mirror's `origin` points at `boyugou/lorvex`; delivery must
-use the user's `davidpovarsky/lorvex` fork explicitly.
+The independent canonical clone is
+`/mnt/development/projects/worktrees/lorvex-visual-tasks-owned-20261125`;
+its `origin` is the user's `davidpovarsky/lorvex` fork. The earlier shared-mirror
+worktree is preserved and is not the writer for this lane.
 
 ## Product behavior
 
@@ -78,9 +80,17 @@ The following new checks are ready for the existing Scaleway Mac lane:
   view descriptor identity, failed/malformed tool rejection and idempotent rendering.
 - Updated `LorvexHanlinAgentTests` catalog and original write-authorization checks.
 - `LorvexMobileUITests/TaskWorkspaceIntegrationTests/testVisualTaskCompletionSurvivesRelaunch`:
-  UI creation of two real test tasks, connecting them, prerequisite completion,
-  live table completion, verification in the original task detail, and relaunch/
-  persisted task reopening. Screenshots are attached to the XCTest result.
+  UI creation of two real test tasks, connecting them, setting a real due date,
+  all five presentations with screenshots (including a populated timeline),
+  prerequisite completion, live table completion, verification in the original
+  task detail, and relaunch/persisted completion and date followed by reopening.
+  The test runner reads `LORVEX_TEST_LANGUAGE=en|he` (default `en`) and sets the
+  application language/locale explicitly. It verifies translated mode labels
+  and completion controls and scrolls the mode picker according to direction.
+  Inject the variable into the UI test target's `EnvironmentVariables` in a
+  copied `.xctestrun` file, then use `test-without-building` on the isolated
+  iPad and iPhone destinations. A test runner `-testLanguage` alone does not
+  override an application's explicit launch arguments.
 
 Native compiler/test evidence, final kit/source pins and the new TestFlight build
 belong in the release receipt after those stages actually run.
