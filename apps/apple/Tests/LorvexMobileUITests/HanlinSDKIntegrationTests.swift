@@ -143,6 +143,11 @@ final class HanlinSDKIntegrationTests: XCTestCase {
             print("LORVEX_UI browser[\(attempt)]: \(elementState(browser))")
             print("LORVEX_UI close[\(attempt)]: \(elementState(close))")
             XCTAssertTrue(waitUntilHittable(close), elementState(close))
+            XCTAssertEqual(close.identifier, "Close")
+            let ownership = XCTAttachment(string: try closeControlHierarchy(in: app))
+            ownership.name = "ChatGPT Close control ownership (redacted)"
+            ownership.lifetime = .keepAlways
+            self.add(ownership)
             close.tap()
             XCTAssertTrue(browser.waitForNonExistence(timeout: 5))
             attach(app, "Lorvex - account after ChatGPT sign-in cancellation")
@@ -151,6 +156,27 @@ final class HanlinSDKIntegrationTests: XCTestCase {
             XCTAssertTrue(add.isEnabled)
         }
         attach(app, "Lorvex - official ChatGPT sign-in cancelled and restarted")
+    }
+
+    @MainActor
+    private func closeControlHierarchy(in app: XCUIApplication) throws -> String {
+        // Retain only control ownership, never web labels, values, or OAuth URLs.
+        let safeIdentifiers: Set<String> = [
+            "Close", "hanlin.close", "chatgpt.authorization.browser",
+            "com.itorah.lorvex", "com.apple.SafariViewService", "com.apple.mobilesafari"
+        ]
+        var paths: [String] = []
+        @MainActor func visit(_ node: any XCUIElementSnapshot, path: [String]) {
+            let identifier = safeIdentifiers.contains(node.identifier) ? node.identifier : "<redacted>"
+            let next = path + ["\(node.elementType) id=\(identifier) frame=\(node.frame)"]
+            if node.elementType == .button,
+               node.identifier == "Close" || node.identifier == "hanlin.close" {
+                paths.append(next.joined(separator: " > "))
+            }
+            for child in node.children { visit(child, path: next) }
+        }
+        visit(try app.snapshot(), path: [])
+        return paths.joined(separator: "\n")
     }
 
     @MainActor

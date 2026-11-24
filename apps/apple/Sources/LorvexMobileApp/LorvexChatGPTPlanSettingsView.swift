@@ -110,13 +110,11 @@ struct LorvexChatGPTPlanSettingsView: View {
         Button("Done") { dismiss() }
       }
     }
-    .sheet(isPresented: Binding(
-      get: { account.authorizationURL != nil },
-      set: { if !$0 { account.cancelSignIn() } }
-    )) {
-      if let url = account.authorizationURL {
-        LorvexChatGPTPlanBrowser(url: url, onFinish: account.cancelSignIn).ignoresSafeArea()
+    .background {
+      LorvexChatGPTPlanBrowser(url: account.authorizationURL) { url in
+        account.cancelSignIn(authorizationURL: url)
       }
+      .frame(width: 0, height: 0)
     }
   }
 }

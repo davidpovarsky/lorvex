@@ -101,6 +101,11 @@ PY
 export DEVELOPER_DIR="$LORVEX_UI_TEST_DEVELOPER_DIR"
 xcrun simctl boot "$SIMULATOR_ID"
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
+TEST_SELECTION=()
+IFS=',' read -r -a UI_TESTS <<< "${LORVEX_UI_ONLY_TESTS:-LorvexMobileUITests/HanlinSDKIntegrationTests}"
+for selector in "${UI_TESTS[@]}"; do
+  TEST_SELECTION+=("-only-testing:$selector")
+done
 status=0
 xcodebuild -xctestrun "$XCTESTRUN_PATH" \
   -jobs "${LORVEX_UI_JOBS:-3}" \
@@ -108,7 +113,7 @@ xcodebuild -xctestrun "$XCTESTRUN_PATH" \
   -resultBundlePath "$OUT/Lorvex-Hanlin-UI.xcresult" \
   -collect-test-diagnostics never \
   -parallel-testing-enabled NO \
-  -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests \
+  "${TEST_SELECTION[@]}" \
   test-without-building 2>&1 | tee "$OUT/lorvex-hanlin-ui.log" || status=$?
 if [[ -d "$OUT/Lorvex-Hanlin-UI.xcresult" ]]; then
   xcrun xcresulttool export attachments --path "$OUT/Lorvex-Hanlin-UI.xcresult" --output-path "$OUT/screenshots" || true

@@ -287,6 +287,12 @@ final class LorvexChatGPTAccountState {
     }
   }
 
+  func cancelSignIn(authorizationURL: URL) {
+    // A retired browser must not cancel a newer attempt or a validated exchange.
+    guard self.authorizationURL == authorizationURL else { return }
+    cancelSignIn()
+  }
+
   func cancelSignIn() {
     // Safari dismisses itself while the validated callback is being exchanged.
     guard pending != nil || authorizationURL != nil || listener != nil else { return }
@@ -539,27 +545,151 @@ private final class LorvexChatGPTCallbackReader: @unchecked Sendable {
   }
 }
 
+@MainActor
 struct LorvexChatGPTPlanBrowser: UIViewControllerRepresentable {
-  let url: URL
-  let onFinish: @MainActor () -> Void
+  let url: URL?
+  let onFinish: @MainActor (URL) -> Void
 
-  func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+  func makeUIViewController(context: Context) -> Presenter { Presenter() }
 
-  func makeUIViewController(context: Context) -> SFSafariViewController {
-    let browser = SFSafariViewController(url: url)
-    browser.dismissButtonStyle = .close
-    browser.delegate = context.coordinator
-    browser.view.accessibilityIdentifier = "chatgpt.authorization.browser"
-    return browser
+  func updateUIViewController(_ presenter: Presenter, context: Context) {
+    presenter.configure(url: url, onFinish: onFinish)
   }
 
-  func updateUIViewController(_ view: SFSafariViewController, context: Context) {}
+  static func dismantleUIViewController(_ presenter: Presenter, coordinator: ()) {
+    presenter.invalidate()
+  }
 
+  /// SwiftUI hosts only this presenter. Safari must be presented modally, never
+  /// embedded as a child controller, so its Close cannot dismiss the settings host.
   @MainActor
-  final class Coordinator: NSObject, @MainActor SFSafariViewControllerDelegate {
-    private let onFinish: @MainActor () -> Void
-    init(onFinish: @escaping @MainActor () -> Void) { self.onFinish = onFinish }
-    func safariViewControllerDidFinish(_ controller: SFSafariViewController) { onFinish() }
+  final class Presenter: UIViewController, @MainActor SFSafariViewControllerDelegate,
+                         @MainActor UIAdaptivePresentationControllerDelegate {
+    private enum Dismissal { case native, programmatic }
+    private var requestedURL: URL?
+    private var displayedURL: URL?
+    private var browser: SFSafariViewController?
+    private var dismissal: Dismissal?
+    private var observingNativeClose = false
+    private var invalidated = false
+    private var onFinish: (@MainActor (URL) -> Void)?
+
+    override func loadView() {
+      view = UIView(frame: .zero)
+      view.backgroundColor = .clear
+      view.isUserInteractionEnabled = false
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+      super.viewDidAppear(animated)
+      reconcile()
+    }
+
+    func configure(url: URL?, onFinish: @escaping @MainActor (URL) -> Void) {
+      requestedURL = url
+      self.onFinish = onFinish
+      reconcile()
+    }
+
+    private func reconcile() {
+      guard !invalidated else { return }
+      if let browser {
+        // Reconcile a completed native dismissal before testing its closing flag.
+        // A newer attempt remains queued until this exact controller has gone.
+        if browser.presentingViewController == nil,
+           !browser.isBeingPresented, !browser.isBeingDismissed {
+          retire(browser)
+          return
+        }
+        if let dismissal {
+          if case .native = dismissal { observeNativeClose(of: browser) }
+          return
+        }
+        guard requestedURL != displayedURL else { return }
+        dismissal = .programmatic
+        browser.dismiss(animated: true) { [weak self, weak browser] in
+          guard let self, let browser else { return }
+          self.retire(browser)
+        }
+        return
+      }
+      guard isViewLoaded, view.window != nil, let requestedURL,
+            presentedViewController == nil else { return }
+      let browser = SFSafariViewController(url: requestedURL)
+      browser.dismissButtonStyle = .close
+      browser.delegate = self
+      browser.view.accessibilityIdentifier = "chatgpt.authorization.browser"
+      self.browser = browser
+      displayedURL = requestedURL
+      present(browser, animated: true) { [weak self, weak browser] in
+        guard let self, let browser, self.browser === browser else { return }
+        self.reconcile()
+      }
+      browser.presentationController?.delegate = self
+    }
+
+    func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+      guard browser === controller, let displayedURL else { return }
+      // UIKit dismisses Safari after this callback. Fence the attempt now, but
+      // never initiate a second dismissal of Safari or its settings presenter.
+      if case .programmatic? = dismissal { return }
+      dismissal = .native
+      onFinish?(displayedURL)
+    }
+
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+      guard let browser, presentationController.presentedViewController === browser else { return }
+      if let displayedURL { onFinish?(displayedURL) }
+      retire(browser)
+    }
+
+    private func observeNativeClose(of controller: SFSafariViewController) {
+      guard !observingNativeClose, let transition = controller.transitionCoordinator else { return }
+      observingNativeClose = true
+      let registered = transition.animate(alongsideTransition: nil) { [weak self, weak controller] _ in
+        // Recheck actual UIKit ownership after the transition callback returns.
+        // This also services a new attempt queued while the old one was closing.
+        _Concurrency.Task { @MainActor [weak self, weak controller] in
+          guard let self, let controller, self.browser === controller else { return }
+          self.observingNativeClose = false
+          self.reconcile()
+        }
+      }
+      if !registered { observingNativeClose = false }
+    }
+
+    private func retire(_ controller: SFSafariViewController) {
+      guard browser === controller else { return }
+      let finishedURL = displayedURL
+      browser = nil
+      displayedURL = nil
+      dismissal = nil
+      observingNativeClose = false
+      if let finishedURL, requestedURL == finishedURL {
+        requestedURL = nil
+        let onFinish = onFinish
+        // A native dismissal discovered during a SwiftUI update must not mutate
+        // its observed account in that update. The callback is attempt-bound.
+        _Concurrency.Task { @MainActor in onFinish?(finishedURL) }
+      }
+      reconcile()
+    }
+
+    func invalidate() {
+      invalidated = true
+      requestedURL = nil
+      guard let browser else { return }
+      if let displayedURL {
+        let onFinish = onFinish
+        _Concurrency.Task { @MainActor in onFinish?(displayedURL) }
+      }
+      if let _ = dismissal { return }
+      dismissal = .programmatic
+      browser.dismiss(animated: false) { [weak self, weak browser] in
+        guard let self, let browser else { return }
+        self.retire(browser)
+      }
+    }
   }
 }
 #else
