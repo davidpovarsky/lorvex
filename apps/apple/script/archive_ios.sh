@@ -22,6 +22,9 @@
 #   EXPORT_METHOD         app-store-connect | development (default: app-store-connect)
 #   ARCHIVE_DIR           Directory for .xcarchive output  (default: dist/ios-archive)
 #   LORVEX_XCODEBUILD_JOBS Maximum concurrent build jobs (default: 3)
+#   LORVEX_DERIVED_DATA_PATH  Optional isolated DerivedData for archive/export
+#   LORVEX_CLONED_SOURCE_PACKAGES_DIR  Optional package checkout directory;
+#                                     selects system Git for process URL mirrors
 #
 # --archive and --export require the schema-freeze tripwire to be ARMED
 # (see script/verify_schema_freeze.py; schema/migration_policy.json
@@ -64,6 +67,11 @@ Environment for --export:
   EXPORT_METHOD      app-store-connect | development  (default: app-store-connect)
   ARCHIVE_DIR        output directory for .xcarchive   (default: dist/ios-archive)
   LORVEX_XCODEBUILD_JOBS  maximum concurrent build jobs  (default: 3)
+
+Optional archive/export runner paths (Xcode defaults when unset):
+  LORVEX_DERIVED_DATA_PATH  per-task DerivedData directory
+  LORVEX_CLONED_SOURCE_PACKAGES_DIR  package checkout directory; enables
+                                     -scmProvider system for process URL mirrors
 
 Environment for --archive/--export (schema-freeze gate):
   LORVEX_ALLOW_UNFROZEN   Set to 1 to skip the schema-freeze-armed
@@ -310,6 +318,15 @@ XCODE_ARGS=(
   "${XCODE_PINNED_RESOLUTION_FLAGS[@]}"
   "CODE_SIGN_STYLE=$([[ "$EXPORT_METHOD" == "app-store-connect" ]] && echo Manual || echo Automatic)"
 )
+# Preserve the caller's isolated runner caches without changing default paths
+# or global Git configuration. System Git honors process-scoped URL mirrors.
+if [[ -n "${LORVEX_DERIVED_DATA_PATH:-}" ]]; then
+  XCODE_ARGS+=(-derivedDataPath "$LORVEX_DERIVED_DATA_PATH")
+fi
+if [[ -n "${LORVEX_CLONED_SOURCE_PACKAGES_DIR:-}" ]]; then
+  XCODE_ARGS+=(-clonedSourcePackagesDirPath "$LORVEX_CLONED_SOURCE_PACKAGES_DIR" -scmProvider system)
+fi
+
 if [[ "$EXPORT_METHOD" == "app-store-connect" ]]; then
   # All five shipping targets declare their verified distribution profile in
   # XcodeGen. Preserve that manual configuration instead of overriding it.

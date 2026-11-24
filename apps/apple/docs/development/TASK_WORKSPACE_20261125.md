@@ -97,3 +97,17 @@ The following new checks are ready for the existing Scaleway Mac lane:
 
 Native compiler/test evidence, final kit/source pins and the new TestFlight build
 belong in the release receipt after those stages actually run.
+
+
+## Isolated release runner configuration
+
+The release owner can keep the existing archive/export gates while selecting
+per-task caches through optional `archive_ios.sh` environment variables:
+
+- `LORVEX_DERIVED_DATA_PATH` supplies `-derivedDataPath`.
+- `LORVEX_CLONED_SOURCE_PACKAGES_DIR` supplies
+  `-clonedSourcePackagesDirPath` and `-scmProvider system`, allowing the existing
+  process-scoped Git URL mirror to resolve the private shared kit.
+
+Unset variables preserve the existing Xcode defaults. This configuration change
+does not run an archive or weaken signing, schema-freeze, export, or IPA gates.
