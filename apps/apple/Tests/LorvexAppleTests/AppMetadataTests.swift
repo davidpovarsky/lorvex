@@ -56,7 +56,7 @@ func appMetadataMatchesAppleDistributionIdentity() {
     AppMetadata.displayVersion
       == "\(AppMetadata.marketingVersion) (\(AppMetadata.buildVersion))")
   #expect(AppMetadata.minimumSystemVersion == "26.0")
-  #expect(MobileAppMetadata.minimumSystemVersion == "26.0")
+  #expect(MobileAppMetadata.minimumSystemVersion == "27.0")
   #expect(AppMetadata.urlScheme == "lorvex")
   #expect(AppMetadata.appCategory == "public.app-category.productivity")
   #expect(

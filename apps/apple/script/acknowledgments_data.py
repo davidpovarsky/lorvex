@@ -56,6 +56,12 @@ class PackageLicense:
 # `verify_acknowledgments.py` fails the build — this is the single place a
 # dependency add/bump/removal must be reflected.
 PACKAGE_METADATA: dict[str, PackageLicense] = {
+    "equatable": PackageLicense(
+        display_name="Equatable",
+        spdx="Apache-2.0",
+        extra_text_file="equatable.LICENSE.txt",
+        extra_text_label="License",
+    ),
     "eventsource": PackageLicense(
         display_name="eventsource",
         spdx="MIT",
@@ -67,6 +73,36 @@ PACKAGE_METADATA: dict[str, PackageLicense] = {
         spdx="MIT",
         extra_text_file="GRDB.swift.LICENSE.txt",
         extra_text_label="License",
+    ),
+    "hanlin-streaming-markdown": PackageLicense(
+        display_name="hanlin-streaming-markdown",
+        spdx="MIT",
+        extra_text_file="hanlin-streaming-markdown.LICENSE.txt",
+        extra_text_label="License",
+    ),
+    "highlightswift": PackageLicense(
+        display_name="HighlightSwift",
+        spdx="MIT AND BSD-3-Clause",
+        extra_text_file="HighlightSwift.LICENSE.txt",
+        extra_text_label="Licenses (HighlightSwift and bundled Highlight.js)",
+    ),
+    "iosmath": PackageLicense(
+        display_name="iosMath",
+        spdx="MIT AND LPPL-1.3c-or-later",
+        extra_text_file="iosMath.LICENSE.txt",
+        extra_text_label="License and Latin Modern Math font notices (GUST Font License)",
+    ),
+    "swift-ai-sdk": PackageLicense(
+        display_name="swift-ai-sdk",
+        spdx="Apache-2.0",
+        extra_text_file="swift-ai-sdk.LICENSE.txt",
+        extra_text_label="License",
+    ),
+    "swift-argument-parser": PackageLicense(
+        display_name="swift-argument-parser",
+        spdx="Apache-2.0",
+        extra_text_file=None,
+        needs_apache_appendix=True,
     ),
     "swift-atomics": PackageLicense(
         display_name="swift-atomics",
@@ -113,11 +149,23 @@ PACKAGE_METADATA: dict[str, PackageLicense] = {
         extra_text_file="swift-sdk.LICENSE.txt",
         extra_text_label="License",
     ),
+    "swift-syntax": PackageLicense(
+        display_name="swift-syntax",
+        spdx="Apache-2.0",
+        extra_text_file=None,
+        needs_apache_appendix=True,
+    ),
     "swift-system": PackageLicense(
         display_name="swift-system",
         spdx="Apache-2.0",
         extra_text_file=None,
         needs_apache_appendix=True,
+    ),
+    "swiftui-shimmer": PackageLicense(
+        display_name="SwiftUI-Shimmer",
+        spdx="MIT",
+        extra_text_file="SwiftUI-Shimmer.LICENSE.txt",
+        extra_text_label="License",
     ),
 }
 
