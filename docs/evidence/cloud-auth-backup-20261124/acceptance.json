@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-24",
+  "scope": "Lorvex Cloud canonical authentication throttling and populated SQLite backup acceptance",
+  "source": {
+    "repository": "davidpovarsky/lorvex",
+    "commit": "351add8c85129ebc34e4d6df868e0088797fe341",
+    "tree": "a81d13d2bdd6485a553604024ce90dd7e3ef4a18",
+    "parent": "5384773dc3b8a495030101ad0217498153763eac",
+    "nativeReleaseSourceUnchanged": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+    "sha256": {
+      "server.mjs": "6eb099659056a0a14570cc302350fd9a95fb3817cf6e157a866dadea2b25b958",
+      "store.mjs": "27ec54401f0dbb30ca759df66ed752c6284be3f79087092f4ae7c85ba806c51f",
+      "rate-limit.test.mjs": "48d7107e771a496e1db8607f8ca01957ef3d7ac75f666f497116594d89b31509",
+      "backup.test.mjs": "ebfb30d802f49dca383750ba81d2097db2d65e155c571d6da35ed6c01457147c",
+      "test-support/acceptance-fixture.mjs": "5d88d533713de18cee0b981fcd05d4cdee93f007ab82b3e6260f19d03b619503"
+    }
+  },
+  "runtime": {
+    "node": "v24.22.0",
+    "python": "3.12.3",
+    "isolation": "Fresh loopback-only HTTP server, temporary SQLite database and injected fixture clock; no production accounts or databases used by tests."
+  },
+  "baseline": {
+    "source": "Exact deployed pre-change allowlisted code snapshot",
+    "serverSHA256": "1fd531b7e1acc17b0a5b1d7d268ee8aad65e55c8e625155a345866000d1b3f3f",
+    "storeSHA256": "dd55cb1c151ae5be1b4ef8b914979c29a6076a9b453bea55cd0bfc1ae75bca0b",
+    "finalRegressionTests": 10,
+    "passed": 5,
+    "failed": 5,
+    "logSHA256": "28ff1a1d14baa69a6ae0ce9e25010306da3c2050c41d52a00f1805a22dcd3526",
+    "failures": [
+      "REST canonical-email login alias",
+      "OAuth canonical-email login alias",
+      "REST canonical-email registration alias",
+      "OAuth canonical-email registration alias",
+      "Distinct long accounts sharing a 180-character prefix"
+    ],
+    "initialNineCaseRun": {
+      "passed": 4,
+      "failed": 5,
+      "logSHA256": "271e5fc22c343780b95773e4e842a454e4eb9d415be651bca41ba64644ab9687"
+    }
+  },
+  "fixed": {
+    "passed": 27,
+    "failed": 0,
+    "rateLimitTests": 10,
+    "populatedBackupTests": 1,
+    "existingAffectedAuthAndMCPTests": 16,
+    "logSHA256": "d9f8167d211eb40b007a558e7b33c566085aba30ac302545039932a840c580ea",
+    "command": "node --test --test-concurrency=1 --test-reporter=tap rate-limit.test.mjs backup.test.mjs server.test.mjs oauth-contract.test.mjs oauth-localization.test.mjs mcp-auth.test.mjs",
+    "workingDirectory": "cloud",
+    "cooldownMilliseconds": 600000,
+    "productChange": "Use the store's complete lowercase/trim normalization before hashing the identity to a fixed SHA-256 key in all four REST/OAuth login/registration paths; keep existing thresholds, validation and errors.",
+    "oversizedInvalidInputBytes": 131084
+  },
+  "deployedBackupProof": {
+    "backupScriptSHA256": "547197d64719b76c0843a9bdc518de17154710ea653ba19f1d30112acb8b0cd3",
+    "scriptProvenance": "Exact deployed backup.py; only its default home differs from the repository file, and all home/database/destination paths were overridden to the isolated fixture.",
+    "passed": 1,
+    "failed": 0,
+    "logSHA256": "0e654f2154e18a12ca4284a0564aee4cb24b8214f39c907ea0d483a6e181f1f1",
+    "sourceConnectionOpenDuringBackup": true,
+    "integrity": "ok",
+    "counts": {
+      "accounts": 2,
+      "entities": 2,
+      "changes": 2,
+      "receipts": 2,
+      "tokens": 2,
+      "audit": 2
+    },
+    "logicalSHA256": "03d5874499b206da2f389085a0d223a0cab27aec2f0c47f1ce1ba62c4df5aa64",
+    "archiveSHA256": "32a67ae6735d60f85b71474d457d590cc6dca273cfd257d6fb32548bb628fcbd",
+    "archiveSizeBytes": 3059,
+    "restoredSizeBytes": 86016,
+    "archivePermissions": "0600",
+    "restoredSessionsAndAccountIsolationVerified": true,
+    "idempotentReplayPreservedTaskIDs": true,
+    "allRowsAndSchemaLogicalDigestUnchanged": true,
+    "fixtureCleanup": true,
+    "productionDataUsed": false
+  },
+  "deployment": {
+    "startedUTC": "2026-11-24T19:39:35Z",
+    "sourceCommit": "351add8c85129ebc34e4d6df868e0088797fe341",
+    "sourceTree": "a81d13d2bdd6485a553604024ce90dd7e3ef4a18",
+    "unit": "lorvex-cloud.service",
+    "files": {
+      "server.mjs": {
+        "beforeSHA256": "1fd531b7e1acc17b0a5b1d7d268ee8aad65e55c8e625155a345866000d1b3f3f",
+        "afterSHA256": "6eb099659056a0a14570cc302350fd9a95fb3817cf6e157a866dadea2b25b958"
+      },
+      "store.mjs": {
+        "beforeSHA256": "dd55cb1c151ae5be1b4ef8b914979c29a6076a9b453bea55cd0bfc1ae75bca0b",
+        "afterSHA256": "27ec54401f0dbb30ca759df66ed752c6284be3f79087092f4ae7c85ba806c51f"
+      }
+    },
+    "productionAccountMutationRequests": 0,
+    "databaseSchemaChanged": false,
+    "databaseReadOrWritePerformed": false,
+    "rollbackAvailable": true,
+    "restartExit": 0,
+    "checks": {
+      "publicHealth": {
+        "status": 200,
+        "ok": true,
+        "service": "Lorvex Cloud"
+      },
+      "issuerIdentification": true,
+      "protocolVersion": "2025-11-25",
+      "protectedCatalogStatus": 401,
+      "unauthenticatedTool": {
+        "status": 200,
+        "isError": true,
+        "challenge": "invalid_token"
+      },
+      "sourceHashesMatch": true,
+      "active": "active"
+    },
+    "outcome": "deployed_verified",
+    "finishedUTC": "2026-11-24T19:39:35Z",
+    "receiptSHA256": "0679249830f0bcaa511771af0c49210eb35ffede9e8b810c1ef549aa80310feb",
+    "preflight": "An initial temporary filename without an .mjs suffix was rejected by node --check before any live replacement or restart. Correcting the temporary suffix allowed the same staged syntax gate to pass."
+  },
+  "limitations": {
+    "personalChatGPTOAuthGrant": false,
+    "physicalDeviceInstallAndMigration": false,
+    "personalCloudRoundtrip": false,
+    "firstSubscribedModelReply": false,
+    "productionRateLimitHammeringPerformed": false,
+    "liveDatabaseRestorePerformed": false
+  },
+  "acceptance": "Backend regressions and isolated populated restore are proven. Personal consent, migration and physical-device acceptance remain separate open task criteria."
+}
