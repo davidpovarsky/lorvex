@@ -229,7 +229,9 @@ func backgroundDatabaseWorkHoldsABackgroundTaskThatSuspendsOnExpiry() throws {
   #expect(beginBody.contains("expire()"))
 
   let expire = try #require(source.range(of: "private static func expire() {"))
-  let expireBody = source[expire.upperBound...].prefix(200)
+  let expireEnd = try #require(source.range(of: "private static func endBackgroundTask()", range: expire.upperBound..<source.endIndex))
+  let expireBody = source[expire.upperBound..<expireEnd.lowerBound]
+  #expect(expireBody.contains("if UIApplication.shared.applicationState == .background {"))
   // Both exits wait for database work in flight to give up its locks before the
   // background task ends: suspending only interrupts, and the system may
   // suspend the process as soon as the task is over.

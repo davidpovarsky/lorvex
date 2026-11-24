@@ -106,6 +106,7 @@ xcodebuild -xctestrun "$XCTESTRUN_PATH" \
   -jobs "${LORVEX_UI_JOBS:-3}" \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
   -resultBundlePath "$OUT/Lorvex-Hanlin-UI.xcresult" \
+  -collect-test-diagnostics never \
   -parallel-testing-enabled NO \
   -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests \
   test-without-building 2>&1 | tee "$OUT/lorvex-hanlin-ui.log" || status=$?

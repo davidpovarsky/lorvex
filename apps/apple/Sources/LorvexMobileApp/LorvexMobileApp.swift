@@ -254,8 +254,11 @@ private extension Scene {
         await BackgroundDatabaseWork.run {
           // Apply what other devices changed first, so a task completed
           // elsewhere does not get its reminder armed again here.
+          guard !Task.isCancelled else { return }
           await store.syncInBackgroundWake()
+          guard !Task.isCancelled else { return }
           await store.replenishReminderWindow()
+          guard !Task.isCancelled else { return }
           await store.publishWidgetSnapshotInBackgroundWake()
         }
       }

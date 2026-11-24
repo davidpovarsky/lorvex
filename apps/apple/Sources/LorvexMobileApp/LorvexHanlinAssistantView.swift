@@ -45,7 +45,7 @@ struct LorvexHanlinAssistantView: View {
                 #if canImport(UIKit)
                 LorvexHanlinChatWorkspace(assistant: assistant, draft: composerDraft,
                     modelName: provider == "ChatGPT" ? chatGPTAccount.selectedModelID : modelID,
-                    showModelSettings: { showModelSettings = true },
+                    showModelSettings: { openModelSettings() },
                     showRemoteBridgeSettings: openMCPSettings,
                     send: send)
                 #else
@@ -70,7 +70,7 @@ struct LorvexHanlinAssistantView: View {
                         .accessibilityIdentifier("hanlin.mcp.settings")
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Model", systemImage: "gearshape") { showModelSettings = true }
+                    Button("Model", systemImage: "gearshape") { openModelSettings() }
                         .accessibilityIdentifier("hanlin.model.settings")
                 }
             }
@@ -85,7 +85,7 @@ struct LorvexHanlinAssistantView: View {
                 _Concurrency.Task { await assistant.cancel() }
             }
             .sheet(isPresented: $showModelSettings) {
-                settings.onAppear(perform: prepareSettings)
+                settings
             }
             .sheet(isPresented: $showRemoteBridgeSettings) {
                 LorvexRemoteBridgeSettingsView(bridge: remoteBridge)
@@ -121,7 +121,7 @@ struct LorvexHanlinAssistantView: View {
     private func loadCredential() {
         apiToken = LorvexHanlinKeychain.read()
         configuredToken = apiToken
-        if modelID.isEmpty { showModelSettings = true }
+        if modelID.isEmpty { openModelSettings() }
     }
 
     private var settings: some View {
@@ -182,6 +182,14 @@ struct LorvexHanlinAssistantView: View {
                 }
             }
         }
+    }
+
+    private func openModelSettings() {
+        guard !showModelSettings else { return }
+        // Initialize a new draft once per presentation. Returning from account
+        // authorization must preserve the selected provider and navigation.
+        prepareSettings()
+        showModelSettings = true
     }
 
     private func prepareSettings() {
@@ -279,7 +287,7 @@ struct LorvexHanlinAssistantView: View {
             return
         }
         guard !modelID.isEmpty, !configuredToken.isEmpty else {
-            showModelSettings = true
+            openModelSettings()
             return
         }
         let requestID = UUID()

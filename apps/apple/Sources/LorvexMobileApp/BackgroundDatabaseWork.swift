@@ -85,9 +85,12 @@ import LorvexCore
 
     /// The background task's time ran out with work still holding the
     /// database: release every lock before the system suspends the process.
+    /// A late expiration after foregrounding must leave the live database resumed.
     /// The users still counted end later; the last one finds nothing to end.
     private static func expire() {
-      DatabaseSuspension.suspend(waitingForOperations: lockReleaseWait)
+      if UIApplication.shared.applicationState == .background {
+        DatabaseSuspension.suspend(waitingForOperations: lockReleaseWait)
+      }
       endBackgroundTask()
     }
 

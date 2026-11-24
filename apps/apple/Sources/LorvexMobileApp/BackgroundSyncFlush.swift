@@ -21,35 +21,51 @@ import LorvexMobile
   /// background.
   @MainActor
   enum BackgroundSyncFlush {
-    static func flushThenSuspend(store: MobileStore) {
+    @discardableResult
+    static func flushThenSuspend(store: MobileStore) -> Task<Void, Never>? {
       BackgroundDatabaseWork.begin()
       let flush = Flush()
       flush.taskID = UIApplication.shared.beginBackgroundTask(withName: "Lorvex sync") {
-        flush.finish()
+        flush.expire()
       }
       guard flush.taskID != .invalid else {
         flush.finish()
-        return
+        return nil
       }
-      Task {
+      flush.work = Task { @MainActor in
+        defer { flush.finish() }
+        guard flush.canContinue else { return }
         await store.flushAutosaveDraftsBeforeSuspension()
+        // An autosave already in flight may finish after expiration. Keep that save,
+        // but do not start a new sync after this flush gave up its database ownership.
+        guard flush.canContinue else { return }
         await store.flushCloudSyncBeforeSuspension()
-        flush.finish()
       }
+      return flush.work
     }
 
     /// One flush's background task; `finish()` runs its exit once.
     @MainActor
     private final class Flush {
       var taskID: UIBackgroundTaskIdentifier = .invalid
+      var work: Task<Void, Never>?
       private var finished = false
+
+      var canContinue: Bool { !finished && !Task.isCancelled }
+
+      func expire() {
+        work?.cancel()
+        finish()
+      }
 
       func finish() {
         guard !finished else { return }
         finished = true
+        work = nil
         BackgroundDatabaseWork.end()
         if taskID != .invalid {
           UIApplication.shared.endBackgroundTask(taskID)
+          taskID = .invalid
         }
       }
     }
