@@ -27,7 +27,8 @@
 # Bump the build number first (`script/bump_build.py`) and commit it, so the
 # uploaded build matches a commit on main.
 #
-# Credentials come from `secrets/apple-developer.env` at the repository root,
+# Credentials may be preloaded by the runner, supplied through
+# LORVEX_APPLE_ENV_FILE, or loaded from `secrets/apple-developer.env` at the repository root,
 # which git ignores. Define ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH for API
 # authentication, or APPLE_ID and APPLE_PASSWORD (an app-specific password).
 # Signing needs APPLE_TEAM_ID, MAS_APP_SIGN_IDENTITY ("Apple Distribution: …"),
@@ -41,17 +42,21 @@
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SECRETS="$ROOT_DIR/../../secrets/apple-developer.env"
+SECRETS="${LORVEX_APPLE_ENV_FILE:-$ROOT_DIR/../../secrets/apple-developer.env}"
 MODE="${1:-}"
 
-if [[ ! -f "$SECRETS" ]]; then
-  echo "release_testflight: $SECRETS is missing" >&2
+# An explicitly configured loader must exist. A caller may instead supply the
+# already-loaded shared runner environment, with no repository secret copy.
+if [[ -n "${LORVEX_APPLE_ENV_FILE:-}" && ! -f "$SECRETS" ]]; then
+  echo "release_testflight: configured environment file is missing" >&2
   exit 2
 fi
-set -a
-# shellcheck disable=SC1090
-source "$SECRETS"
-set +a
+if [[ -f "$SECRETS" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$SECRETS"
+  set +a
+fi
 : "${APPLE_TEAM_ID:?APPLE_TEAM_ID is not set}"
 source "$ROOT_DIR/script/lib_altool_auth.sh"
 configure_altool_auth || exit $?

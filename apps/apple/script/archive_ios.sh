@@ -298,8 +298,13 @@ XCODE_ARGS=(
   -destination "$ARCHIVE_DESTINATION"
   -archivePath "$ARCHIVE_PATH"
   "${XCODE_PINNED_RESOLUTION_FLAGS[@]}"
-  CODE_SIGN_STYLE=Automatic
+  "CODE_SIGN_STYLE=$([[ "$EXPORT_METHOD" == "app-store-connect" ]] && echo Manual || echo Automatic)"
 )
+if [[ "$EXPORT_METHOD" == "app-store-connect" ]]; then
+  # All five shipping targets declare their verified distribution profile in
+  # XcodeGen. Preserve that manual configuration instead of overriding it.
+  XCODE_ARGS+=(CODE_SIGN_IDENTITY="Apple Distribution")
+fi
 
 # Each target's App Store entitlements file is declared per-target, per
 # Release-configuration in Config/XcodeGen/project.yml (search for

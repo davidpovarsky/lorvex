@@ -499,7 +499,7 @@ class VerifyPayloadAppTests(unittest.TestCase):
         profile_path = (focus_filter / "embedded.mobileprovision").resolve()
         self.fixture.profiles[profile_path]["Entitlements"][
             "application-identifier"
-        ] = f"{TEAM}.com.lorvex.apple.*"
+        ] = f"{TEAM}.{self.metadata['MOBILE_BUNDLE_ID']}.*"
 
         self.assertEqual(self.fixture.run(), [])
         failures = self.fixture.run(require_app_store_profile=True)

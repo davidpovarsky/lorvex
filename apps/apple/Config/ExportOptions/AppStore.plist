@@ -19,7 +19,26 @@
   <key>teamID</key>
   <string>TEAM_ID_PLACEHOLDER</string>
   <key>signingStyle</key>
-  <string>automatic</string>
+  <string>manual</string>
+  <key>signingCertificate</key>
+  <string>Apple Distribution</string>
+  <key>manageAppVersionAndBuildNumber</key>
+  <false/>
+  <key>destination</key>
+  <string>export</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.itorah.lorvex</key>
+    <string>Lorvex_AI_MAIN_AppStore_20261123</string>
+    <key>com.itorah.lorvex.widgets</key>
+    <string>Lorvex_AI_WIDGETS_AppStore_20261123</string>
+    <key>com.itorah.lorvex.focusfilter</key>
+    <string>Lorvex_AI_FOCUS_AppStore_20261123</string>
+    <key>com.itorah.lorvex.watchkitapp</key>
+    <string>Lorvex_AI_WATCH_AppStore_20261123</string>
+    <key>com.itorah.lorvex.watchkitapp.widgets</key>
+    <string>Lorvex_AI_WATCHWIDGETS_AppStore_20261123</string>
+  </dict>
   <key>uploadSymbols</key>
   <true/>
   <key>stripSwiftSymbols</key>

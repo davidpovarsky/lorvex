@@ -609,7 +609,7 @@ class ProductionDMGScriptContractTests(unittest.TestCase):
                                 str(app),
                             ],
                             "pid": 123,
-                            "pluginIdentifier": "com.lorvex.apple.focuswidget",
+                            "pluginIdentifier": metadata["WIDGET_BUNDLE_ID"],
                             "pluginPath": str(
                                 app
                                 / "Contents"
@@ -625,7 +625,7 @@ class ProductionDMGScriptContractTests(unittest.TestCase):
                         Path.home()
                         / "Library"
                         / "Group Containers"
-                        / "group.com.lorvex.apple"
+                        / metadata["APP_GROUP_ID"]
                         / "Lorvex"
                         / "widget_snapshot.json"
                     )
@@ -654,21 +654,21 @@ class ProductionDMGScriptContractTests(unittest.TestCase):
                     final_reset = name == "final-app-group-reset.json"
                     content = json.dumps(
                         {
-                            "appGroupIdentifier": "group.com.lorvex.apple",
+                            "appGroupIdentifier": metadata["APP_GROUP_ID"],
                             "backupCreated": False,
                             "databaseAbsentAfterReset": True,
                             "databasePath": str(
                                 Path.home()
                                 / "Library"
                                 / "Group Containers"
-                                / "group.com.lorvex.apple"
+                                / metadata["APP_GROUP_ID"]
                                 / "Lorvex"
                                 / "db.sqlite"
                             ),
                             "destructive": True,
                             "defaultsDomainsCleared": [
-                                "com.lorvex.apple",
-                                "group.com.lorvex.apple",
+                                metadata["BUNDLE_ID"],
+                                metadata["APP_GROUP_ID"],
                             ],
                             "generation": 6 if final_reset else 3,
                             "helperBinary": str(
@@ -685,7 +685,7 @@ class ProductionDMGScriptContractTests(unittest.TestCase):
                                 Path.home()
                                 / "Library"
                                 / "Containers"
-                                / "com.lorvex.apple"
+                                / metadata["BUNDLE_ID"]
                                 / "Data"
                                 / "Library"
                                 / "Application Support"
