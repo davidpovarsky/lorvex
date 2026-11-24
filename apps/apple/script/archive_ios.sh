@@ -21,6 +21,7 @@
 #   LORVEX_IOS_SCHEME     XcodeGen scheme to archive (default: LorvexMobileApp)
 #   EXPORT_METHOD         app-store-connect | development (default: app-store-connect)
 #   ARCHIVE_DIR           Directory for .xcarchive output  (default: dist/ios-archive)
+#   LORVEX_XCODEBUILD_JOBS Maximum concurrent build jobs (default: 3)
 #
 # --archive and --export require the schema-freeze tripwire to be ARMED
 # (see script/verify_schema_freeze.py; schema/migration_policy.json
@@ -42,6 +43,7 @@ source "$ROOT_DIR/script/lib_xcode_package_lock.sh"
 SCHEME="${LORVEX_IOS_SCHEME:-LorvexMobileApp}"
 EXPORT_METHOD="${EXPORT_METHOD:-app-store-connect}"
 ARCHIVE_DIR="${ARCHIVE_DIR:-"$ROOT_DIR/dist/ios-archive"}"
+XCODEBUILD_JOBS="${LORVEX_XCODEBUILD_JOBS:-3}"
 MODE=""
 
 usage() {
@@ -61,6 +63,7 @@ Environment for --export:
   APPLE_TEAM_ID      10-character Apple Developer Team ID
   EXPORT_METHOD      app-store-connect | development  (default: app-store-connect)
   ARCHIVE_DIR        output directory for .xcarchive   (default: dist/ios-archive)
+  LORVEX_XCODEBUILD_JOBS  maximum concurrent build jobs  (default: 3)
 
 Environment for --archive/--export (schema-freeze gate):
   LORVEX_ALLOW_UNFROZEN   Set to 1 to skip the schema-freeze-armed
@@ -87,6 +90,11 @@ while [[ $# -gt 0 ]]; do
       echo "unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
+
+if [[ ! "$XCODEBUILD_JOBS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "LORVEX_XCODEBUILD_JOBS must be a positive integer." >&2
+  exit 2
+fi
 
 # ---------------------------------------------------------------------------
 # Choose default mode based on credential availability
@@ -199,6 +207,7 @@ if [[ "$MODE" == "build-only" ]]; then
       -project "$PROJECT_PATH" \
       -scheme "$SCHEME" \
       -configuration Debug \
+      -jobs "$XCODEBUILD_JOBS" \
       -destination "$DESTINATION" \
       "${XCODE_PINNED_RESOLUTION_FLAGS[@]}" \
       CODE_SIGNING_ALLOWED=NO \
@@ -295,6 +304,7 @@ XCODE_ARGS=(
   -project "$PROJECT_PATH"
   -scheme "$SCHEME"
   -configuration Release
+  -jobs "$XCODEBUILD_JOBS"
   -destination "$ARCHIVE_DESTINATION"
   -archivePath "$ARCHIVE_PATH"
   "${XCODE_PINNED_RESOLUTION_FLAGS[@]}"

@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "kind": "lorvex-cloud-operations-readback",
+  "capacityMeasuredAt": "2026-11-24T16:23:19.465681+00:00",
+  "capacity": {
+    "/": {
+      "availableBytes": 1063915520,
+      "totalBytes": 50884108288,
+      "freeInodes": 4800919
+    },
+    "/mnt/development": {
+      "availableBytes": 5204611072,
+      "totalBytes": 108259958784,
+      "freeInodes": 4600165
+    }
+  },
+  "comparison": {
+    "rootMinimumBytes": 805306368,
+    "dataMinimumBytes": 536870912,
+    "reference": "Previously coordinated shared Oracle admission bounds; point-in-time comparison only",
+    "rootAboveMinimum": true,
+    "dataAboveMinimum": true
+  },
+  "units": {
+    "lorvex-cloud.service": {
+      "exit": 0,
+      "properties": {
+        "Result": "success",
+        "ExecMainStartTimestamp": "Tue 2026-11-24 15:34:39 UTC",
+        "ExecMainExitTimestamp": "",
+        "ExecMainStatus": "0",
+        "MemoryCurrent": "18690048",
+        "CPUUsageNSec": "160555000",
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "running",
+        "UnitFileState": "enabled"
+      }
+    },
+    "lorvex-mcp-bridge.service": {
+      "exit": 0,
+      "properties": {
+        "Result": "success",
+        "ExecMainStartTimestamp": "Mon 2026-11-23 22:14:21 UTC",
+        "ExecMainExitTimestamp": "",
+        "ExecMainStatus": "0",
+        "MemoryCurrent": "20742144",
+        "CPUUsageNSec": "1100708000",
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "running",
+        "UnitFileState": "enabled"
+      }
+    },
+    "lorvex-cloud-backup.service": {
+      "exit": 0,
+      "properties": {
+        "Result": "success",
+        "ExecMainStartTimestamp": "Tue 2026-11-24 03:31:45 UTC",
+        "ExecMainExitTimestamp": "Tue 2026-11-24 03:31:45 UTC",
+        "ExecMainStatus": "0",
+        "MemoryCurrent": "[not set]",
+        "CPUUsageNSec": "50975000",
+        "LoadState": "loaded",
+        "ActiveState": "inactive",
+        "SubState": "dead",
+        "UnitFileState": "static"
+      }
+    },
+    "lorvex-cloud-backup.timer": {
+      "exit": 0,
+      "properties": {
+        "NextElapseUSecRealtime": "Wed 2026-11-25 03:22:53 UTC",
+        "LastTriggerUSec": "Tue 2026-11-24 03:31:45 UTC",
+        "Result": "success",
+        "LoadState": "loaded",
+        "ActiveState": "active",
+        "SubState": "waiting",
+        "UnitFileState": "enabled"
+      }
+    }
+  },
+  "backupFiles": [
+    {
+      "name": "lorvex-cloud-20261123T163837Z.sqlite.gz",
+      "bytes": 1217,
+      "modifiedUTC": "2026-11-23T16:38:37.359563+00:00"
+    },
+    {
+      "name": "lorvex-cloud-20261123T221421Z.sqlite.gz",
+      "bytes": 1217,
+      "modifiedUTC": "2026-11-23T22:14:21.215101+00:00"
+    },
+    {
+      "name": "lorvex-cloud-20261123T222659Z.sqlite.gz",
+      "bytes": 2066,
+      "modifiedUTC": "2026-11-23T22:26:59.289520+00:00"
+    },
+    {
+      "name": "lorvex-cloud-20261123T225927Z.sqlite.gz",
+      "bytes": 2489,
+      "modifiedUTC": "2026-11-23T22:59:27.547809+00:00"
+    },
+    {
+      "name": "lorvex-cloud-20261124T033145Z.sqlite.gz",
+      "bytes": 2489,
+      "modifiedUTC": "2026-11-24T03:31:45.427072+00:00"
+    }
+  ],
+  "healthReadback": {
+    "at": "2026-11-24T16:24:36.082125+00:00",
+    "health": {
+      "lorvex": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "service": "Lorvex Cloud",
+          "version": 1,
+          "storage": "durable",
+          "sourceOfTruth": "server"
+        },
+        "url": "https://torah-social.tail0a6c7d.ts.net:10000/cloud/health"
+      },
+      "gsd": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "name": "GSD Cloud",
+          "mode": "cloud-account",
+          "version": "1.0.0"
+        },
+        "url": "https://torah-social.tail0a6c7d.ts.net:10000/gsd-cloud/health"
+      }
+    },
+    "telemetry": {
+      "oauthAuditCounts": {},
+      "serverErrorCount": 0,
+      "otherMessageCount": 6,
+      "rawMessagesExported": false
+    },
+    "liveServerSHA256": "1fd531b7e1acc17b0a5b1d7d268ee8aad65e55c8e625155a345866000d1b3f3f"
+  },
+  "at": "2026-11-24T16:27:02.795181+00:00",
+  "productionChanged": false,
+  "oauthAuditProbe": {
+    "url": "https://torah-social.tail0a6c7d.ts.net:10000/cloud/oauth/authorize",
+    "httpStatus": 400,
+    "observedEvent": {
+      "method": "GET",
+      "path": "/cloud/oauth/authorize",
+      "status": 400,
+      "timestampUSec": "1795537590907039"
+    },
+    "validationBeforeBeginOAuth": true,
+    "accountGrantOrOAuthRequestCreated": false,
+    "rawMessagesExported": false
+  },
+  "scheduledBackupReadback": {
+    "name": "lorvex-cloud-20261124T033145Z.sqlite.gz",
+    "compressedBytes": 2489,
+    "sha256": "109cdac2d3f4cee683cecd922107a8e560e750bf282a007c7eed3a030d89d8a6",
+    "decompressedBytes": 159744,
+    "gzipCRCVerified": true,
+    "sqliteReadWriteVersions": [
+      2,
+      2
+    ],
+    "initialMemoryOnlyAttempt": "sqlite3.OperationalError: unable to open database file (WAL-format header; no content mutation)",
+    "recordContentReadOrExported": false,
+    "fileBackedReadOnlyRestoreIntegrity": "ok",
+    "snapshotBytesUnchanged": true,
+    "ownedTemporaryCopyRemoved": true
+  },
+  "scope": {
+    "servicesRestarted": false,
+    "productionFilesChanged": false,
+    "productionAccountDataRead": false,
+    "personalGrantVerified": false,
+    "physicalIPadAcceptance": false,
+    "capacityFutureGuarantee": false,
+    "automaticAlertingVerified": false,
+    "transactionalMutationAudit": "Source verified and previously covered by cloud acceptance; no new write fixture in this readback"
+  }
+}

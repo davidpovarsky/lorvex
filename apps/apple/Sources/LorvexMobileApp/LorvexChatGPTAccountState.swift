@@ -556,7 +556,7 @@ struct LorvexChatGPTPlanBrowser: UIViewControllerRepresentable {
   func updateUIViewController(_ view: SFSafariViewController, context: Context) {}
 
   @MainActor
-  final class Coordinator: NSObject, SFSafariViewControllerDelegate {
+  final class Coordinator: NSObject, @MainActor SFSafariViewControllerDelegate {
     private let onFinish: @MainActor () -> Void
     init(onFinish: @escaping @MainActor () -> Void) { self.onFinish = onFinish }
     func safariViewControllerDidFinish(_ controller: SFSafariViewController) { onFinish() }

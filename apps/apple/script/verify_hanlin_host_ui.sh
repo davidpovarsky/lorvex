@@ -7,6 +7,7 @@ OUT="${LORVEX_UI_OUTPUT_DIR:-$ROOT/dist/hanlin-host-ui}"
 DERIVED_DATA="${LORVEX_UI_DERIVED_DATA:-$ROOT/dist/hanlin-ipad-simulator}"
 SOURCE_PACKAGES="${LORVEX_UI_SOURCE_PACKAGES:-$ROOT/dist/hanlin-ipad-build/SourcePackages}"
 mkdir -p "$PROJECT_DIR" "$OUT"
+source "$ROOT/script/lib_xcode_package_lock.sh"
 python3 "$ROOT/script/install_hanlin_sdk.py" --check > "$OUT/sdk-installation.json"
 # Default to the immutable SDK's stable-build picker. A routed Mac may explicitly
 # use a newer compiler and a separately verified XCTest runner. Never change the
@@ -27,6 +28,7 @@ export DEVELOPER_DIR="$LORVEX_UI_BUILD_DEVELOPER_DIR"
 xcodebuild -version > "$OUT/xcode-build-version.txt"
 DEVELOPER_DIR="$LORVEX_UI_TEST_DEVELOPER_DIR" xcodebuild -version > "$OUT/xcode-test-version.txt"
 xcodegen --spec "$ROOT/Config/XcodeGen/project.yml" --project "$PROJECT_DIR" --project-root "$ROOT" --quiet
+seed_xcode_package_lock "$ROOT" "$PROJECT_DIR/LorvexAppleNative.xcodeproj"
 SIMULATOR_ID="$(python3 - "$OUT" <<'PY'
 import json,os,pathlib,subprocess,sys,uuid
 sdk=subprocess.check_output(["xcrun","--sdk","iphonesimulator","--show-sdk-version"],text=True).strip()
@@ -72,6 +74,7 @@ xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
   -destination "generic/platform=iOS Simulator" \
   -derivedDataPath "$DERIVED_DATA" \
   -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+  "${XCODE_PINNED_RESOLUTION_FLAGS[@]}" \
   -parallel-testing-enabled NO -skipMacroValidation \
   -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests \
   ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
@@ -85,6 +88,7 @@ xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
   -derivedDataPath "$DERIVED_DATA" \
   -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+  "${XCODE_PINNED_RESOLUTION_FLAGS[@]}" \
   -resultBundlePath "$OUT/Lorvex-Hanlin-UI.xcresult" \
   -parallel-testing-enabled NO -skipMacroValidation \
   -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests \
