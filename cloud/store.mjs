@@ -11,7 +11,7 @@ const hash=x=>createHash('sha256').update(String(x)).digest('hex');
 const obj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const iso=()=>new Date().toISOString();
 const validVersion=/^\d{13}_\d{4}_[0-9a-f]{16}$/;
-const normalEmail=s=>typeof s==='string'?s.toLowerCase().trim():'';
+export const normalEmail=s=>typeof s==='string'?s.toLowerCase().trim():'';
 const DEFAULT_SCOPES='lorvex.read lorvex.write offline_access';
 export function oauthScopes(value=DEFAULT_SCOPES){
   if(typeof value!=='string')throw new CloudError(400,'invalid_scope');

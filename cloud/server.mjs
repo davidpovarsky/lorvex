@@ -1,7 +1,8 @@
 import http from 'node:http';
+import {createHash} from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { CloudStore,CloudError,oauthScopes } from './store.mjs';
+import { CloudStore,CloudError,oauthScopes,normalEmail } from './store.mjs';
 import { CLOUD_TOOLS,invokeCloudTool } from './tools.mjs';
 import {oauthLabels,oauthLanguage,oauthDocument,oauthLoginBody,htmlEscape} from './oauth-page.mjs';
 
@@ -63,7 +64,9 @@ export function createCloudServer({
     text:error==='insufficient_scope'?'Connect Lorvex with the required permissions.':'Connect your Lorvex account to use this tool.'}],
     _meta:{'mcp/www_authenticate':[challenge(scopes.join(' '),error)['WWW-Authenticate']]}});
   const attempts=new Map();
-  const throttle=(name)=>{
+  const throttle=(kind,email)=>{
+    // Match the complete canonical identity without retaining oversized input keys.
+    const name=kind+':'+createHash('sha256').update(normalEmail(email)).digest('hex');
     const entry=attempts.get(name)||{count:0,until:0};
     if(entry.until>clock())throw new CloudError(429,'too_many_login_attempts');
     entry.count++;
@@ -71,12 +74,12 @@ export function createCloudServer({
     attempts.set(name,entry);
   };
   const register=(res,email,password)=>{
-    throttle('register:'+String(email).slice(0,180).toLowerCase());
+    throttle('register',email);
     const account=store.createAccount(email,password);
     return json(res,201,{user:store.publicAccount(account),...store.issueToken(account.id)});
   };
   const login=(res,email,password)=>{
-    throttle('login:'+String(email).slice(0,180).toLowerCase());
+    throttle('login',email);
     const account=store.login(email,password);
     return json(res,200,{user:store.publicAccount(account),...store.issueToken(account.id)});
   };
@@ -150,10 +153,10 @@ export function createCloudServer({
         let account;
         try {
           if(form.mode==='register'){
-            throttle('register:'+String(form.email).slice(0,180).toLowerCase());
+            throttle('register',form.email);
             account=store.createAccount(form.email,form.password);
           } else {
-            throttle('login:'+String(form.email).slice(0,180).toLowerCase());
+            throttle('login',form.email);
             account=store.login(form.email,form.password);
           }
         } catch(e) {
