@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "title": "Lorvex signed release 1.0.0 (172) acceptance",
+  "repository": "https://github.com/davidpovarsky/lorvex",
+  "branch": "codex/lorvex-final-20261124",
+  "documentationOnlyFollowup": true,
+  "documentationBaseRevision": "bb456ec3bd90a357cf2a302361540393cab76863",
+  "releaseSourceRevision": "bb05d2ea2303a934a2c968a33a085bd1aebb0e06",
+  "releaseSourceTree": "36c14a4b99dda155d98d7007bef261bdb7f0c9b6",
+  "sdkRevision": "bea35c3c2a435d1cc5f7ce93b08a649b104bc10f",
+  "version": "1.0.0",
+  "build": "172",
+  "nativeAcceptance": "HANLIN_NATIVE_ACCEPTANCE_20261124.md",
+  "release": {
+    "startedUTC": "2026-11-24T18:09:44Z",
+    "validationFinishedUTC": "2026-11-24T18:20:17Z",
+    "uploadFinishedUTC": "2026-11-24T18:22:04Z",
+    "appleVerifiedUTC": "2026-11-24T18:31:21.727641+00:00",
+    "validationExitCode": 0,
+    "deliveryExitCode": 0,
+    "archiveResult": "passed",
+    "exportResult": "passed",
+    "recursiveBundleAudit": {
+      "result": "passed",
+      "artifactName": "LorvexMobileApp.app",
+      "evidenceMarker": "iOS IPA recursive verification passed"
+    },
+    "appleValidationResult": "passed",
+    "appleValidationEvidenceMarker": "No errors validating archive",
+    "uploadSubmitted": true
+  },
+  "apple": {
+    "buildId": "e5c310ef-ce91-45cd-b107-0e6c62e2483c",
+    "processingState": "VALID",
+    "expired": false,
+    "internalBuildState": "IN_BETA_TESTING",
+    "externalBuildState": "READY_FOR_BETA_SUBMISSION",
+    "existingInternalGroup": {
+      "relationshipConfirmed": true,
+      "relationshipAdded": false,
+      "hasAccessToAllBuilds": true,
+      "newInvitationsSent": false
+    },
+    "verifiedThrough": "Official betaGroups/{id}/relationships/builds route",
+    "recoveredVerificationIssue": {
+      "stage": "Ancillary TestFlight group relationship read",
+      "httpStatus": 403,
+      "effect": "Initial group verification was incomplete; archive, validation and upload had succeeded.",
+      "resolution": "The official betaGroups relationship route confirmed the existing internal group's build access."
+    }
+  },
+  "artifact": {
+    "deliveryFileName": "Lorvex-1.0.0-172.ipa",
+    "exportedFileName": "LorvexMobileApp.ipa",
+    "sizeBytes": 88841687,
+    "sha256": "d9ff7181779ca0588bb737c374eecaaf32a620f2e6e1f005ee3054114b383de1",
+    "deliveryCopyWholeFileVerified": true,
+    "publicBinaryUploaded": false
+  },
+  "evidenceSHA256": {
+    "releaseStatus": "006b0ccd2c707aeaf1dfb154e566992a9d3621aa57ffb3b84e36c684f6feeaba",
+    "validationLog": "9efe0d75c96014f7c752d106c74e1aaa22f34948a9c6b2019dab46d6b51e98bf",
+    "testflightProcessing": "8c2d4dbdcb27706abbefa97c91bb3946a64ce0c078dd75628bbd0fa69a5cefc2",
+    "testflightGroup": "987dc6672fee46c087074e0176caf2fba3bb2127f07311ec62586912690d5089",
+    "nativeAcceptanceReceipt": "56a591543496e6e03f7b29ce1d23953bd0f1458ca69d9d6b6b4932c16f15b441",
+    "nativeAcceptanceLog": "0c2a6b31495823506810958a9b9486e80ca1409a6ece6e0e9dfe5fca71084418"
+  },
+  "limits": [
+    "Physical-device installation and launch of this signed build remain unverified.",
+    "A personal Cloud OAuth grant and a personal ChatGPT account authorization/token exchange remain unverified.",
+    "Subscribed model inference with the user's personal account remains unverified.",
+    "The two exposed legacy device links report offline; those results do not establish Cloud acceptance.",
+    "The native UI evidence covers the official pre-consent browser, cancellation, retry and visible settings, without a personal grant.",
+    "Internal TestFlight availability does not establish external beta approval, public distribution, or physical-device acceptance."
+  ],
+  "publicationSafety": "Allowlisted release facts and hashes only. No credentials, account identities, raw machine paths, private file links, authorization logs or binaries are included."
+}
