@@ -111,3 +111,51 @@ per-task caches through optional `archive_ios.sh` environment variables:
 
 Unset variables preserve the existing Xcode defaults. This configuration change
 does not run an archive or weaken signing, schema-freeze, export, or IPA gates.
+
+
+## Focused native acceptance controller
+
+`script/verify_task_workspace_native.py` prints a plan by default. Its
+`--execute` mode is reserved for the explicitly granted, single-owner Mac
+validation slot. It has no archive, upload, push, or release-control operation.
+
+The controller runs the four focused Swift Testing suites
+`MobileTaskWorkspaceTests`, `LorvexHanlinTaskWorkspaceTests`,
+`LorvexHanlinAgentTests`, and `SwiftLorvexCoreServiceInProgressTests`.
+The first three cover the new projection/mutations, descriptor rendering,
+and the existing tool catalog/authorization. The core suite verifies the
+underlying status and prerequisite transitions. Actual case names, results,
+counts, raw logs, and xUnit output are retained.
+
+It then performs one ad-hoc signed arm64 `build-for-testing` with two jobs
+and executes the exact resulting products on four newly created simulators:
+iPhone/en, iPhone/he, iPad/en, and iPad/he. Runtime and device compatibility are
+checked against the installed metadata. Each configuration keeps its complete
+xcresult, structured result summary, attachments and log hashes. The UI test
+attaches the actual task/prerequisite IDs and completed/date persistence after
+relaunch only after all assertions and canonical reopening succeed.
+
+Example plan (supply the final source SHA after integration and dependency pinning):
+
+```sh
+/opt/homebrew/bin/python3.12 apps/apple/script/verify_task_workspace_native.py \
+  --expected-sha FINAL_40_CHARACTER_SHA \
+  --output /Users/m1/builds/lorvex-visual-173-20261125/evidence/acceptance-RUN_ID \
+  --derived-data /Users/m1/caches/DerivedData/lorvex-visual-173-20261125 \
+  --source-packages /Users/m1/caches/DerivedData/lorvex-visual-173-20261125/SourcePackages \
+  --kit-mirror /Users/m1/builds/task-visualization-kit-20261125/kit.git
+```
+
+Add `--execute` only for the assigned Mac slot. The optional `--phase`
+selects `unit`, `build`, `ui`, or `all`; `--cases` permits a focused
+diagnostic configuration. A UI-only run requires `--build-receipt` pointing
+to a passing build receipt for the exact same SHA and unchanged products.
+Partial runs explicitly report `matrixComplete: false`.
+
+All evidence must live outside the source checkout. The controller refuses
+an existing output directory, preserves failed simulators for diagnosis after
+shutting them down, and deletes only its own successful simulators after
+exporting evidence. Representative original screenshots are copied to
+`screenshots/<device>-<language>-<mode>.png` with their hashes and original
+attachment metadata; no screenshot pixels are modified. A failing case stops
+the remaining matrix until the specific problem is resolved.

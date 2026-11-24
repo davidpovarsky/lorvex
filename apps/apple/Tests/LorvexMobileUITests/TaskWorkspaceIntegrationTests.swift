@@ -125,6 +125,24 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     app.buttons["task.detail.reopen"].tap()
     XCTAssertTrue(app.buttons["task.detail.complete"].waitForExistence(timeout: 10))
     attach(app, "Lorvex \(language.rawValue) - persisted task reopened through original editor")
+    let proof: [String: Any] = [
+      "sourceSHA": ProcessInfo.processInfo.environment["LORVEX_TEST_SOURCE_SHA"] ?? "unrecorded",
+      "runID": ProcessInfo.processInfo.environment["LORVEX_TEST_RUN_ID"] ?? "unrecorded",
+      "language": language.rawValue,
+      "taskID": taskID,
+      "prerequisiteID": prerequisiteID,
+      "taskTitle": title,
+      "dueDateLabel": savedDateLabel,
+      "restartObserved": true,
+      "completedAfterRelaunch": true,
+      "dueDatePreservedAfterRelaunch": true,
+      "reopenedInCanonicalDetail": true,
+    ]
+    let encoded = try JSONSerialization.data(withJSONObject: proof, options: [.sortedKeys])
+    let persistence = XCTAttachment(string: String(decoding: encoded, as: UTF8.self))
+    persistence.name = "Lorvex \(language.rawValue) - workspace persistence receipt"
+    persistence.lifetime = .keepAlways
+    add(persistence)
   }
 
   @MainActor
