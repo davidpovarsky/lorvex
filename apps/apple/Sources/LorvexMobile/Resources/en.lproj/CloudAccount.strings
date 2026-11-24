@@ -1,7 +1,0 @@
-"cloud.account.signed_out" = "Not signed in";
-"cloud.account.restored" = "Signed in — syncing with Lorvex Cloud";
-"cloud.account.connecting" = "Connecting securely…";
-"cloud.account.connected" = "Connected — syncing with Lorvex Cloud";
-"cloud.account.synced" = "Synced with Lorvex Cloud";
-"cloud.account.sync_paused" = "Sync paused: ";
-"cloud.account.disconnected" = "Signed out. Local tasks are unchanged.";

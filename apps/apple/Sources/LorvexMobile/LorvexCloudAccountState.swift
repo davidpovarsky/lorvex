@@ -7,7 +7,7 @@ import LorvexCore
 public final class LorvexCloudAccountState {
   public private(set) var email = ""
   public private(set) var accountID: String?
-  public private(set) var status = String(localized: "cloud.account.signed_out", defaultValue: "Not signed in", table: "CloudAccount", bundle: MobileL10n.bundle)
+  public private(set) var status = String(localized: "cloud.account.signed_out", defaultValue: "Not signed in", table: "Localizable", bundle: MobileL10n.bundle)
   public private(set) var isSigningIn = false
   public private(set) var isSyncing = false
   public private(set) var lastSync: Date?
@@ -47,7 +47,7 @@ public final class LorvexCloudAccountState {
       guard revision == self.accountRevision, let current else { return }
       self.accountID = current.id
       self.email = current.email
-      self.status = String(localized: "cloud.account.restored", defaultValue: "Signed in — syncing with Lorvex Cloud", table: "CloudAccount", bundle: MobileL10n.bundle)
+      self.status = String(localized: "cloud.account.restored", defaultValue: "Signed in — syncing with Lorvex Cloud", table: "Localizable", bundle: MobileL10n.bundle)
       // The scene's first .active event can precede Keychain restoration.
       // Remember that event and start immediately once the account is ready.
       self.beginPollingIfReady()
@@ -60,7 +60,7 @@ public final class LorvexCloudAccountState {
     let revision = accountRevision
     isSigningIn = true
     defer { isSigningIn = false }
-    status = String(localized: "cloud.account.connecting", defaultValue: "Connecting securely…", table: "CloudAccount", bundle: MobileL10n.bundle)
+    status = String(localized: "cloud.account.connecting", defaultValue: "Connecting securely…", table: "Localizable", bundle: MobileL10n.bundle)
     do {
       await disableICloud()
       guard revision == accountRevision else { return }
@@ -69,7 +69,7 @@ public final class LorvexCloudAccountState {
       guard revision == accountRevision else { return }
       accountID = session.accountID
       self.email = session.email
-      status = String(localized: "cloud.account.connected", defaultValue: "Connected — syncing with Lorvex Cloud", table: "CloudAccount", bundle: MobileL10n.bundle)
+      status = String(localized: "cloud.account.connected", defaultValue: "Connected — syncing with Lorvex Cloud", table: "Localizable", bundle: MobileL10n.bundle)
       await syncNow()
       beginPollingIfReady()
     } catch {
@@ -92,13 +92,13 @@ public final class LorvexCloudAccountState {
       lastReceived = result.received
       lastConflicts = result.serverConflicts
       lastSync = Date()
-      status = String(localized: "cloud.account.synced", defaultValue: "Synced with Lorvex Cloud", table: "CloudAccount", bundle: MobileL10n.bundle)
+      status = String(localized: "cloud.account.synced", defaultValue: "Synced with Lorvex Cloud", table: "Localizable", bundle: MobileL10n.bundle)
       await didSync()
     } catch is CancellationError {
       // Scene suspension cancels a poll; durable outbox work resumes later.
     } catch {
       guard revision == accountRevision else { return }
-      status = String(localized: "cloud.account.sync_paused", defaultValue: "Sync paused: ", table: "CloudAccount", bundle: MobileL10n.bundle) + error.localizedDescription
+      status = String(localized: "cloud.account.sync_paused", defaultValue: "Sync paused: ", table: "Localizable", bundle: MobileL10n.bundle) + error.localizedDescription
     }
   }
 
@@ -108,7 +108,7 @@ public final class LorvexCloudAccountState {
     cancelPolling()
     email = ""
     accountID = nil
-    status = String(localized: "cloud.account.disconnected", defaultValue: "Signed out. Local tasks are unchanged.", table: "CloudAccount", bundle: MobileL10n.bundle)
+    status = String(localized: "cloud.account.disconnected", defaultValue: "Signed out. Local tasks are unchanged.", table: "Localizable", bundle: MobileL10n.bundle)
     lastSync = nil
     lastSent = 0
     lastReceived = 0
