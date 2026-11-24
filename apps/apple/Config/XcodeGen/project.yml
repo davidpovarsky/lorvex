@@ -13,7 +13,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    CURRENT_PROJECT_VERSION: "172"
+    CURRENT_PROJECT_VERSION: "173"
     MARKETING_VERSION: "1.0.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
@@ -43,7 +43,7 @@ packages:
     path: ../../Vendor/HanlinSDK
   TaskVisualizationKit:
     url: https://github.com/davidpovarsky/task-visualization-kit.git
-    revision: bbec234ce2fc74022226fdf4cdcec3d3ac00fa8a
+    revision: a78c84e1df369ea7c93cf4b23d4f5d8d60e25293
 targets:
   LorvexCore:
     type: framework

@@ -109,7 +109,9 @@ public struct MobileTaskWorkspaceView: View {
       return
     } catch {
       guard loadID == request, !Task.isCancelled else { return }
-      loadError = await store.userFacingBannerMessage(for: error, source: "ios.visual_tasks.read")
+      let message = await store.userFacingBannerMessage(for: error, source: "ios.visual_tasks.read")
+      guard loadID == request, !Task.isCancelled else { return }
+      loadError = message
     }
   }
 
