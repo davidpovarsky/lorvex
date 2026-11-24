@@ -79,20 +79,35 @@ xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
   -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests \
   ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
   build-for-testing 2>&1 | tee "$OUT/lorvex-hanlin-ui-build.log"
+# Execute the exact build-produced manifest. Loading the project again with a
+# different test driver reopens SwiftPM and can deadlock Xcode during teardown.
+XCTESTRUN_PATH="$(python3 - "$DERIVED_DATA" "$OUT" <<'PY'
+import hashlib,json,pathlib,plistlib,sys
+derived,out=map(pathlib.Path,sys.argv[1:])
+sdk=json.loads((out/"simulator-selection.json").read_text())["sdkVersion"]
+candidates=list((derived/"Build/Products").glob("LorvexMobileUITests_iphonesimulator"+sdk+"-*.xctestrun"))
+if len(candidates) != 1:
+    raise SystemExit("Expected exactly one build-produced UI test manifest: "+str(candidates))
+path=candidates[0]
+data=path.read_bytes()
+manifest=plistlib.loads(data)
+if "LorvexMobileUITests" not in manifest:
+    raise SystemExit("The build-produced manifest has no LorvexMobileUITests target")
+(out/"xctestrun-selection.json").write_text(json.dumps(
+    {"path":str(path),"sha256":hashlib.sha256(data).hexdigest(),"target":"LorvexMobileUITests"},indent=2)+"\n")
+print(path)
+PY
+)"
 export DEVELOPER_DIR="$LORVEX_UI_TEST_DEVELOPER_DIR"
 xcrun simctl boot "$SIMULATOR_ID"
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
 status=0
-xcodebuild -project "$PROJECT_DIR/LorvexAppleNative.xcodeproj" \
-  -scheme LorvexMobileUITests -configuration Debug -jobs "${LORVEX_UI_JOBS:-3}" \
+xcodebuild -xctestrun "$XCTESTRUN_PATH" \
+  -jobs "${LORVEX_UI_JOBS:-3}" \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-  -derivedDataPath "$DERIVED_DATA" \
-  -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
-  "${XCODE_PINNED_RESOLUTION_FLAGS[@]}" \
   -resultBundlePath "$OUT/Lorvex-Hanlin-UI.xcresult" \
-  -parallel-testing-enabled NO -skipMacroValidation \
+  -parallel-testing-enabled NO \
   -only-testing:LorvexMobileUITests/HanlinSDKIntegrationTests \
-  ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
   test-without-building 2>&1 | tee "$OUT/lorvex-hanlin-ui.log" || status=$?
 if [[ -d "$OUT/Lorvex-Hanlin-UI.xcresult" ]]; then
   xcrun xcresulttool export attachments --path "$OUT/Lorvex-Hanlin-UI.xcresult" --output-path "$OUT/screenshots" || true
