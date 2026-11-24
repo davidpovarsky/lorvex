@@ -60,6 +60,7 @@ final class HanlinSDKIntegrationTests: XCTestCase {
         XCTAssertEqual(close.label, "סגירה")
         let nav = app.navigationBars["Hanlin AI"]
         XCTAssertGreaterThan(close.frame.midX, nav.frame.midX, "Hebrew cancellation control must follow RTL navigation")
+        attach(app, "Lorvex - Hebrew RTL assistant")
         app.buttons["hanlin.cloud.settings"].tap()
         XCTAssertTrue(app.navigationBars["ענן Lorvex"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["לא מחובר"].exists)
@@ -84,8 +85,8 @@ final class HanlinSDKIntegrationTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["חשבון ChatGPT"].waitForExistence(timeout: 5))
         let add = app.buttons["chatgpt.accounts.add"]
         XCTAssertTrue(add.waitForExistence(timeout: 5))
-        XCTAssertTrue(add.isHittable)
         attach(app, "Lorvex - Hebrew ChatGPT account management")
+        XCTAssertTrue(waitUntilHittable(add), elementState(add))
     }
 
     @MainActor
@@ -130,17 +131,40 @@ final class HanlinSDKIntegrationTests: XCTestCase {
 
         // Exercise the actual loopback listener and official authorization page.
         // No account credentials or consent are supplied by this acceptance test.
-        for _ in 0..<2 {
+        for attempt in 0..<2 {
+            attach(app, "Lorvex - ChatGPT account before sign-in")
+            _ = waitUntilHittable(add)
+            print("LORVEX_UI add[\(attempt)]: \(elementState(add))")
             add.tap()
             let browser = app.otherElements["chatgpt.authorization.browser"]
             XCTAssertTrue(browser.waitForExistence(timeout: 15))
             let close = browser.buttons["Close"]
             XCTAssertTrue(close.waitForExistence(timeout: 5))
+            print("LORVEX_UI browser[\(attempt)]: \(elementState(browser))")
+            print("LORVEX_UI close[\(attempt)]: \(elementState(close))")
+            XCTAssertTrue(waitUntilHittable(close), elementState(close))
             close.tap()
+            XCTAssertTrue(browser.waitForNonExistence(timeout: 5))
+            attach(app, "Lorvex - account after ChatGPT sign-in cancellation")
+            print("LORVEX_UI after cancel: account=\(app.navigationBars["ChatGPT account"].exists) add=\(elementState(add))")
             XCTAssertTrue(app.staticTexts["Sign-in cancelled"].waitForExistence(timeout: 5))
             XCTAssertTrue(add.isEnabled)
         }
         attach(app, "Lorvex - official ChatGPT sign-in cancelled and restarted")
+    }
+
+    @MainActor
+    private func waitUntilHittable(_ element: XCUIElement) -> Bool {
+        let predicate = NSPredicate(format: "hittable == true")
+        return XCTWaiter.wait(for: [
+            XCTNSPredicateExpectation(predicate: predicate, object: element)
+        ], timeout: 5) == .completed
+    }
+
+    @MainActor
+    private func elementState(_ element: XCUIElement) -> String {
+        guard element.exists else { return "absent" }
+        return "id=\(element.identifier) label=\(element.label) frame=\(element.frame) enabled=\(element.isEnabled) hittable=\(element.isHittable)"
     }
 
     @MainActor
