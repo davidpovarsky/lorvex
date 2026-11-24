@@ -16,6 +16,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       "-setupCompleted", "YES", "-AppleLanguages", "(\(language.rawValue))",
       "-AppleLocale", language.locale,
     ]
+    app.launchEnvironment["LORVEX_CLOUD_SYNC"] = "off"
     app.launch()
     openWorkspace(app, language: language)
     let title = language.taskPrefix + String(UUID().uuidString.prefix(8))
@@ -71,6 +72,15 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
           app.descendants(matching: .any)
             .matching(identifier: "task-workspace.timeline.chart")
             .firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(
+          app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", title))
+            .firstMatch.waitForExistence(timeout: 5),
+          "The chart must expose the task that this test actually scheduled.")
+      }
+      if mode == "network" {
+        XCTAssertTrue(
+          app.buttons[title].firstMatch.waitForExistence(timeout: 5),
+          "The native relationship map must expose the real task as an accessible node.")
       }
       attach(app, "Lorvex \(language.rawValue) - live \(mode) with connected real tasks")
     }

@@ -90,7 +90,10 @@ The following new checks are ready for the existing Scaleway Mac lane:
   Inject the variable into the UI test target's `EnvironmentVariables` in a
   copied `.xctestrun` file, then use `test-without-building` on the isolated
   iPad and iPhone destinations. A test runner `-testLanguage` alone does not
-  override an application's explicit launch arguments.
+  override an application's explicit launch arguments. The test explicitly sets
+  `LORVEX_CLOUD_SYNC=off` for the application. Use fresh owned simulators with
+  no saved account; keep the per-language `.xctestrun` files beside the original
+  in `Build/Products` so `__TESTROOT__` continues to resolve the exact products.
 
 Native compiler/test evidence, final kit/source pins and the new TestFlight build
 belong in the release receipt after those stages actually run.
