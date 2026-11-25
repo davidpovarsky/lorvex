@@ -71,7 +71,11 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let hasDueDate = app.switches[language.hasDueDate]
     XCTAssertTrue(hasDueDate.waitForExistence(timeout: 5))
     XCTAssertEqual(hasDueDate.value as? String, "0")
+    attachHierarchy(app, "Lorvex \(language.rawValue) - due toggle before activation")
     hasDueDate.tap()
+    attachHierarchy(app, "Lorvex \(language.rawValue) - due toggle after activation")
+    expectation(for: NSPredicate(format: "value == %@", "1"), evaluatedWith: hasDueDate)
+    waitForExpectations(timeout: 5)
     let saveDate = app.buttons["task-workspace.date.save"]
     saveDate.tap()
     XCTAssertTrue(saveDate.waitForNonExistence(timeout: 10))
@@ -107,6 +111,8 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         XCTAssertTrue(dateToggle.waitForExistence(timeout: 5))
         XCTAssertEqual(dateToggle.value as? String, "0")
         dateToggle.tap()
+        expectation(for: NSPredicate(format: "value == %@", "1"), evaluatedWith: dateToggle)
+        waitForExpectations(timeout: 5)
         app.buttons["task-workspace.date.save"].tap()
         XCTAssertTrue(dateToggle.waitForNonExistence(timeout: 10))
         XCTAssertTrue(timelineDetail.waitForExistence(timeout: 10))
@@ -409,6 +415,15 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
   @MainActor
   private func clearSearch(_ app: XCUIApplication, language: TestLanguage) {
     app.buttons[language.clearSearch].tap()
+  }
+
+  @MainActor
+  private func attachHierarchy(_ app: XCUIApplication, _ name: String) {
+    let hierarchy = XCTAttachment(string: app.debugDescription)
+    hierarchy.name = name + " hierarchy"
+    hierarchy.lifetime = .keepAlways
+    add(hierarchy)
+    attach(app, name)
   }
 
   @MainActor
