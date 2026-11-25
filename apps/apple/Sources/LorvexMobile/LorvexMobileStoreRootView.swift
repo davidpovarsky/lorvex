@@ -8,16 +8,22 @@ public struct LorvexMobileStoreRootView: View {
   /// picker via `AppAppearance.preferenceKey`. Drives `preferredColorScheme`.
   @AppStorage(AppAppearance.preferenceKey) private var appearanceRaw = AppAppearance.system.rawValue
   private let setupPreferences: MobileSetupPreferences
+  private let openAssistant: (() -> Void)?
+  private let assistantAccessibilityLabel: String
   @State private var showSetupWizard = false
   @State private var captureSheetVisible = false
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
   public init(
     store: MobileStore,
-    setupPreferences: MobileSetupPreferences = MobileSetupPreferences()
+    setupPreferences: MobileSetupPreferences = MobileSetupPreferences(),
+    openAssistant: (() -> Void)? = nil,
+    assistantAccessibilityLabel: String = "AI"
   ) {
     self.store = store
     self.setupPreferences = setupPreferences
+    self.openAssistant = openAssistant
+    self.assistantAccessibilityLabel = assistantAccessibilityLabel
   }
 
   public var body: some View {
@@ -231,6 +237,18 @@ public struct LorvexMobileStoreRootView: View {
   ) -> some TabContent<MobileTabBarItem> {
     Tab(tab.title, systemImage: tab.systemImage, value: MobileTabBarItem.tab(tab)) {
       content()
+        .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
+          if let openAssistant {
+            Button(action: openAssistant) {
+              Label("AI", systemImage: "sparkles").labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 8)
+            .accessibilityLabel(assistantAccessibilityLabel)
+            .accessibilityIdentifier("hanlin.open")
+          }
+        }
     }
   }
 }

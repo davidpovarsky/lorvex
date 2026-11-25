@@ -150,6 +150,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         app.buttons["lorvex.visual.detail.close"].tap()
         XCTAssertTrue(app.buttons["task-workspace.tab." + mode].waitForExistence(timeout: 10))
       }
+      verifyAssistantControlDoesNotCoverWorkspace(app, mode: mode, language: language)
       attach(app, "Lorvex \(language.rawValue) - live \(mode) with connected real tasks")
     }
 
@@ -368,6 +369,32 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     XCTAssertEqual(app.buttons["task-workspace.complete." + taskID].label, language.reopenTask)
     attachHierarchy(app, "Lorvex \(language.rawValue) - main workspace reads exact Hanlin task and saved completion")
     return taskID
+  }
+
+  @MainActor
+  private func verifyAssistantControlDoesNotCoverWorkspace(
+    _ app: XCUIApplication, mode: String, language: TestLanguage
+  ) {
+    let assistant = app.buttons["hanlin.open"]
+    XCTAssertTrue(assistant.waitForExistence(timeout: 10))
+    XCTAssertTrue(assistant.isHittable && app.frame.contains(assistant.frame))
+    let assistantFrame = assistant.frame
+    let controls = app.buttons.matching(
+      NSPredicate(format: "identifier BEGINSWITH %@", "task-workspace.")
+    ).allElementsBoundByIndex.filter {
+      $0.exists && !$0.frame.isEmpty && app.frame.intersects($0.frame)
+    }
+    XCTAssertFalse(controls.isEmpty)
+    let frames = controls.map { "\($0.identifier)=\($0.frame)" }
+    let observation = XCTAttachment(string: "hanlin=\(assistantFrame)\n" + frames.joined(separator: "\n"))
+    observation.name = "Lorvex \(language.rawValue) - \(mode) assistant and workspace control frames"
+    observation.lifetime = .keepAlways
+    add(observation)
+    for control in controls {
+      XCTAssertFalse(
+        assistantFrame.intersects(control.frame),
+        "The Hanlin entry must not cover \(control.identifier).")
+    }
   }
 
   @MainActor

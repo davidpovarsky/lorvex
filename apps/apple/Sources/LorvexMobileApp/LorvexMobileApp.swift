@@ -110,23 +110,13 @@ struct LorvexMobileApp: App {
 
   @ViewBuilder
   private var rootContent: some View {
-    LorvexMobileStoreRootView(store: store)
+    LorvexMobileStoreRootView(
+      store: store, openAssistant: { showHanlinAssistant = true },
+      assistantAccessibilityLabel: String(localized: "Open Hanlin AI personal planner"))
       .sheet(isPresented: $showHanlinAssistant) {
         LorvexHanlinAssistantView(
           assistant: hanlinAssistant, store: store, remoteBridge: remoteBridge,
           cloudAccount: cloudAccount, chatGPTAccount: chatGPTAccount)
-      }
-      .overlay(alignment: .bottomTrailing) {
-        Button {
-          showHanlinAssistant = true
-        } label: {
-          Label("AI", systemImage: "sparkles").labelStyle(.titleAndIcon)
-        }
-        .buttonStyle(.borderedProminent)
-        .padding(.trailing, 18)
-        .padding(.bottom, 95)
-        .accessibilityLabel("Open Hanlin AI personal planner")
-        .accessibilityIdentifier("hanlin.open")
       }
       .lorvexMobileSystemEntrypoints(store: store)
       .confirmationDialog(
