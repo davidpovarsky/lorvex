@@ -180,43 +180,10 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     app.buttons["task-workspace.lane-choice." + taskID + ".in_progress"].tap()
     expectation(for: NSPredicate(format: "label == %@", language.inProgress), evaluatedWith: lane)
     waitForExpectations(timeout: 10)
-    var boardDragVerified = false
-    if UIDevice.current.userInterfaceIdiom == .pad {
-      clearSearch(app, language: language)
-      let destinationTitle = language.dragTargetPrefix + String(UUID().uuidString.prefix(8))
-      createTask(app, title: destinationTitle)
-      let destinationRow = findTaskButton(named: destinationTitle, app: app)
-      XCTAssertTrue(destinationRow.waitForExistence(timeout: 10))
-      let destinationID = String(destinationRow.identifier.dropFirst("task-workspace.open.".count))
-      selectMode("board", app: app, language: language)
-      let sourceCard = app.buttons["task-workspace.open." + taskID]
-      let destinationCard = app.buttons["task-workspace.open." + destinationID]
-      XCTAssertTrue(sourceCard.waitForExistence(timeout: 10))
-      XCTAssertTrue(destinationCard.waitForExistence(timeout: 10))
-      XCTAssertTrue(app.frame.contains(sourceCard.frame) && app.frame.contains(destinationCard.frame))
-      XCTAssertTrue(sourceCard.isHittable && destinationCard.isHittable)
-      let hierarchy = XCTAttachment(string: app.debugDescription)
-      hierarchy.name = "Lorvex \(language.rawValue) - native board before drag"
-      hierarchy.lifetime = .keepAlways
-      add(hierarchy)
-      attach(app, "Lorvex \(language.rawValue) - adjacent canonical board columns before drag")
-      // AdvancedKanban owns a native DragGesture. A short touch followed by
-      // movement exercises onMove without opening the card context menu.
-      sourceCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        .press(forDuration: 0.05, thenDragTo:
-          destinationCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
-      selectMode("table", app: app, language: language)
-      searchFor(title, app: app)
-      expectation(for: NSPredicate(format: "label == %@", language.openLane), evaluatedWith: lane)
-      waitForExpectations(timeout: 10)
-      boardDragVerified = true
-      attach(app, "Lorvex \(language.rawValue) - table confirms native board drag saved Open")
-    } else {
-      selectMode("board", app: app, language: language)
-      XCTAssertTrue(app.buttons["task-workspace.open." + taskID].waitForExistence(timeout: 10))
-      attach(app, "Lorvex \(language.rawValue) - board reflects canonical In Progress transition")
-      selectMode("table", app: app, language: language)
-    }
+    let boardDragVerified = try verifyNativeBoardLiftAndDrop(
+      app, taskID: taskID, title: title, language: language)
+    let boardScrollVerified = try verifyNativeBoardScroll(
+      app, primaryTitle: title, language: language)
     let complete = app.buttons["task-workspace.complete." + taskID]
     XCTAssertTrue(complete.isHittable)
     complete.tap()
@@ -282,6 +249,8 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       "assistantWorkspaceControlsDoNotOverlap":
         assistantVerifiedModes == Set(["graph", "board", "timeline", "network", "table"]),
       "nativeBoardDragVerified": boardDragVerified,
+      "nativeBoardColumnControlsVerified": boardDragVerified,
+      "nativeBoardScrollVerified": boardScrollVerified,
       "nativeFlowConnectionDragVerified": flowConnectionDragVerified,
       "dependencyPreservedAfterRelaunch": true,
       "restartObserved": true,
@@ -524,6 +493,247 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     attach(app, "Lorvex \(language.rawValue) - native network Fit restored")
   }
 
+  private struct NativeBoardCardObservation {
+    let id: String
+    let frame: CGRect
+    let value: String
+  }
+
+  @MainActor
+  private func nativeBoardCards(
+    in column: XCUIElement, viewport: CGRect
+  ) throws -> [NativeBoardCardObservation] {
+    let snapshot = try column.snapshot()
+    var pending = snapshot.children
+    var seen = Set<String>()
+    var result: [NativeBoardCardObservation] = []
+    let prefix = "task-workspace.board.card."
+    while let element = pending.popLast() {
+      pending.append(contentsOf: element.children)
+      guard element.identifier.hasPrefix(prefix) else { continue }
+      let id = String(element.identifier.dropFirst(prefix.count))
+      XCTAssertFalse(id.isEmpty)
+      XCTAssertTrue(seen.insert(id).inserted, "Native card IDs must be unique within a column.")
+      let frame = element.frame
+      let visible = frame.intersection(viewport)
+      guard !frame.isEmpty, !visible.isNull,
+            visible.width >= 44, visible.height >= 44 else { continue }
+      result.append(NativeBoardCardObservation(
+        id: id, frame: frame, value: element.value as? String ?? ""))
+    }
+    return result.sorted { $0.frame.minY < $1.frame.minY }
+  }
+
+  @MainActor
+  private func verifyNativeBoardLiftAndDrop(
+    _ app: XCUIApplication, taskID: String, title: String, language: TestLanguage
+  ) throws -> Bool {
+    clearSearch(app, language: language)
+    let destinationTitle = language.dragTargetPrefix + String(UUID().uuidString.prefix(8))
+    createTask(app, title: destinationTitle)
+    // Filter the real table before locating the new lazy row.
+    searchFor(destinationTitle, app: app)
+    let destinationRow = findTaskButton(named: destinationTitle, app: app)
+    XCTAssertTrue(destinationRow.waitForExistence(timeout: 10))
+    let destinationID = String(destinationRow.identifier.dropFirst("task-workspace.open.".count))
+    XCTAssertFalse(destinationID.isEmpty)
+    clearSearch(app, language: language)
+    selectMode("board", app: app, language: language)
+    let destinationColumn = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.board.column.open").firstMatch
+    let sourceColumn = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.board.column.in_progress").firstMatch
+    let collapse = app.buttons["task-workspace.board.collapse.open"]
+    XCTAssertTrue(destinationColumn.waitForExistence(timeout: 10))
+    XCTAssertTrue(collapse.isHittable)
+    collapse.tap()
+    XCTAssertTrue(destinationColumn.waitForNonExistence(timeout: 5))
+    XCTAssertTrue(collapse.isHittable && app.frame.contains(collapse.frame))
+    XCTAssertGreaterThanOrEqual(collapse.frame.width, 44)
+    XCTAssertGreaterThanOrEqual(collapse.frame.height, 44)
+    attach(app, "Lorvex \(language.rawValue) - collapsed column retains its native expand control")
+    collapse.tap()
+    XCTAssertTrue(destinationColumn.waitForExistence(timeout: 5))
+    XCTAssertTrue(sourceColumn.waitForExistence(timeout: 5))
+    let source = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.board.card." + taskID).firstMatch
+    let destination = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.board.card." + destinationID).firstMatch
+    XCTAssertTrue(source.waitForExistence(timeout: 10))
+    XCTAssertTrue(destination.waitForExistence(timeout: 10))
+    let viewport = app.frame
+    let sourceFrame = source.frame
+    let destinationFrame = destination.frame
+    let sourceVisible = sourceFrame.intersection(sourceColumn.frame).intersection(viewport)
+    let destinationVisible = destinationFrame.intersection(destinationColumn.frame).intersection(viewport)
+    for visible in [sourceVisible, destinationVisible] {
+      XCTAssertFalse(visible.isNull)
+      XCTAssertGreaterThanOrEqual(visible.width, 44)
+      XCTAssertGreaterThanOrEqual(visible.height, 44)
+    }
+    XCTAssertTrue(source.isHittable && destination.isHittable)
+    let from = source.coordinate(withNormalizedOffset: CGVector(
+      dx: (sourceVisible.midX - sourceFrame.minX) / sourceFrame.width,
+      dy: (sourceVisible.midY - sourceFrame.minY) / sourceFrame.height))
+    let to = destination.coordinate(withNormalizedOffset: CGVector(
+      dx: (destinationVisible.midX - destinationFrame.minX) / destinationFrame.width,
+      dy: (destinationVisible.midY - destinationFrame.minY) / destinationFrame.height))
+    let observation = XCTAttachment(string:
+      "source=\(sourceFrame) visible=\(sourceVisible) nativePoint=\(from.screenPoint)\n"
+      + "destination=\(destinationFrame) visible=\(destinationVisible) nativePoint=\(to.screenPoint)")
+    observation.name = "Lorvex \(language.rawValue) - native Board system lift and drop coordinates"
+    observation.lifetime = .keepAlways
+    add(observation)
+    attach(app, "Lorvex \(language.rawValue) - adjacent native columns before system lift")
+    // Each coordinate remains relative to its actual card; XCTest applies the
+    // device orientation transform. The hold activates system lift, not a swipe.
+    from.press(forDuration: 0.8, thenDragTo: to)
+    selectMode("table", app: app, language: language)
+    searchFor(title, app: app)
+    let lane = app.buttons["task-workspace.lane." + taskID]
+    expectation(for: NSPredicate(format: "label == %@", language.openLane), evaluatedWith: lane)
+    waitForExpectations(timeout: 10)
+    attach(app, "Lorvex \(language.rawValue) - table confirms native Board system drop saved Open")
+    return true
+  }
+
+  @MainActor
+  private func verifyNativeBoardScroll(
+    _ app: XCUIApplication, primaryTitle: String, language: TestLanguage
+  ) throws -> Bool {
+    // Grow the real fixture only when the observed column needs more content,
+    // after all five original captures. Never assume a fixed device capacity.
+    clearSearch(app, language: language)
+    let batch = String(UUID().uuidString.prefix(8))
+    var created = 0
+    var observedOverflow = false
+    var before: [NativeBoardCardObservation] = []
+    var viewport = CGRect.zero
+    selectMode("board", app: app, language: language)
+    let column = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.board.column.open").firstMatch
+    while true {
+      XCTAssertTrue(column.waitForExistence(timeout: 10))
+      viewport = column.frame.intersection(app.frame)
+      before = try nativeBoardCards(in: column, viewport: viewport)
+      XCTAssertGreaterThanOrEqual(before.count, 2)
+      let ordinals = try before.map { observation -> (index: Int, count: Int) in
+        let ordinal = try XCTUnwrap(
+          observation.value.split(separator: ",", maxSplits: 1).first,
+          "The native card must expose its real index, count and lane.")
+        let components = ordinal.split(separator: "/")
+          .map { $0.trimmingCharacters(in: .whitespaces) }
+        guard components.count == 2 else {
+          XCTFail("The native card ordinal must contain exactly an index and count: \(observation.value)")
+          throw NSError(domain: "NativeBoardAcceptance", code: 1)
+        }
+        let index = try XCTUnwrap(Int(components[0]))
+        let count = try XCTUnwrap(Int(components[1]))
+        XCTAssertGreaterThanOrEqual(index, 1)
+        XCTAssertGreaterThanOrEqual(count, index)
+        return (index, count)
+      }
+      XCTAssertEqual(Set(ordinals.map { $0.count }).count, 1)
+      let total = try XCTUnwrap(ordinals.first?.count)
+      let maximumVisibleIndex = ordinals.map { $0.index }.max() ?? 0
+      let lowestEdge = before.map { $0.frame.maxY }.max() ?? viewport.minY
+      observedOverflow = maximumVisibleIndex < total || lowestEdge > viewport.maxY + 48
+      let growth = XCTAttachment(string:
+        "created=\(created) column=\(viewport) total=\(total) "
+        + "lastVisibleIndex=\(maximumVisibleIndex) lowestEdge=\(lowestEdge) "
+        + "overflow=\(observedOverflow)\n"
+        + before.map { "\($0.id) value=\($0.value) frame=\($0.frame)" }.joined(separator: "\n"))
+      growth.name = "Lorvex \(language.rawValue) - measured Board fixture capacity \(created)"
+      growth.lifetime = .keepAlways
+      add(growth)
+      if observedOverflow { break }
+      guard created < 12 else {
+        XCTFail("Twelve real additional tasks did not produce measurable native column overflow.")
+        return false
+      }
+      let strides = zip(before, before.dropFirst()).map { $1.frame.minY - $0.frame.minY }
+      let measuredStride = max(44, strides.reduce(0, +) / CGFloat(strides.count))
+      let needed = max(1, Int(ceil((viewport.maxY + 64 - lowestEdge) / measuredStride)))
+      let addition = min(12 - created, needed)
+      selectMode("table", app: app, language: language)
+      for _ in 0..<addition {
+        created += 1
+        let fixtureTitle = language.boardScrollPrefix + batch + String(format: " %02d", created)
+        createTask(app, title: fixtureTitle)
+        searchFor(fixtureTitle, app: app)
+        let row = findTaskButton(named: fixtureTitle, app: app)
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertEqual(row.label, fixtureTitle)
+        XCTAssertFalse(String(row.identifier.dropFirst("task-workspace.open.".count)).isEmpty)
+        clearSearch(app, language: language)
+      }
+      selectMode("board", app: app, language: language)
+    }
+    XCTAssertTrue(observedOverflow)
+    let touched = try XCTUnwrap(before.filter { viewport.contains($0.frame) }
+      .min { abs($0.frame.midY - viewport.midY) < abs($1.frame.midY - viewport.midY) })
+    XCTAssertTrue(touched.value.contains(language.openLane))
+    let card = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.board.card." + touched.id).firstMatch
+    XCTAssertTrue(card.isHittable)
+    let title = app.buttons["task-workspace.open." + touched.id].label
+    XCTAssertFalse(title.isEmpty)
+    let beforeObservation = XCTAttachment(string:
+      "column=\(viewport) touched=\(touched.id)\n"
+      + before.map { "\($0.id) value=\($0.value) frame=\($0.frame)" }.joined(separator: "\n"))
+    beforeObservation.name = "Lorvex \(language.rawValue) - native Board card scroll before"
+    beforeObservation.lifetime = .keepAlways
+    add(beforeObservation)
+    attach(app, "Lorvex \(language.rawValue) - native Board before ordinary card swipe")
+    let distance = min(CGFloat(120), touched.frame.midY - viewport.minY - 24)
+    XCTAssertGreaterThanOrEqual(distance, 48)
+    let start = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+    let end = card.coordinate(withNormalizedOffset: CGVector(
+      dx: 0.5, dy: 0.5 - distance / touched.frame.height))
+    let endpoint = CGPoint(x: touched.frame.midX, y: touched.frame.midY - distance)
+    XCTAssertTrue(viewport.contains(endpoint))
+    let gesture = XCTAttachment(string:
+      "card=\(touched.frame) column=\(viewport) displayStart=\(CGPoint(x: touched.frame.midX, y: touched.frame.midY)) "
+      + "displayEnd=\(endpoint) distance=\(distance) nativeStart=\(start.screenPoint) nativeEnd=\(end.screenPoint)")
+    gesture.name = "Lorvex \(language.rawValue) - native Board ordinary swipe endpoints"
+    gesture.lifetime = .keepAlways
+    add(gesture)
+    // This short card-centred touch moves through at most 120 display points.
+    // It must scroll immediately; the separate 0.8s gesture tests system lift.
+    start.press(forDuration: 0.05, thenDragTo: end)
+    let after = try nativeBoardCards(in: column, viewport: viewport)
+    let beforeIDs = Set(before.map(\.id))
+    let afterIDs = Set(after.map(\.id))
+    let common = beforeIDs.intersection(afterIDs)
+    XCTAssertTrue(common.contains(touched.id), "The touched card must remain observable after the short swipe.")
+    XCTAssertGreaterThanOrEqual(common.count, 2)
+    let original = before.filter { common.contains($0.id) }
+    let scrolled = after.filter { common.contains($0.id) }
+    XCTAssertEqual(original.map(\.id), scrolled.map(\.id), "Scrolling must preserve card order.")
+    for (first, last) in zip(original, scrolled) {
+      XCTAssertFalse(first.value.isEmpty)
+      XCTAssertEqual(first.value, last.value, "Native index, count and lane must remain unchanged.")
+      XCTAssertEqual(first.frame.midX, last.frame.midX, accuracy: 2)
+      XCTAssertLessThan(last.frame.midY - first.frame.midY, -24,
+        "The touched card and neighboring cards must move together through native scrolling.")
+    }
+    let afterObservation = XCTAttachment(string:
+      after.map { "\($0.id) value=\($0.value) frame=\($0.frame)" }.joined(separator: "\n"))
+    afterObservation.name = "Lorvex \(language.rawValue) - native Board card scroll after"
+    afterObservation.lifetime = .keepAlways
+    add(afterObservation)
+    attach(app, "Lorvex \(language.rawValue) - native Board ordinary swipe scrolls without reordering")
+    selectMode("table", app: app, language: language)
+    searchFor(title, app: app)
+    let lane = app.buttons["task-workspace.lane." + touched.id]
+    XCTAssertTrue(lane.waitForExistence(timeout: 10))
+    XCTAssertEqual(lane.label, language.openLane)
+    attach(app, "Lorvex \(language.rawValue) - canonical lane unchanged after native Board scroll")
+    clearSearch(app, language: language)
+    searchFor(primaryTitle, app: app)
+    return true
+  }
+
   @MainActor
   private func verifyNativeConnectionDrag(
     _ app: XCUIApplication, prerequisiteID: String, dependentID: String,
@@ -718,6 +928,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     var taskPrefix: String { self == .he ? "בדיקת משימה " : "Visual task " }
     var hanlinTaskPrefix: String { self == .he ? "נוצרה דרך Hanlin " : "Hanlin created " }
     var dragTargetPrefix: String { self == .he ? "יעד לגרירה " : "Drag destination " }
+    var boardScrollPrefix: String { self == .he ? "גלילת לוח " : "Board scroll " }
     var prerequisitePrefix: String { self == .he ? "הכנה " : "Prepare " }
     var editConnections: String { self == .he ? "עריכת קשרים" : "Edit connections" }
     var removeConnection: String { self == .he ? "הסרת קשר" : "Remove connection" }
