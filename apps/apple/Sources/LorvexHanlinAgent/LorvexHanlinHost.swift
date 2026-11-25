@@ -292,17 +292,17 @@ public actor LorvexHanlinHost: HanlinHostIntegration {
     case "show_task_workspace", "get_dependency_graph":
       if let rootID = a.rootTaskId { _ = try await core.loadTask(id: rootID) }
       if let listID = a.listId { _ = try await core.loadListDetail(id: listID, limit: 1, offset: 0) }
-      let graph = try await core.getDependencyGraph(
-        rootTaskID: a.rootTaskId, listID: a.listId,
-        includeInactive: tool == "show_task_workspace" ? true : (a.includeInactive ?? true))
       if tool == "show_task_workspace" {
+        let workspace = try await core.loadTaskWorkspace(rootTaskID: a.rootTaskId, listID: a.listId)
         return try Self.encode([
           "presentation": a.presentation ?? "graph",
           "rootTaskID": a.rootTaskId as Any? ?? NSNull(),
           "listID": a.listId as Any? ?? NSNull(),
-          "taskCount": graph.nodes.count, "truncated": graph.truncated
+          "taskCount": workspace.tasks.count, "truncated": workspace.truncated
         ])
       }
+      let graph = try await core.getDependencyGraph(
+        rootTaskID: a.rootTaskId, listID: a.listId, includeInactive: a.includeInactive ?? true)
       return try Self.encode([
         "nodes": graph.nodes.map { node -> [String: Any] in
           ["id": node.id, "title": node.title, "status": node.status,

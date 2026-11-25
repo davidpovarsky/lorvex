@@ -3,8 +3,8 @@ import LorvexCore
 import TaskVisualizationKit
 
 extension MobileStore {
-  /// Read the bounded canonical graph, then the actual task records. Including
-  /// inactive tasks keeps completed prerequisites visible and enables reopening.
+  /// Include independent tasks as well as the scoped dependency neighbourhood.
+  /// Inactive tasks stay visible so their existing records can be reopened.
   public func loadVisualTaskWorkspace(
     rootTaskID: String? = nil, listID: String? = nil
   ) async throws -> TaskWorkspaceSnapshot {
@@ -12,20 +12,14 @@ extension MobileStore {
     if let rootTaskID { rootTitle = try await core.loadTask(id: rootTaskID).title }
     else { rootTitle = nil }
     if let listID { _ = try await core.loadListDetail(id: listID, limit: 1, offset: 0) }
-    let graph = try await core.getDependencyGraph(
-      rootTaskID: rootTaskID, listID: listID, includeInactive: true)
-    var tasks: [LorvexTask] = []
-    tasks.reserveCapacity(graph.nodes.count)
-    for node in graph.nodes {
-      try Task.checkCancellation()
-      tasks.append(try await core.loadTask(id: node.id))
-    }
+    let workspace = try await core.loadTaskWorkspace(rootTaskID: rootTaskID, listID: listID)
+    let tasks = workspace.tasks
     let blocked = try await core.blockedTaskIDs(in: tasks)
     try Task.checkCancellation()
     cacheTasks(tasks)
     let names = Dictionary((lists?.lists ?? []).map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
     return MobileTaskWorkspaceProjection.snapshot(
-      graph: graph, tasks: tasks, blockedIDs: blocked,
+      tasks: tasks, blockedIDs: blocked, isTruncated: workspace.truncated,
       title: rootTitle ?? listID.flatMap { names[$0] } ?? MobileTaskWorkspaceCopy.title,
       listNames: names)
   }

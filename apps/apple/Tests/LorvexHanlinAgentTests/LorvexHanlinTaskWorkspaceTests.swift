@@ -49,6 +49,27 @@ struct LorvexHanlinTaskWorkspaceTests {
     #expect(try await core.loadTask(id: second.id).dependsOn.isEmpty)
   }
 
+  @Test func workspaceDescriptorCountsIndependentTasksAcrossStatuses() async throws {
+    let core = try SwiftLorvexCoreService.inMemory()
+    let namespace = try HanlinConversationNamespace(
+      app: "lorvex", account: "test-workspace-count", workspace: "personal", space: "tasks")
+    let context = HanlinHostContext(namespace: namespace, sceneID: UUID(), generation: UUID())
+    let host = LorvexHanlinHost(core: core, context: context, authorizeWrite: { _ in true })
+    _ = try await core.createTask(TaskCreateDraft(title: "Independent open"))
+    let finished = try await core.createTask(TaskCreateDraft(title: "Independent completed"))
+    _ = try await core.completeTask(id: finished.id)
+
+    let response = await host.invokeRemoteTool(
+      name: "show_task_workspace", argumentsJSON: Data(#"{"presentation":"board"}"#.utf8),
+      remoteRequestID: "workspace-independent-0001")
+    #expect(!response.isError)
+    let json = try #require(
+      try JSONSerialization.jsonObject(with: Data(response.text.utf8)) as? [String: Any])
+    #expect(json["taskCount"] as? Int == 2)
+    #expect(json["truncated"] as? Bool == false)
+    #expect(LorvexHanlinTaskWorkspace(callID: "independent", resultJSON: response.text) != nil)
+  }
+
   @Test func failedOrMalformedToolNeverCreatesAWorkspaceAndReplayIsStable() {
     var message = LorvexHanlinMessage(role: .assistant, text: "", status: .streaming)
     let payload = #"{"presentation":"board","rootTaskID":"task-1","listID":null,"taskCount":2}"#

@@ -7,12 +7,12 @@ import TaskVisualizationKit
 @MainActor
 enum MobileTaskWorkspaceProjection {
   static func snapshot(
-    graph: DependencyGraph, tasks: [LorvexTask], blockedIDs: Set<String>,
+    tasks: [LorvexTask], blockedIDs: Set<String>, isTruncated: Bool,
     title: String, listNames: [String: String] = [:]
   ) -> TaskWorkspaceSnapshot {
     let visibleIDs = Set(tasks.map(\.id))
     var warnings: [String] = []
-    if graph.truncated { warnings.append(MobileTaskWorkspaceCopy.truncated) }
+    if isTruncated { warnings.append(MobileTaskWorkspaceCopy.truncated) }
     if tasks.contains(where: { !Set($0.dependsOn).isSubset(of: visibleIDs) }) {
       warnings.append(MobileTaskWorkspaceCopy.hiddenDependencies)
     }

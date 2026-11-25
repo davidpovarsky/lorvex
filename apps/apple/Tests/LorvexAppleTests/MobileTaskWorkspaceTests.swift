@@ -81,6 +81,42 @@ struct MobileTaskWorkspaceTests {
     #expect(reopened.tasks.first { $0.id == later.id }?.isReady == true)
   }
 
+  @Test func workspaceIncludesIndependentTasksAndKeepsListAndRootScopes() async throws {
+    let (core, store) = try fixture()
+    let list = try await core.createList(name: "Workspace", description: nil)
+    let other = try await core.createList(name: "Elsewhere", description: nil)
+    let standalone = try await core.createTask(TaskCreateDraft(title: "Independent", listID: list.id))
+    let prerequisite = try await core.createTask(TaskCreateDraft(title: "External prerequisite", listID: other.id))
+    let dependent = try await core.createTask(TaskCreateDraft(
+      title: "Scoped dependent", listID: list.id, dependsOn: [prerequisite.id]))
+    let unrelated = try await core.createTask(TaskCreateDraft(title: "Unrelated", listID: other.id))
+    let archived = try await core.createTask(TaskCreateDraft(title: "Trashed", listID: list.id))
+    _ = try await core.archiveTask(id: archived.id)
+
+    let all = try await store.loadVisualTaskWorkspace()
+    #expect(Set(all.tasks.map(\.id)) == Set([standalone.id, prerequisite.id, dependent.id, unrelated.id]))
+    let scoped = try await store.loadVisualTaskWorkspace(listID: list.id)
+    #expect(Set(scoped.tasks.map(\.id)) == Set([standalone.id, prerequisite.id, dependent.id]))
+    #expect(scoped.tasks.first { $0.id == dependent.id }?.isBlocked == true)
+    let rooted = try await store.loadVisualTaskWorkspace(rootTaskID: dependent.id)
+    #expect(Set(rooted.tasks.map(\.id)) == Set([prerequisite.id, dependent.id]))
+    let independent = try await store.loadVisualTaskWorkspace(rootTaskID: standalone.id)
+    #expect(independent.tasks.map(\.id) == [standalone.id])
+  }
+
+  @Test func workspaceInventoryIsBoundedAndReportsMoreIndependentTasks() async throws {
+    let (core, store) = try fixture()
+    for index in 0..<501 {
+      _ = try await core.createTask(TaskCreateDraft(title: "Task \(index)"))
+    }
+    let page = try await core.listTasks(
+      status: "all", listID: nil, priority: nil, text: nil, limit: 500, offset: 0)
+    let snapshot = try await store.loadVisualTaskWorkspace()
+    #expect(snapshot.tasks.map(\.id) == page.tasks.map(\.id))
+    #expect(snapshot.tasks.count == 500)
+    #expect(snapshot.warnings.contains(MobileTaskWorkspaceCopy.truncated))
+  }
+
   @Test func workspaceEditsSurviveStoreReopenAndPreserveIndependentDates() async throws {
     let path = FileManager.default.temporaryDirectory
       .appending(path: "lorvex-visual-persistence-" + UUID().uuidString + ".sqlite")
