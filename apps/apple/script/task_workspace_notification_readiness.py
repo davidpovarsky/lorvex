@@ -1,6 +1,62 @@
 """Wait for actual native notification and badge callbacks before UI acceptance."""
 from pathlib import Path
 import hashlib,json,os,re,subprocess,time,uuid
+def capture_timeout_diagnostics(controller,key,simulator,pid,number,folder):
+ """Sample only the app and services proved to belong to this owned simulator."""
+ c=controller
+ evidence={"result":"unavailable","processes":[],"startedUTC":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()}
+ def process_record(target):
+  observed=subprocess.run(["ps","-p",str(target),"-o","pid=,ppid=,comm="],env=c.ui_env,capture_output=True,text=True,timeout=5)
+  fields=observed.stdout.strip().split(None,2)
+  if observed.returncode!=0 or len(fields)!=3:return None
+  return {"pid":int(fields[0]),"parentPID":int(fields[1]),"command":fields[2]}
+ try:
+  app=process_record(pid)
+  if not app or f"/Devices/{simulator}/" not in app["command"] or Path(app["command"]).name!="LorvexMobileApp":
+   evidence["reason"]="Launched application process is absent or no longer matches this owned simulator"
+   return evidence
+  parent=process_record(app["parentPID"])
+  if not parent or Path(parent["command"]).name!="launchd_sim":
+   evidence["reason"]="The application's simulator launchd parent could not be proved"
+   return evidence
+  evidence["simulatorLaunchd"]=parent
+  candidates=[("application",app)]
+  try:
+   inventory=subprocess.run(["ps","-axo","pid=,ppid=,comm="],env=c.ui_env,capture_output=True,text=True,timeout=5)
+   if inventory.returncode==0:
+    services={"SpringBoard":[],"usernotificationsd":[]}
+    for line in inventory.stdout.splitlines():
+     fields=line.strip().split(None,2)
+     if len(fields)!=3:continue
+     entry={"pid":int(fields[0]),"parentPID":int(fields[1]),"command":fields[2]}
+     role=Path(entry["command"]).name
+     if entry["parentPID"]==app["parentPID"] and role in ("SpringBoard","usernotificationsd"):
+      services[role].append(entry)
+    for role,entries in services.items():
+     if len(entries)==1:candidates.append((role,entries[0]))
+     elif entries:evidence[role+"Discovery"]="ambiguous owned service process; not sampled"
+   else:evidence["serviceDiscovery"]="process inventory unavailable"
+  except (subprocess.TimeoutExpired,ValueError) as error:
+   evidence["serviceDiscovery"]=type(error).__name__
+  for role,expected in candidates:
+   record={"role":role,**expected,"result":"unavailable"}
+   evidence["processes"].append(record)
+   try:
+    if process_record(expected["pid"])!=expected:
+     record["reason"]="Process identity changed before sampling";continue
+    output=folder/f"attempt-{number}-{role}-sample.txt"
+    code,log=c.run(key+f"-readiness-timeout-{number}-{role}-sample",["sample",str(expected["pid"]),"3","-file",str(output)],timeout=15,check=False)
+    record.update(result="captured" if code==0 and output.exists() else "sample-unavailable",exitCode=code,log=str(log))
+    if output.exists():record["artifact"]={"path":str(output),"sha256":hashlib.sha256(output.read_bytes()).hexdigest()}
+   except Exception as error:
+    record.update(result="sample-unavailable",reason=type(error).__name__+": "+str(error))
+  evidence["result"]="completed"
+ except Exception as error:
+  evidence["reason"]=type(error).__name__+": "+str(error)
+ finally:
+  evidence["finishedUTC"]=__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+ return evidence
+
 def prepare(controller,key,simulator,application):
  c=controller;uuid.UUID(simulator)
  records=c.receipt.get("cases",[])+([c.receipt["hostUI"]] if c.receipt.get("hostUI") else [])
@@ -19,7 +75,7 @@ def prepare(controller,key,simulator,application):
   env.pop(name,None)
  env["SIMCTL_CHILD_LORVEX_CLOUD_SYNC"]="off"
  language=key.rsplit("-",1)[-1];language=language if language in ("en","he") else "en"
- predicate='process == "LorvexMobileApp" AND subsystem == "com.apple.UserNotifications"'
+ predicate='process == "LorvexMobileApp"'
  for number in (1,2):
   if number==2:
    c.run(key+"-readiness-recovery-shutdown",["xcrun","simctl","shutdown",simulator],timeout=60)
@@ -39,7 +95,7 @@ def prepare(controller,key,simulator,application):
    pid=int(match.group(1));attempt["applicationPID"]=pid;c.save()
    while time.monotonic()-started<180:
     current=path.read_text(errors="replace")
-    lines=[line for line in current.splitlines() if f"LorvexMobileApp[{pid}:" in line]
+    lines=[line for line in current.splitlines() if f"LorvexMobileApp[{pid}:" in line and "[com.apple.UserNotifications:" in line]
     received=[i for i,line in enumerate(lines) if re.search(r"Got \d+ pending notification \[ hasCompletionHandler: 1 \]",line)]
     badge=[i for i,line in enumerate(lines) if "Set badge count [ hasCompletionHandler: 1 hasError: 0 ]" in line]
     if received and badge and any(b>received[0] for b in badge):
@@ -47,7 +103,10 @@ def prepare(controller,key,simulator,application):
      break
     if observer.poll() is not None:raise RuntimeError("Readiness OS log observer ended before completion")
     time.sleep(1)
-   if attempt["result"]!="passed":attempt["result"]="service-not-ready-before-deadline"
+   attempt["readinessElapsedSeconds"]=round(time.monotonic()-started,3)
+   if attempt["result"]!="passed":
+    attempt["result"]="service-not-ready-before-deadline"
+    attempt["timeoutDiagnostics"]=capture_timeout_diagnostics(c,key,simulator,pid,number,folder)
   finally:
    c.ui_env=original_env
    if observer.poll() is None:
