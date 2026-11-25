@@ -59,6 +59,8 @@ def prepare(controller,key,simulator,application):
    c.save()
   if attempt["result"]=="passed":
    evidence["result"]="passed";evidence["usedOwnedDeviceReboot"]=number==2;break
+ if evidence["result"]!="passed":
+  evidence["result"]="failed";evidence["usedOwnedDeviceReboot"]=len(evidence["attempts"])>1
  evidence["finishedUTC"]=__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
  (folder/"receipt.json").write_text(json.dumps(evidence,indent=2)+"\n");record["systemServiceReadinessReceipt"]={"path":str(folder/"receipt.json"),"sha256":hashlib.sha256((folder/"receipt.json").read_bytes()).hexdigest()};c.save()
  if evidence["result"]!="passed":raise RuntimeError("Real notification enumeration and badge callback never became ready; no UI case executed.")
