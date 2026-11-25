@@ -30,9 +30,9 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let prerequisitePicker = app.buttons["task-workspace.connection.prerequisite"]
     XCTAssertTrue(prerequisitePicker.waitForExistence(timeout: 5))
     prerequisitePicker.tap()
-    app.buttons[prerequisite].tap()
+    selectConnectionChoice(prerequisite, app: app)
     app.buttons["task-workspace.connection.dependent"].tap()
-    app.buttons[title].tap()
+    selectConnectionChoice(title, app: app)
     let connect = app.buttons["task-workspace.connection.add"]
     XCTAssertTrue(connect.isEnabled)
     connect.tap()
@@ -235,6 +235,17 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     persistence.name = "Lorvex \(language.rawValue) - workspace persistence receipt"
     persistence.lifetime = .keepAlways
     add(persistence)
+  }
+
+  @MainActor
+  private func selectConnectionChoice(_ title: String, app: XCUIApplication) {
+    // The native Picker presents its choices inside a collection view. The
+    // graph behind the sheet exposes the same real task title, so selecting
+    // from every app button is ambiguous once graph accessibility is enabled.
+    let choice = app.collectionViews.buttons[title]
+    XCTAssertTrue(choice.waitForExistence(timeout: 5))
+    XCTAssertTrue(choice.isHittable)
+    choice.tap()
   }
 
   @MainActor
