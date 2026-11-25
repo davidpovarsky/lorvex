@@ -27,13 +27,36 @@ import xml.etree.ElementTree as ET
 UI_TARGET = "LorvexMobileUITests"
 UI_CASE = "TaskWorkspaceIntegrationTests/testVisualTaskCompletionSurvivesRelaunch"
 UI_SELECTOR = f"{UI_TARGET}/{UI_CASE}"
+HOST_UI_CASES = (
+    "HanlinSDKIntegrationTests/testOriginalComposerInsideLorvex",
+    "HanlinSDKIntegrationTests/testHebrewCloudAndChatGPTSettings",
+    "HanlinSDKIntegrationTests/testMCPConnectionUsesCloudAccount",
+    "HanlinSDKIntegrationTests/testChatGPTSignInCanBeCancelledAndRestarted",
+)
+HOST_UI_SELECTORS = tuple(f"{UI_TARGET}/{case}" for case in HOST_UI_CASES)
 UNIT_SUITES = (
     "MobileTaskWorkspaceTests",
     "LorvexHanlinTaskWorkspaceTests",
     "LorvexHanlinAgentTests",
     "SwiftLorvexCoreServiceInProgressTests",
+    "LorvexHanlinPresentationStateTests",
+    "LorvexCloudAccountSyncTests",
 )
-REQUIRED_NEW_TESTS = (
+UNIT_SUITE_NAMES = {
+    "MobileTaskWorkspaceTests", "LorvexHanlinTaskWorkspaceTests",
+    "LorvexHanlinAgentTests", "Core service in_progress",
+    "LorvexHanlinPresentationStateTests", "Lorvex Cloud account sync",
+}
+UNIT_FUNCTIONS = (
+    "appMetadataMatchesAppleDistributionIdentity",
+    "appMetadataUsesSharedProductMetadata",
+    "publicContactURLsPointAtLorvexAppNotGitHub",
+    "backgroundDatabaseWorkHoldsABackgroundTaskThatSuspendsOnExpiry",
+    "backgroundFlushWritesAutosaveDraftsBeforeItsSyncPass",
+    "backgroundWakesReachTheStoreAndSyncBeforeReminders",
+    "backgroundWakesAdoptWhatTheyApplied",
+)
+REQUIRED_UNIT_TESTS = (
     "dependenciesUseOriginalIDsAndRejectCyclesWithoutLosingOtherFields",
     "boardUsesCanonicalBlockedStartAndDoesNotPartiallyReopen",
     "cancelledAndSomedayRemainEditableButAreNotReady",
@@ -46,7 +69,23 @@ REQUIRED_NEW_TESTS = (
     "staleContextDoesNotWrite",
     "remoteBridgeRequiresLiveApprovalAndIsIdempotent",
     "remoteBridgeRejectsUnknownToolAndMalformedArguments",
-)
+    "activityKeepsDistinctCallsAndObservedResultState",
+    "cancellationCannotPublishIntoTheNextRequest",
+    "changedCredentialCreatesADifferentProviderIdentity",
+    "sourcesAreObservedDeduplicatedAndSafeForNavigation",
+    "failedOrCancelledToolCannotBecomeACompletedReceipt",
+    "interruptedFirstSyncBindsBeforeNetworkAndRejectsAnotherAccount",
+    "lostPushReceiptAndRestartPreserveDataWithoutDuplicates",
+    "concurrentServerLifecycleAndLocalTitleUseCanonicalJoin",
+    "logoutInvalidatesAnInflightPullBeforeItCanApplyOrCheckpoint",
+    "regressingCursorIsRejectedWithoutChangingCheckpoint",
+    "failedBackfillIsNotMarkedInitializedAndReseedIsRetried",
+    "malformedPayloadDoesNotAdvanceTheCursor",
+    "foregroundBeforeSavedAccountRestorationStillStartsSync",
+    "oracleBindingKeepsCloudKitOffThroughLogoutAndFactoryRecreation",
+    "unauthorizedAccessRefreshesExactlyOnceAndKeepsAccountIdentity",
+) + UNIT_FUNCTIONS
+MINIMUM_UNIT_TESTS = 44  # 4 workspace + 2 workspace agent + 6 agent + 10 core + 5 state + 10 cloud + 7 functions.
 DEVICE_TYPES = {
     "iphone": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
     "ipad": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
@@ -134,6 +173,7 @@ class Controller:
             "phase": args.phase,
             "requestedCases": args.cases,
             "requiredMatrix": list(MATRIX),
+            "requiredHostUICases": list(HOST_UI_CASES),
             "buildJobs": 2,
             "result": "running",
             "steps": [],
@@ -203,7 +243,7 @@ class Controller:
             "xcrun", "swift", "test", "--package-path", str(self.apple),
             "--scratch-path", str(self.dd / "SwiftPM"),
             "--disable-automatic-resolution", "--skip-update", "--jobs", "2",
-            "--no-parallel", "--filter", "|".join(UNIT_SUITES),
+            "--no-parallel", "--filter", "|".join(UNIT_SUITES + UNIT_FUNCTIONS),
             "--xunit-output", str(self.out / "unit-results.xml"),
         ]
 
@@ -220,14 +260,16 @@ class Controller:
             "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "build-for-testing",
         ]
 
-    def ui_command(self, manifest: Path, simulator: str, language: str, result: Path):
+    def ui_command(self, manifest: Path, simulator: str, language: str, result: Path,
+                   selectors: tuple[str, ...] = (UI_SELECTOR,)):
         return [
             "xcodebuild", "-xctestrun", str(manifest),
             "-destination", f"platform=iOS Simulator,id={simulator}",
             "-destination-timeout", "90", "-jobs", "2",
             "-parallel-testing-enabled", "NO", "-collect-test-diagnostics", "never",
             "-testLanguage", language, "-testRegion", "IL" if language == "he" else "US",
-            "-resultBundlePath", str(result), "-only-testing:" + UI_SELECTOR,
+            "-resultBundlePath", str(result),
+            *("-only-testing:" + selector for selector in selectors),
             "test-without-building",
         ]
 
@@ -238,6 +280,8 @@ class Controller:
             "source": str(self.source),
             "output": str(self.out),
             "unitSuites": list(UNIT_SUITES),
+            "unitFunctions": list(UNIT_FUNCTIONS),
+            "minimumUnitCases": MINIMUM_UNIT_TESTS,
             "unitCommand": self.unit_command(),
             "nativeBuildCommand": self.build_command(),
             "caseCommands": {
@@ -247,6 +291,11 @@ class Controller:
                     self.out / key / "result.xcresult",
                 ) for key in self.args.cases
             },
+            "hostUICommand": self.ui_command(
+                self.dd / "Build/Products/LorvexMobileUITests.workspace-en.xctestrun",
+                "<fresh-owned-host-ipad-simulator>", "en",
+                self.out / "hanlin-host-ipad/result.xcresult", HOST_UI_SELECTORS,
+            ),
             "runtime": self.args.runtime,
             "deviceTypes": DEVICE_TYPES,
             "archiveOrUpload": False,
@@ -260,6 +309,7 @@ class Controller:
                 "apps/apple/Package.resolved", "apps/apple/Config/XcodeGen/project.yml",
                 "apps/apple/Config/XcodeGen/Package.resolved",
                 "apps/apple/Tests/LorvexMobileUITests/TaskWorkspaceIntegrationTests.swift",
+                "apps/apple/Tests/LorvexMobileUITests/HanlinSDKIntegrationTests.swift",
             )
         }
         self.receipt["gitObjects"] = {
@@ -268,6 +318,12 @@ class Controller:
                 "apps/apple/Sources/LorvexMobile", "apps/apple/Sources/LorvexHanlinAgent",
                 "apps/apple/Sources/LorvexCore", "apps/apple/core",
                 "apps/apple/Tests/LorvexAppleTests/MobileTaskWorkspaceTests.swift",
+                "apps/apple/Tests/LorvexAppleTests/LorvexCloudAccountSyncTests.swift",
+                "apps/apple/Tests/LorvexAppleTests/AppMetadataTests.swift",
+                "apps/apple/Tests/LorvexAppleTests/NotificationActionsTests.swift",
+                "apps/apple/Tests/LorvexAppleTests/MobileReviewTests.swift",
+                "apps/apple/Tests/LorvexAppleTests/MobileStoreBackgroundAdoptionTests.swift",
+                "apps/apple/Sources/LorvexMobileApp",
                 "apps/apple/Tests/LorvexHanlinAgentTests",
                 "apps/apple/Tests/LorvexCoreServiceTests/SwiftLorvexCoreServiceInProgressTests.swift",
             )
@@ -303,7 +359,7 @@ class Controller:
             summary = re.search(r"Test run with (\d+) tests .*passed", line)
             if summary:
                 summary_count = int(summary[1])
-        missing = [name for name in REQUIRED_NEW_TESTS if not any(name + "(" in x["name"] for x in passed)]
+        missing = [name for name in REQUIRED_UNIT_TESTS if not any(name + "(" in x["name"] for x in passed)]
         xml = self.out / "unit-results.xml"
         xml_cases = []
         if xml.exists():
@@ -313,13 +369,16 @@ class Controller:
                 xml_cases.append({**case.attrib, "result": status})
         accepted = (
             code == 0 and summary_count is not None and summary_count == len(passed)
-            and len(passed) >= 22 and not missing and set(UNIT_SUITES).issubset(suites)
+            and len(passed) >= MINIMUM_UNIT_TESTS and not missing and UNIT_SUITE_NAMES.issubset(suites)
+            and not any(case["result"] != "Passed" for case in xml_cases)
         )
         result = {
             "sourceSHA": self.args.expected_sha, "exitCode": code,
             "result": "passed" if accepted else "failed",
             "suites": sorted(suites), "cases": passed, "caseCount": len(passed),
             "summaryCount": summary_count, "missingRequiredTests": missing,
+            "missingRequiredSuites": sorted(UNIT_SUITE_NAMES - suites),
+            "minimumRequiredCases": MINIMUM_UNIT_TESTS,
             "log": str(log), "logSHA256": digest(log),
             "xunitPath": str(xml) if xml.exists() else None,
             "xunitSHA256": digest(xml) if xml.exists() else None, "xunitCases": xml_cases,
@@ -480,8 +539,7 @@ class Controller:
             and proof_ok
         ) else "failed"
 
-    def ui(self):
-        build = self.load_build()
+    def simulator_inventory(self):
         runtimes = self.json_command("simulator-runtimes", ["xcrun", "simctl", "list", "runtimes", "-j"])
         types = self.json_command("simulator-device-types", ["xcrun", "simctl", "list", "devicetypes", "-j"])
         runtime = next((
@@ -495,6 +553,10 @@ class Controller:
         if not set(DEVICE_TYPES.values()).issubset(supported & installed):
             raise RuntimeError("Requested runtime does not support both installed test device types.")
         self.receipt["simulatorInventory"] = {"runtime": runtime, "deviceTypes": DEVICE_TYPES}
+
+    def ui(self):
+        build = self.load_build()
+        self.simulator_inventory()
         original = Path(build["xctestrun"])
         manifests = {language: self.language_manifest(original, language) for language in ("en", "he")}
         for key in self.args.cases:
@@ -553,6 +615,124 @@ class Controller:
                 self.publish_screenshots()
             if record["result"] != "passed":
                 raise RuntimeError(f"{key} failed; remaining configurations were not run.")
+    def extract_host_ui(self, record: dict, case_dir: Path):
+        result = Path(record["xcresult"])
+        summary = self.json_command("hanlin-host-summary", [
+            "xcrun", "xcresulttool", "get", "test-results", "summary", "--path", str(result),
+        ])
+        tree = self.json_command("hanlin-host-tests", [
+            "xcrun", "xcresulttool", "get", "test-results", "tests", "--path", str(result),
+        ])
+        write_json(case_dir / "summary.json", summary)
+        write_json(case_dir / "tests.json", tree)
+        cases = list(test_cases(tree.get("testNodes", [])))
+        matched = {
+            expected: [
+                case for case in cases
+                if case.get("nodeIdentifier", "").removesuffix("()") in (
+                    expected, UI_TARGET + "/" + expected,
+                )
+            ] for expected in HOST_UI_CASES
+        }
+        record.update({"summary": summary, "matchedCases": matched})
+        attachments = case_dir / "attachments"
+        self.run("hanlin-host-attachments", [
+            "xcrun", "xcresulttool", "export", "attachments",
+            "--path", str(result), "--output-path", str(attachments),
+        ])
+        manifest_path = attachments / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        record["attachmentManifestSHA256"] = digest(manifest_path)
+        exports = []
+        screenshots = []
+        for test in manifest:
+            for attachment in test.get("attachments", []):
+                path = (attachments / attachment["exportedFileName"]).resolve()
+                if not path.is_relative_to(attachments.resolve()) or not path.is_file():
+                    raise RuntimeError("Invalid exported host attachment path.")
+                item = {**attachment, "testIdentifier": test["testIdentifier"],
+                        "path": str(path), "sha256": digest(path), "size": path.stat().st_size}
+                exports.append(item)
+                label = attachment.get("suggestedHumanReadableName", "")
+                if path.suffix.lower() == ".png" and label.startswith("Lorvex - "):
+                    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")[:90]
+                    representative = self.out / "screenshots" / ("host-ipad-" + slug + ".png")
+                    representative.parent.mkdir(exist_ok=True)
+                    shutil.copyfile(path, representative)
+                    screenshots.append({
+                        "label": label, "path": str(representative),
+                        "sha256": digest(representative), "originalAttachment": item,
+                    })
+        write_json(case_dir / "attachments-index.json", exports)
+        record["screenshots"] = screenshots
+        record["result"] = "passed" if (
+            record["exitCode"] == 0 and summary.get("result") == "Passed"
+            and summary.get("passedTests") == len(HOST_UI_CASES)
+            and summary.get("failedTests") == 0 and summary.get("skippedTests") == 0
+            and len(cases) == len(HOST_UI_CASES)
+            and all(len(matches) == 1 and matches[0].get("result") == "Passed"
+                    for matches in matched.values())
+        ) else "failed"
+
+    def host_ui(self):
+        build = self.load_build()
+        if "simulatorInventory" not in self.receipt:
+            self.simulator_inventory()
+        manifest = self.language_manifest(Path(build["xctestrun"]), "en")
+        key = "hanlin-host-ipad"
+        case_dir = self.out / key
+        case_dir.mkdir()
+        record = {
+            "sourceSHA": self.args.expected_sha, "startedUTC": utc(),
+            "family": "ipad", "languages": ["en", "he"],
+            "runtime": self.args.runtime, "deviceType": DEVICE_TYPES["ipad"],
+            "selectors": list(HOST_UI_SELECTORS), "result": "running",
+            "xctestrun": str(manifest), "xctestrunSHA256": digest(manifest),
+            "xcresult": str(case_dir / "result.xcresult"), "freshSimulator": True,
+        }
+        self.receipt["hostUI"] = record
+        self.save()
+        simulator = None
+        try:
+            _, log = self.run(key + "-create", [
+                "xcrun", "simctl", "create",
+                f"Lorvex-host-ipad-{self.args.expected_sha[:8]}-{uuid.uuid4().hex[:6]}",
+                DEVICE_TYPES["ipad"], self.args.runtime,
+            ])
+            simulator = log.read_text().strip()
+            uuid.UUID(simulator)
+            record["simulatorID"] = simulator
+            self.save()
+            self.run(key + "-boot", ["xcrun", "simctl", "boot", simulator])
+            self.run(key + "-bootstatus", ["xcrun", "simctl", "bootstatus", simulator, "-b"], timeout=180)
+            code, log = self.run(
+                key + "-test", self.ui_command(
+                    manifest, simulator, "en", Path(record["xcresult"]), HOST_UI_SELECTORS,
+                ), timeout=1200, check=False,
+            )
+            record.update({"exitCode": code, "log": str(log), "logSHA256": digest(log)})
+            if Path(record["xcresult"]).is_dir():
+                self.extract_host_ui(record, case_dir)
+            else:
+                record.update({"result": "failed", "error": "No xcresult was produced."})
+        except BaseException as error:
+            record.update({"result": "failed", "error": str(error)})
+            raise
+        finally:
+            if simulator:
+                self.run(key + "-shutdown", ["xcrun", "simctl", "shutdown", simulator], check=False)
+                if record["result"] == "passed":
+                    code, _ = self.run(key + "-delete", ["xcrun", "simctl", "delete", simulator], check=False)
+                    record["simulatorDeleted"] = code == 0
+                else:
+                    record["simulatorPreservedForDebugging"] = True
+            record["finishedUTC"] = utc()
+            write_json(case_dir / "case-receipt.json", record)
+            write_json(self.out / "host-representative-screenshots.json", record.get("screenshots", []))
+            self.save()
+        if record["result"] != "passed":
+            raise RuntimeError("Required Hanlin host UI acceptance failed; inspect its exact case receipt.")
+
     def publish_screenshots(self):
         screenshots = [
             {"case": case["key"], "language": case["language"], "family": case["family"],
@@ -594,6 +774,8 @@ class Controller:
                     self.build()
                 if self.args.phase in ("ui", "all"):
                     self.ui()
+                if self.args.phase in ("ui", "host-ui", "all"):
+                    self.host_ui()
                 self.assert_source()
                 self.receipt["trackedSourceCleanAfter"] = True
                 self.receipt["result"] = "passed"
@@ -606,6 +788,7 @@ class Controller:
                 self.receipt["matrixComplete"] = {
                     case["key"] for case in self.receipt["cases"] if case["result"] == "passed"
                 } == set(MATRIX)
+                self.receipt["requiredHostUIComplete"] = self.receipt.get("hostUI", {}).get("result") == "passed"
                 self.save()
         print(json.dumps({
             "result": self.receipt["result"], "receipt": str(self.out / "receipt.json"),
@@ -624,8 +807,8 @@ def main() -> int:
     parser.add_argument("--kit-mirror", type=Path)
     parser.add_argument("--developer-dir", type=Path)
     parser.add_argument("--runtime", default="com.apple.CoreSimulator.SimRuntime.iOS-27-2")
-    parser.add_argument("--phase", choices=("unit", "build", "ui", "all"), default="all")
-    parser.add_argument("--build-receipt", type=Path, help="Reuse a verified build for this exact SHA during --phase ui.")
+    parser.add_argument("--phase", choices=("unit", "build", "ui", "host-ui", "all"), default="all")
+    parser.add_argument("--build-receipt", type=Path, help="Reuse a verified build for this exact SHA during --phase ui or host-ui.")
     parser.add_argument("--cases", default=",".join(MATRIX), help="Comma-separated focused UI cases; default is the four-case matrix.")
     parser.add_argument("--execute", action="store_true", help="Execute only after the coordinator explicitly grants the heavy Mac slot.")
     args = parser.parse_args()
