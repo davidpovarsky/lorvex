@@ -43,7 +43,7 @@ packages:
     path: ../../Vendor/HanlinSDK
   TaskVisualizationKit:
     url: https://github.com/davidpovarsky/task-visualization-kit.git
-    revision: 3a1837f7c80c5c4210bf35dd5dfa9afeeff76ea3
+    revision: 2194705871da715eb996ecfeb10f280e1cb0a85e
 targets:
   LorvexCore:
     type: framework
