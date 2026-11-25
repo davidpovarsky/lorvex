@@ -72,7 +72,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     XCTAssertTrue(hasDueDate.waitForExistence(timeout: 5))
     XCTAssertEqual(hasDueDate.value as? String, "0")
     attachHierarchy(app, "Lorvex \(language.rawValue) - due toggle before activation")
-    hasDueDate.tap()
+    tapDateSwitch(hasDueDate, app: app)
     attachHierarchy(app, "Lorvex \(language.rawValue) - due toggle after activation")
     expectation(for: NSPredicate(format: "value == %@", "1"), evaluatedWith: hasDueDate)
     waitForExpectations(timeout: 5)
@@ -110,7 +110,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         timelinePlanned.tap()
         XCTAssertTrue(dateToggle.waitForExistence(timeout: 5))
         XCTAssertEqual(dateToggle.value as? String, "0")
-        dateToggle.tap()
+        tapDateSwitch(dateToggle, app: app)
         expectation(for: NSPredicate(format: "value == %@", "1"), evaluatedWith: dateToggle)
         waitForExpectations(timeout: 5)
         app.buttons["task-workspace.date.save"].tap()
@@ -312,6 +312,18 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     waitForExpectations(timeout: 10)
     done.tap()
     XCTAssertTrue(done.waitForNonExistence(timeout: 10))
+  }
+
+  @MainActor
+  private func tapDateSwitch(_ row: XCUIElement, app: XCUIApplication) {
+    // SwiftUI exposes the whole Form row as a Switch, with the actual native
+    // switch as its descendant. A row-centre pointer tap hits the empty label
+    // area. Select the observed native control without assuming an RTL side.
+    let control = row.switches.firstMatch
+    XCTAssertTrue(control.waitForExistence(timeout: 5))
+    XCTAssertTrue(row.frame.contains(control.frame) && app.frame.contains(control.frame))
+    XCTAssertTrue(control.isHittable)
+    control.tap()
   }
 
   @MainActor
