@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import plistlib
 from types import SimpleNamespace
 import tempfile
 import unittest
@@ -90,6 +91,80 @@ class NativeUnitEvidenceTests(unittest.TestCase):
                     self.write_report(report, self.cases[:1], outcome=outcome)
                     self.write_report(other, self.cases[1:])
                     self.assert_rejected()
+
+
+class RuntimeBinaryClosureTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.products = self.root / "Products"
+        self.app = self.products / "Debug-iphonesimulator/App.app"
+        self.runner = self.products / "Debug-iphonesimulator/UITests-Runner.app"
+        self.test_bundle = self.runner / "PlugIns/UITests.xctest"
+        self.make_bundle(self.app, "app", "App")
+        self.make_bundle(self.runner, "runner", "Runner")
+        self.make_bundle(self.test_bundle, "tests", "UITests")
+        self.make_bundle(self.app / "Frameworks/Module.framework", "module", "Module")
+        self.debug = self.app / "App.debug.dylib"
+        self.debug.write_bytes(self.macho(b"debug implementation"))
+        (self.app / "Frameworks/libRuntime.dylib").write_bytes(self.macho(b"runtime"))
+        self.manifest = self.products / "UITests_iphonesimulator27.1-arm64.xctestrun"
+        self.manifest.write_bytes(plistlib.dumps({"UITests": {
+            "TestHostPath": "__TESTROOT__/Debug-iphonesimulator/UITests-Runner.app",
+            "TestBundlePath": "__TESTHOST__/PlugIns/UITests.xctest",
+            "UITargetAppPath": "__TESTROOT__/Debug-iphonesimulator/App.app",
+        }}))
+        self.closure = native.runtime_closure.capture(self.app, self.manifest)
+        self.artifact = self.root / "runtime-closure.json"
+        native.write_json(self.artifact, self.closure)
+        self.receipt = self.root / "build-receipt.json"
+        native.write_json(self.receipt, {
+            "sourceSHA": "0" * 40, "result": "passed",
+            "application": str(self.app),
+            "xctestrun": str(self.manifest), "xctestrunSHA256": native.digest(self.manifest),
+            "binarySHA256": self.closure["machOBinaries"],
+            "runtimeBinaryClosure": self.closure,
+            "runtimeBinaryClosureArtifact": {
+                "path": str(self.artifact), "sha256": native.digest(self.artifact)},
+        })
+        self.controller = native.Controller.__new__(native.Controller)
+        self.controller.args = SimpleNamespace(build_receipt=self.receipt, expected_sha="0" * 40)
+        self.controller.receipt = {}
+
+    @staticmethod
+    def macho(body):
+        return bytes.fromhex("cffaedfe") + body
+
+    def make_bundle(self, path, identifier, executable):
+        path.mkdir(parents=True)
+        (path / "Info.plist").write_bytes(plistlib.dumps({
+            "CFBundleIdentifier": identifier, "CFBundleExecutable": executable,
+        }))
+        (path / executable).write_bytes(self.macho(executable.encode()))
+
+    def test_binds_debug_library_test_executable_runner_and_embedded_runtimes(self):
+        self.controller.load_build()
+        files = self.closure["machOBinaries"]
+        self.assertEqual(len(files), 6)
+        for path in (self.debug, self.test_bundle / "UITests", self.runner / "Runner",
+                     self.app / "Frameworks/Module.framework/Module"):
+            self.assertIn(str(path), files)
+        self.assertEqual(self.closure["testBundlePaths"], [str(self.test_bundle)])
+
+    def test_rejects_changed_debug_library_or_test_without_main_executable_change(self):
+        for path in (self.debug, self.test_bundle / "UITests"):
+            with self.subTest(runtime=path.name):
+                original = path.read_bytes()
+                path.write_bytes(self.macho(b"changed code"))
+                with self.assertRaisesRegex(RuntimeError, "binary changed"):
+                    self.controller.load_build()
+                path.write_bytes(original)
+
+    def test_rejects_added_runtime_even_when_every_previous_hash_still_matches(self):
+        (self.app / "Frameworks/Unexpected.dylib").write_bytes(self.macho(b"new runtime"))
+        with self.assertRaisesRegex(RuntimeError, "binary closure changed"):
+            self.controller.load_build()
 
 
 if __name__ == "__main__":

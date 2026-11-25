@@ -11,6 +11,7 @@ import argparse
 import datetime as dt
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -23,6 +24,17 @@ import sys
 import time
 import uuid
 import xml.etree.ElementTree as ET
+
+def sibling_module(name: str):
+    path = Path(__file__).with_name(name + ".py")
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+runtime_closure = sibling_module("task_workspace_runtime_closure")
+
 
 UI_TARGET = "LorvexMobileUITests"
 UI_CASE = "TaskWorkspaceIntegrationTests/testVisualTaskCompletionSurvivesRelaunch"
@@ -392,6 +404,8 @@ class Controller:
                 "apps/apple/Config/XcodeGen/Package.resolved",
                 "apps/apple/Tests/LorvexMobileUITests/TaskWorkspaceIntegrationTests.swift",
                 "apps/apple/Tests/LorvexMobileUITests/HanlinSDKIntegrationTests.swift",
+                "apps/apple/script/task_workspace_runtime_closure.py",
+                "apps/apple/script/task_workspace_notification_readiness.py",
             )
         }
         self.receipt["gitObjects"] = {
@@ -657,9 +671,9 @@ class Controller:
         info = plistlib.loads((app / "Info.plist").read_bytes())
         if info["CFBundleIdentifier"] != "com.itorah.lorvex":
             raise RuntimeError("Unexpected tested application identity.")
-        binaries = [app / info["CFBundleExecutable"]]
-        for name in ("LorvexMobile", "LorvexCore", "LorvexHanlinAgent"):
-            binaries.append(app / f"Frameworks/{name}.framework/{name}")
+        closure = runtime_closure.capture(app, manifest)
+        closure_path = self.out / "runtime-binary-closure-build.json"
+        write_json(closure_path, closure)
         result = {
             "sourceSHA": self.args.expected_sha, "sourceTree": self.receipt["sourceTree"],
             "result": "passed", "exitCode": code, "log": str(log), "logSHA256": digest(log),
@@ -669,7 +683,9 @@ class Controller:
                 "CFBundleIdentifier", "CFBundleShortVersionString", "CFBundleVersion",
                 "MinimumOSVersion", "DTSDKName", "DTXcodeBuild",
             )},
-            "binarySHA256": {str(p): digest(p) for p in binaries},
+            "binarySHA256": closure["machOBinaries"],
+            "runtimeBinaryClosure": closure,
+            "runtimeBinaryClosureArtifact": {"path": str(closure_path), "sha256": digest(closure_path)},
         }
         self.assert_source()
         self.receipt["build"] = result
@@ -686,9 +702,34 @@ class Controller:
         for path, expected in result["binarySHA256"].items():
             if digest(Path(path)) != expected:
                 raise RuntimeError("Built application binary changed: " + path)
+        artifact = result["runtimeBinaryClosureArtifact"]
+        closure_path = Path(artifact["path"])
+        if digest(closure_path) != artifact["sha256"]:
+            raise RuntimeError("Build runtime closure artifact changed.")
+        recorded = result["runtimeBinaryClosure"]
+        if json.loads(closure_path.read_text()) != recorded:
+            raise RuntimeError("Build runtime closure artifact disagrees with its receipt.")
+        observed = runtime_closure.capture(Path(result["application"]), Path(result["xctestrun"]))
+        if observed != recorded or result["binarySHA256"] != observed["machOBinaries"]:
+            raise RuntimeError("Native runtime or XCTest binary closure changed after the build.")
         self.receipt["testedBuildReceipt"] = str(self.args.build_receipt or self.out / "build-receipt.json")
         self.receipt["testedBuildReceiptSHA256"] = digest(Path(self.receipt["testedBuildReceipt"]))
         return result
+
+    def record_runtime_closure(self, record: dict, case_dir: Path, stage: str):
+        build = self.load_build()
+        path = case_dir / f"runtime-binary-closure-{stage}.json"
+        write_json(path, build["runtimeBinaryClosure"])
+        record["runtimeBinaryClosure" + stage.title()] = {"path": str(path), "sha256": digest(path)}
+        if stage == "after":
+            record["runtimeBinaryClosureUnchanged"] = True
+        self.save()
+
+    def prepare_system_services(self, key: str, simulator: str, application: str):
+        path = Path(__file__).with_name("task_workspace_notification_readiness.py")
+        self.receipt["systemServiceReadinessHelper"] = {"path": str(path), "sha256": digest(path)}
+        self.save()
+        sibling_module("task_workspace_notification_readiness").prepare(self, key, simulator, application)
 
     def language_manifest(self, original: Path, language: str) -> Path:
         manifest = plistlib.loads(original.read_bytes())
@@ -826,6 +867,8 @@ class Controller:
                 self.save()
                 self.run(key + "-boot", ["xcrun", "simctl", "boot", simulator])
                 self.run(key + "-bootstatus", ["xcrun", "simctl", "bootstatus", simulator, "-b"], timeout=180)
+                self.record_runtime_closure(record, case_dir, "before")
+                self.prepare_system_services(key, simulator, build["application"])
                 code, log = self.run(
                     key + "-test", self.ui_command(manifests[language], simulator, language, Path(record["xcresult"])),
                     timeout=900, check=False,
@@ -843,6 +886,11 @@ class Controller:
             finally:
                 if simulator:
                     self.run(key + "-shutdown", ["xcrun", "simctl", "shutdown", simulator], check=False)
+                try:
+                    self.record_runtime_closure(record, case_dir, "after")
+                except Exception as error:
+                    record.update(result="failed", error=str(error), runtimeBinaryClosureUnchanged=False)
+                if simulator:
                     if record["result"] == "passed":
                         code, _ = self.run(key + "-delete", ["xcrun", "simctl", "delete", simulator], check=False)
                         record["simulatorDeleted"] = code == 0
@@ -922,7 +970,7 @@ class Controller:
         case_dir = self.out / key
         case_dir.mkdir()
         record = {
-            "sourceSHA": self.args.expected_sha, "startedUTC": utc(),
+            "key": key, "sourceSHA": self.args.expected_sha, "startedUTC": utc(),
             "family": "ipad", "languages": ["en", "he"],
             "runtime": self.args.runtime, "deviceType": DEVICE_TYPES["ipad"],
             "selectors": list(HOST_UI_SELECTORS), "result": "running",
@@ -944,6 +992,8 @@ class Controller:
             self.save()
             self.run(key + "-boot", ["xcrun", "simctl", "boot", simulator])
             self.run(key + "-bootstatus", ["xcrun", "simctl", "bootstatus", simulator, "-b"], timeout=180)
+            self.record_runtime_closure(record, case_dir, "before")
+            self.prepare_system_services(key, simulator, build["application"])
             code, log = self.run(
                 key + "-test", self.ui_command(
                     manifest, simulator, "en", Path(record["xcresult"]), HOST_UI_SELECTORS,
@@ -960,6 +1010,11 @@ class Controller:
         finally:
             if simulator:
                 self.run(key + "-shutdown", ["xcrun", "simctl", "shutdown", simulator], check=False)
+            try:
+                self.record_runtime_closure(record, case_dir, "after")
+            except Exception as error:
+                record.update(result="failed", error=str(error), runtimeBinaryClosureUnchanged=False)
+            if simulator:
                 if record["result"] == "passed":
                     code, _ = self.run(key + "-delete", ["xcrun", "simctl", "delete", simulator], check=False)
                     record["simulatorDeleted"] = code == 0

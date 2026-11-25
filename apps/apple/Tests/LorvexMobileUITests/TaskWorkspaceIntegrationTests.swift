@@ -304,7 +304,9 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     send.tap()
     let card = app.otherElements["hanlin.workspace.lorvex-acceptance-workspace"]
     XCTAssertTrue(card.waitForExistence(timeout: 30))
-    XCTAssertTrue(app.staticTexts["Native workspace acceptance completed."].waitForExistence(timeout: 15))
+    let completion = app.textViews.matching(
+      NSPredicate(format: "label == %@", "Native workspace acceptance completed.")).firstMatch
+    XCTAssertTrue(completion.waitForExistence(timeout: 15))
     XCTAssertFalse(app.staticTexts["hanlin.error"].exists)
     let created = card.buttons.matching(
       NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@", "task-workspace.open.", title)
