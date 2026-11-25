@@ -94,6 +94,7 @@ public struct MobileTaskWorkspaceView: View {
         MobileVisualTaskCreateSheet(store: store, listID: listID)
       }
     }
+    .accessibilityElement(children: .contain)
     .accessibilityIdentifier("lorvex.visual.workspace")
   }
 

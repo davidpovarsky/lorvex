@@ -3,6 +3,7 @@ import LorvexCore
 import LorvexDomain
 import LorvexSync
 import Testing
+import TaskVisualizationKit
 
 @testable import LorvexMobile
 
@@ -65,6 +66,56 @@ struct LorvexCloudAccountSyncTests {
     #expect(Set(try await secondCore.loadSearchIndexTasks().map(\.id)) == originalIDs)
     #expect(try secondCore.unsyncedOutboundRecordNames().isEmpty)
     #expect(await peer.envelopeCount == serverCount)
+  }
+
+  @Test
+  func visualWorkspaceMutationsConvergeThroughCanonicalCloudSync() async throws {
+    let firstCore = try makeInMemoryCore()
+    let secondCore = try makeInMemoryCore()
+    let firstStore = MobileStore(
+      core: firstCore, defaults: UserDefaults(suiteName: "workspace-sync-first-" + UUID().uuidString)!)
+    let secondStore = MobileStore(
+      core: secondCore, defaults: UserDefaults(suiteName: "workspace-sync-second-" + UUID().uuidString)!)
+    let firstTask = try await firstStore.createPlannedTask(TaskCreateDraft(title: "Prepare"))
+    let secondTask = try await firstStore.createPlannedTask(TaskCreateDraft(title: "Deliver", notes: "Keep notes"))
+    let planned = try #require(LorvexDateFormatters.ymdUTC.date(from: "2026-12-02"))
+    let due = try #require(LorvexDateFormatters.ymdUTC.date(from: "2026-12-08"))
+    try await firstStore.performVisualTaskAction(.addDependency(
+      prerequisiteID: firstTask.id, dependentID: secondTask.id))
+    try await firstStore.performVisualTaskAction(.setPlannedDate(
+      taskID: secondTask.id, date: PlannedDayBridge.displayDate(forStorageDate: planned)))
+    try await firstStore.performVisualTaskAction(.setDueDate(
+      taskID: secondTask.id, date: PlannedDayBridge.displayDate(forStorageDate: due)))
+    try await firstStore.performVisualTaskAction(.setCompleted(taskID: firstTask.id, completed: true))
+    try await firstStore.performVisualTaskAction(.setCompleted(taskID: secondTask.id, completed: true))
+
+    let peer = CloudAccountTestPeer()
+    let first = makeCloudTransport(core: firstCore, peer: peer)
+    let second = makeCloudTransport(core: secondCore, peer: peer)
+    _ = try await first.sync()
+    _ = try await second.sync()
+    let received = try await secondCore.loadTask(id: secondTask.id)
+    #expect(received.dependsOn == [firstTask.id])
+    #expect(received.status == .completed)
+    #expect(received.plannedDate == planned)
+    #expect(received.dueDate == due)
+    #expect(received.notes == "Keep notes")
+    let snapshot = try await secondStore.loadVisualTaskWorkspace()
+    #expect(Set(snapshot.tasks.map(\.id)) == Set([firstTask.id, secondTask.id]))
+    #expect(snapshot.tasks.allSatisfy(\.isCompleted))
+
+    try await secondStore.performVisualTaskAction(.removeDependency(
+      prerequisiteID: firstTask.id, dependentID: secondTask.id))
+    try await secondStore.performVisualTaskAction(.setCompleted(taskID: secondTask.id, completed: false))
+    _ = try await second.sync()
+    _ = try await first.sync()
+    let returned = try await firstStore.loadVisualTaskWorkspace()
+    let task = try #require(returned.tasks.first { $0.id == secondTask.id })
+    #expect(task.dependencyIDs.isEmpty)
+    #expect(!task.isCompleted)
+    #expect(task.isReady)
+    #expect(try firstCore.unsyncedOutboundRecordNames().isEmpty)
+    #expect(try secondCore.unsyncedOutboundRecordNames().isEmpty)
   }
 
   @Test

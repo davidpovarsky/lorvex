@@ -38,6 +38,13 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     XCTAssertTrue(
       app.buttons[language.removeConnection].firstMatch.waitForExistence(timeout: 10),
       "The real saved dependency must appear in the connection editor.")
+    let remove = app.buttons[language.removeConnection].firstMatch
+    remove.tap()
+    XCTAssertTrue(remove.waitForNonExistence(timeout: 10))
+    expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: connect)
+    waitForExpectations(timeout: 10)
+    connect.tap()
+    XCTAssertTrue(remove.waitForExistence(timeout: 10))
     let done = app.buttons["task-workspace.connection.done"]
     expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: done)
     waitForExpectations(timeout: 10)
@@ -72,15 +79,43 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
           app.descendants(matching: .any)
             .matching(identifier: "task-workspace.timeline.chart")
             .firstMatch.waitForExistence(timeout: 10))
-        XCTAssertTrue(
-          app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", title))
-            .firstMatch.waitForExistence(timeout: 5),
-          "The chart must expose the task that this test actually scheduled.")
+        let inspect = app.buttons["task-workspace.timeline.inspect." + taskID]
+        XCTAssertTrue(inspect.waitForExistence(timeout: 10))
+        inspect.tap()
+        let timelineDetail = app.descendants(matching: .any)
+          .matching(identifier: "task-workspace.timeline.detail." + taskID).firstMatch
+        XCTAssertTrue(timelineDetail.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.frame.intersects(timelineDetail.frame))
+        let timelineDue = app.buttons["task-workspace.timeline.due." + taskID]
+        XCTAssertTrue(timelineDue.isHittable)
+        timelineDue.tap()
+        let dateToggle = app.switches["task-workspace.date.toggle"]
+        XCTAssertTrue(dateToggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(dateToggle.value as? String, "1")
+        app.buttons["task-workspace.date.cancel"].tap()
+        let timelinePlanned = app.buttons["task-workspace.timeline.planned." + taskID]
+        XCTAssertTrue(timelinePlanned.waitForExistence(timeout: 5))
+        timelinePlanned.tap()
+        XCTAssertTrue(dateToggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(dateToggle.value as? String, "0")
+        dateToggle.tap()
+        app.buttons["task-workspace.date.save"].tap()
+        XCTAssertTrue(dateToggle.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(timelineDetail.waitForExistence(timeout: 10))
+        attach(app, "Lorvex \(language.rawValue) - timeline inspector writes the planned date")
+        app.buttons["task-workspace.timeline.close-actions"].tap()
       }
-      if mode == "network" {
+      if mode == "network" || mode == "graph" {
+        let node = mode == "network"
+          ? app.buttons[title].firstMatch
+          : app.buttons["task-workspace.open." + taskID]
         XCTAssertTrue(
-          app.buttons[title].firstMatch.waitForExistence(timeout: 5),
-          "The native relationship map must expose the real task as an accessible node.")
+          node.waitForExistence(timeout: 10),
+          "The native graph must expose the real task as an accessible node.")
+        node.tap()
+        XCTAssertTrue(app.buttons["task.detail.complete"].waitForExistence(timeout: 10))
+        app.buttons["lorvex.visual.detail.close"].tap()
+        XCTAssertTrue(app.buttons["task-workspace.tab." + mode].waitForExistence(timeout: 10))
       }
       attach(app, "Lorvex \(language.rawValue) - live \(mode) with connected real tasks")
     }
@@ -98,6 +133,16 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
 
     clearSearch(app, language: language)
     searchFor(title, app: app)
+    let lane = app.buttons["task-workspace.lane." + taskID]
+    XCTAssertTrue(lane.waitForExistence(timeout: 10))
+    lane.tap()
+    app.buttons["task-workspace.lane-choice." + taskID + ".in_progress"].tap()
+    expectation(for: NSPredicate(format: "label == %@", language.inProgress), evaluatedWith: lane)
+    waitForExpectations(timeout: 10)
+    selectMode("board", app: app, language: language)
+    XCTAssertTrue(app.buttons["task-workspace.open." + taskID].waitForExistence(timeout: 10))
+    attach(app, "Lorvex \(language.rawValue) - board reflects canonical In Progress transition")
+    selectMode("table", app: app, language: language)
     let complete = app.buttons["task-workspace.complete." + taskID]
     XCTAssertTrue(complete.isHittable)
     complete.tap()
@@ -250,6 +295,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
 
     var locale: String { self == .he ? "he_IL" : "en_US" }
     var tasks: String { self == .he ? "משימות" : "Tasks" }
+    var inProgress: String { self == .he ? "בביצוע" : "In Progress" }
     var taskPrefix: String { self == .he ? "בדיקת משימה " : "Visual task " }
     var prerequisitePrefix: String { self == .he ? "הכנה " : "Prepare " }
     var editConnections: String { self == .he ? "עריכת קשרים" : "Edit connections" }
