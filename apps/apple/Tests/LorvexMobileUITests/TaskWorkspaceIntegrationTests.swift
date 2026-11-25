@@ -174,19 +174,31 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
 
   @MainActor
   private func selectMode(_ mode: String, app: XCUIApplication, language: TestLanguage) {
-    let modes = ["graph", "board", "timeline", "network", "table"]
     let tab = app.buttons["task-workspace.tab." + mode]
     XCTAssertTrue(tab.waitForExistence(timeout: 10))
-    let selected = app.buttons.matching(
-      NSPredicate(format: "identifier BEGINSWITH %@ AND selected == true", "task-workspace.tab.")
-    ).firstMatch
-    let currentMode = String(selected.identifier.dropFirst("task-workspace.tab.".count))
-    let towardEnd = (modes.firstIndex(of: mode) ?? 0) > (modes.firstIndex(of: currentMode) ?? 0)
     let picker = app.scrollViews.containing(.button, identifier: "task-workspace.tab." + mode).firstMatch
-    for _ in 0..<3 where !tab.isHittable {
-      XCTAssertTrue(picker.exists)
-      if towardEnd != (language == .he) { picker.swipeLeft() }
-      else { picker.swipeRight() }
+    XCTAssertTrue(picker.waitForExistence(timeout: 5))
+    // XCTest can throw while hit-testing an offscreen accessibility element.
+    // Use observed geometry first; physical scroll direction also works in RTL.
+    for _ in 0..<5 {
+      let viewport = picker.frame.intersection(app.frame)
+      let buttonFrame = tab.frame
+      if !viewport.isEmpty && !buttonFrame.isEmpty && viewport.contains(buttonFrame) {
+        break
+      }
+      if buttonFrame.maxX > viewport.maxX {
+        picker.swipeLeft()
+      } else if buttonFrame.minX < viewport.minX {
+        picker.swipeRight()
+      } else {
+        XCTFail("The mode strip must be visible before selecting \(mode): \(viewport), button \(buttonFrame).")
+        return
+      }
+    }
+    let viewport = picker.frame.intersection(app.frame)
+    guard !viewport.isEmpty, !tab.frame.isEmpty, viewport.contains(tab.frame) else {
+      XCTFail("The \(mode) tab did not enter the visible mode strip: \(viewport), button \(tab.frame).")
+      return
     }
     XCTAssertTrue(tab.isHittable, "The \(mode) presentation must be reachable in \(language.rawValue).")
     tab.tap()
