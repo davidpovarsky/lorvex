@@ -12,12 +12,15 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let language = try XCTUnwrap(
       TestLanguage(rawValue: requestedLanguage),
       "LORVEX_TEST_LANGUAGE must be en or he; refusing to claim another language was tested.")
+    let hanlinTitle = language.hanlinTaskPrefix + String(UUID().uuidString.prefix(8))
     let app = XCUIApplication()
     app.launchArguments = [
       "-setupCompleted", "YES", "-AppleLanguages", "(\(language.rawValue))",
       "-AppleLocale", language.locale,
     ]
     app.launchEnvironment["LORVEX_CLOUD_SYNC"] = "off"
+    app.launchEnvironment["LORVEX_HANLIN_WORKSPACE_ACCEPTANCE"] = "1"
+    app.launchEnvironment["LORVEX_HANLIN_WORKSPACE_TASK_TITLE"] = hanlinTitle
     app.launch()
     openWorkspace(app, language: language)
     let title = language.taskPrefix + String(UUID().uuidString.prefix(8))
@@ -63,6 +66,12 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     XCTAssertTrue(taskButton.waitForExistence(timeout: 10))
     let taskID = String(taskButton.identifier.dropFirst("task-workspace.open.".count))
 
+    let hanlinTaskID = verifyHanlinToolWorkspace(app, title: hanlinTitle, language: language)
+    XCTAssertNotEqual(hanlinTaskID, taskID)
+    XCTAssertNotEqual(hanlinTaskID, prerequisiteID)
+    clearSearch(app, language: language)
+    searchFor(title, app: app)
+
     // Schedule a real task so the timeline assertion exercises an actual chart,
     // as well as the date patch and its persistence, rather than an empty state.
     let dueDate = app.buttons["task-workspace.date." + taskID]
@@ -84,6 +93,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     clearSearch(app, language: language)
 
     var flowConnectionDragVerified = false
+    var networkPanFitVerified = false
     for mode in ["graph", "board", "timeline", "network", "table"] {
       selectMode(mode, app: app, language: language)
       if mode == "timeline" {
@@ -125,12 +135,16 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         flowConnectionDragVerified = true
       }
       if mode == "network" || mode == "graph" {
-        let node = mode == "network"
-          ? app.buttons[title].firstMatch
-          : app.buttons["task-workspace.open." + taskID]
+        let node = app.buttons["task-workspace.open." + taskID]
         XCTAssertTrue(
           node.waitForExistence(timeout: 10),
           "The native graph must expose the real task as an accessible node.")
+        if mode == "network" {
+          verifyNativeNetworkPanAndFit(node, app: app, language: language)
+          networkPanFitVerified = true
+        } else {
+          fitGraphToTask(node, app: app, language: language)
+        }
         node.tap()
         XCTAssertTrue(app.buttons["task.detail.complete"].waitForExistence(timeout: 10))
         app.buttons["lorvex.visual.detail.close"].tap()
@@ -212,6 +226,10 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     app.launch()
     openWorkspace(app, language: language)
     selectMode("table", app: app, language: language)
+    searchFor(hanlinTitle, app: app)
+    XCTAssertTrue(app.buttons["task-workspace.open." + hanlinTaskID].waitForExistence(timeout: 10))
+    XCTAssertEqual(app.buttons["task-workspace.complete." + hanlinTaskID].label, language.reopenTask)
+    clearSearch(app, language: language)
     searchFor(title, app: app)
     let persisted = app.buttons["task-workspace.open." + taskID]
     XCTAssertTrue(persisted.waitForExistence(timeout: 10))
@@ -246,6 +264,12 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       "prerequisiteID": prerequisiteID,
       "taskTitle": title,
       "dueDateLabel": savedDateLabel,
+      "nativeHanlinToolWorkspaceVerified": true,
+      "hanlinCreatedTaskID": hanlinTaskID,
+      "hanlinCreatedTaskTitle": hanlinTitle,
+      "hanlinRoutineWriteAuthorization": "production-automatic",
+      "hanlinCreatedTaskPreservedAfterRelaunch": true,
+      "nativeNetworkPanFitVerified": networkPanFitVerified,
       "nativeBoardDragVerified": boardDragVerified,
       "nativeFlowConnectionDragVerified": flowConnectionDragVerified,
       "dependencyPreservedAfterRelaunch": true,
@@ -260,6 +284,164 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     persistence.name = "Lorvex \(language.rawValue) - workspace persistence receipt"
     persistence.lifetime = .keepAlways
     add(persistence)
+  }
+
+  @MainActor
+  private func verifyHanlinToolWorkspace(
+    _ app: XCUIApplication, title: String, language: TestLanguage
+  ) -> String {
+    let open = app.buttons["hanlin.open"]
+    XCTAssertTrue(open.waitForExistence(timeout: 10))
+    open.tap()
+    let editor = app.textViews["hanlin-chat-input"]
+    XCTAssertTrue(editor.waitForExistence(timeout: 10))
+    editor.tap()
+    editor.typeText(language == .he
+      ? "צור משימה בשם \"\(title)\" והצג אותה בטבלה."
+      : "Create a task named \"\(title)\" and show it as a table.")
+    let send = app.buttons["hanlin.composer.send"]
+    XCTAssertTrue(send.isEnabled && send.isHittable)
+    send.tap()
+    let card = app.otherElements["hanlin.workspace.lorvex-acceptance-workspace"]
+    XCTAssertTrue(card.waitForExistence(timeout: 30))
+    XCTAssertTrue(app.staticTexts["Native workspace acceptance completed."].waitForExistence(timeout: 15))
+    XCTAssertFalse(app.staticTexts["hanlin.error"].exists)
+    let created = card.buttons.matching(
+      NSPredicate(format: "identifier BEGINSWITH %@ AND label == %@", "task-workspace.open.", title)
+    ).firstMatch
+    XCTAssertTrue(created.waitForExistence(timeout: 10))
+    let taskID = String(created.identifier.dropFirst("task-workspace.open.".count))
+    XCTAssertFalse(taskID.isEmpty)
+    attachHierarchy(app, "Lorvex \(language.rawValue) - actual Hanlin tool result creates a live card")
+
+    let expand = card.buttons["hanlin.workspace.expand"]
+    let transcript = app.scrollViews.containing(.button, identifier: "hanlin.workspace.expand").firstMatch
+    XCTAssertTrue(transcript.waitForExistence(timeout: 5))
+    for _ in 0..<4 {
+      if app.frame.contains(expand.frame), expand.isHittable { break }
+      if expand.frame.minY < transcript.frame.minY { transcript.swipeDown() }
+      else { transcript.swipeUp() }
+    }
+    XCTAssertTrue(expand.isHittable)
+    expand.tap()
+    let expanded = app.otherElements["hanlin.workspace.expanded"]
+    XCTAssertTrue(expanded.waitForExistence(timeout: 10))
+    let expandedTask = expanded.buttons["task-workspace.open." + taskID]
+    XCTAssertTrue(expandedTask.waitForExistence(timeout: 10))
+    XCTAssertEqual(expandedTask.label, title)
+    expandedTask.tap()
+    let complete = app.buttons["task.detail.complete"]
+    XCTAssertTrue(complete.waitForExistence(timeout: 10))
+    complete.tap()
+    XCTAssertTrue(app.buttons["task.detail.reopen"].waitForExistence(timeout: 10))
+    attach(app, "Lorvex \(language.rawValue) - Hanlin-created task completed in canonical editor")
+    app.buttons["lorvex.visual.detail.close"].tap()
+    expectation(for: NSPredicate(format: "label == %@", language.reopenTask),
+      evaluatedWith: expanded.buttons["task-workspace.complete." + taskID])
+    waitForExpectations(timeout: 10)
+    app.buttons["hanlin.workspace.expanded.close"].tap()
+    XCTAssertTrue(expanded.waitForNonExistence(timeout: 10))
+
+    // The shipped assistant toolbar opens the same current database as the
+    // tool result card. Read the exact tool-created ID through that route too.
+    app.buttons["hanlin.workspace.open"].tap()
+    let sheet = app.otherElements["hanlin.workspace.sheet"]
+    XCTAssertTrue(sheet.waitForExistence(timeout: 10))
+    let toolbarTask = sheet.buttons["task-workspace.open." + taskID]
+    XCTAssertTrue(toolbarTask.waitForExistence(timeout: 10))
+    XCTAssertEqual(toolbarTask.label, title)
+    fitGraphToTask(toolbarTask, app: app, language: language)
+    toolbarTask.tap()
+    XCTAssertTrue(app.buttons["task.detail.reopen"].waitForExistence(timeout: 10))
+    app.buttons["lorvex.visual.detail.close"].tap()
+    app.buttons["hanlin.workspace.close"].tap()
+    XCTAssertTrue(sheet.waitForNonExistence(timeout: 10))
+    app.buttons["hanlin.close"].tap()
+    XCTAssertTrue(open.waitForExistence(timeout: 10))
+
+    clearSearch(app, language: language)
+    searchFor(title, app: app)
+    let canonical = app.buttons["task-workspace.open." + taskID]
+    XCTAssertTrue(canonical.waitForExistence(timeout: 10))
+    XCTAssertEqual(canonical.label, title)
+    XCTAssertEqual(app.buttons["task-workspace.complete." + taskID].label, language.reopenTask)
+    attachHierarchy(app, "Lorvex \(language.rawValue) - main workspace reads exact Hanlin task and saved completion")
+    return taskID
+  }
+
+  @MainActor
+  private func fitGraphToTask(
+    _ node: XCUIElement, app: XCUIApplication, language: TestLanguage
+  ) {
+    let fit = app.buttons["task-workspace.graph.fit"]
+    XCTAssertTrue(fit.waitForExistence(timeout: 10))
+    fit.tap()
+    XCTAssertTrue(node.isHittable && app.frame.contains(node.frame))
+    attachHierarchy(app, "Lorvex \(language.rawValue) - graph Fit exposes the canonical task")
+  }
+
+  @MainActor
+  private func verifyNativeNetworkPanAndFit(
+    _ node: XCUIElement, app: XCUIApplication, language: TestLanguage
+  ) {
+    let canvas = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.network.canvas").firstMatch
+    let fit = app.buttons["task-workspace.network.fit"]
+    XCTAssertTrue(canvas.waitForExistence(timeout: 10))
+    XCTAssertTrue(fit.waitForExistence(timeout: 10))
+    fit.tap()
+    let bounds = canvas.frame.intersection(app.frame)
+    let occupied = app.buttons.matching(
+      NSPredicate(format: "identifier BEGINSWITH %@", "task-workspace.open.")
+    ).allElementsBoundByIndex.map { $0.frame } + [fit.frame]
+    let before = node.frame
+    XCTAssertTrue(node.isHittable && bounds.contains(before))
+    let dx: CGFloat = before.midX < bounds.midX ? 80 : -80
+    let dy: CGFloat = before.midY < bounds.midY ? 56 : -56
+    let fractions: [CGFloat] = [0.15, 0.5, 0.85]
+    let candidates = fractions.flatMap { x in
+      fractions.map { y in CGPoint(
+        x: bounds.minX + bounds.width * x, y: bounds.minY + bounds.height * y) }
+    }
+    guard let start = candidates.first(where: { point in
+      bounds.contains(CGPoint(x: point.x + dx, y: point.y + dy))
+        && !occupied.contains(where: { $0.insetBy(dx: -8, dy: -8).contains(point) })
+    }) else {
+      XCTFail("The visible network must expose empty space for a native pan.")
+      return
+    }
+    let end = CGPoint(x: start.x + dx, y: start.y + dy)
+    let observation = XCTAttachment(
+      string: "canvas=\(bounds) node=\(before) pan=\(start)->\(end)\n" + app.debugDescription)
+    observation.name = "Lorvex \(language.rawValue) - native network observed controls"
+    observation.lifetime = .keepAlways
+    add(observation)
+    let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+    origin.withOffset(CGVector(dx: start.x - app.frame.minX, dy: start.y - app.frame.minY))
+      .press(forDuration: 0.05, thenDragTo:
+        origin.withOffset(CGVector(dx: end.x - app.frame.minX, dy: end.y - app.frame.minY)))
+    // Native pointer actions wait for idle. Direct frame reads preserve the
+    // physical outcome without nesting accessibility queries in a polling block.
+    let afterPan = node.frame
+    let panX = afterPan.midX - before.midX
+    let panY = afterPan.midY - before.midY
+    let pan = XCTAttachment(string: "before=\(before) afterPan=\(afterPan)")
+    pan.name = "Lorvex \(language.rawValue) - native network pan measurement"
+    pan.lifetime = .keepAlways
+    add(pan)
+    XCTAssertGreaterThan(panX * panX + panY * panY, 24 * 24)
+    attach(app, "Lorvex \(language.rawValue) - native network panned")
+    fit.tap()
+    let afterFit = node.frame
+    let fitX = afterFit.midX - before.midX
+    let fitY = afterFit.midY - before.midY
+    let fitted = XCTAttachment(string: "before=\(before) afterPan=\(afterPan) afterFit=\(afterFit)")
+    fitted.name = "Lorvex \(language.rawValue) - native network Fit measurement"
+    fitted.lifetime = .keepAlways
+    add(fitted)
+    XCTAssertLessThan(fitX * fitX + fitY * fitY, 24 * 24)
+    XCTAssertTrue(node.isHittable && bounds.contains(afterFit))
+    attach(app, "Lorvex \(language.rawValue) - native network Fit restored")
   }
 
   @MainActor
@@ -454,6 +636,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     var openLane: String { self == .he ? "פתוחות" : "Open" }
     var inProgress: String { self == .he ? "בביצוע" : "In Progress" }
     var taskPrefix: String { self == .he ? "בדיקת משימה " : "Visual task " }
+    var hanlinTaskPrefix: String { self == .he ? "נוצרה דרך Hanlin " : "Hanlin created " }
     var dragTargetPrefix: String { self == .he ? "יעד לגרירה " : "Drag destination " }
     var prerequisitePrefix: String { self == .he ? "הכנה " : "Prepare " }
     var editConnections: String { self == .he ? "עריכת קשרים" : "Edit connections" }

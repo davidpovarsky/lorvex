@@ -98,9 +98,12 @@ struct LorvexHanlinAssistantView: View {
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button(String(localized: "Close")) { showTaskWorkspace = false }
+                                    .accessibilityIdentifier("hanlin.workspace.close")
                             }
                         }
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("hanlin.workspace.sheet")
             }
             .sheet(isPresented: $showModelSettings) {
                 settings
@@ -137,6 +140,17 @@ struct LorvexHanlinAssistantView: View {
     }
 
     private func loadCredential() {
+        #if DEBUG
+        if LorvexHanlinWorkspaceAcceptance.isEnabled {
+            // The opt-in simulator fixture never reads or writes a Keychain token.
+            provider = "Other"
+            modelID = LorvexHanlinWorkspaceAcceptance.modelID
+            endpoint = LorvexHanlinWorkspaceAcceptance.endpoint
+            apiToken = LorvexHanlinWorkspaceAcceptance.credential
+            configuredToken = apiToken
+            return
+        }
+        #endif
         apiToken = LorvexHanlinKeychain.read()
         configuredToken = apiToken
         if modelID.isEmpty { openModelSettings() }

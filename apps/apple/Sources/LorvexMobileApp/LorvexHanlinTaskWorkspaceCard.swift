@@ -37,10 +37,14 @@ struct LorvexHanlinTaskWorkspaceCard: View {
           .toolbar {
             ToolbarItem(placement: .cancellationAction) {
               Button(String(localized: "Close")) { expanded = false }
+                .accessibilityIdentifier("hanlin.workspace.expanded.close")
             }
           }
       }
+      .accessibilityElement(children: .contain)
+      .accessibilityIdentifier("hanlin.workspace.expanded")
     }
+    .accessibilityElement(children: .contain)
     .accessibilityIdentifier("hanlin.workspace." + request.id)
   }
 }

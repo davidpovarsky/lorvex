@@ -34,7 +34,12 @@ public enum LorvexHanlinAgentFactory {
     let identity = HanlinHostSession(conversationID: conversationID, context: context)
     let host = LorvexHanlinHost(core: core, context: context,
                                 authorizeWrite: authorizeWrite, didWrite: didWrite)
+    #if DEBUG
+    let engine = try LorvexHanlinWorkspaceAcceptance.makeEngineIfEnabled(configuration: configuration)
+      ?? HanlinAISDKAgentEngine(configuration: configuration)
+    #else
     let engine = try HanlinAISDKAgentEngine(configuration: configuration)
+    #endif
     let persistence = try HanlinPrivateConversationStore(directory: directory)
     let agent = HanlinAgentSession(identity: identity, host: host,
                                     engine: engine, store: persistence)
