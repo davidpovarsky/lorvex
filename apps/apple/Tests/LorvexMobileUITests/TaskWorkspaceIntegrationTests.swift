@@ -387,17 +387,29 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
   ) {
     let assistant = app.buttons["hanlin.open"]
     XCTAssertTrue(assistant.waitForExistence(timeout: 10))
-    XCTAssertTrue(assistant.isHittable && app.frame.contains(assistant.frame))
+    let viewport = app.frame
     let assistantFrame = assistant.frame
+    XCTAssertTrue(assistant.isHittable && viewport.contains(assistantFrame))
     let workspace = app.descendants(matching: .any)
       .matching(identifier: "lorvex.visual.workspace").firstMatch
     XCTAssertTrue(workspace.waitForExistence(timeout: 10))
-    let controls = workspace.descendants(matching: .button).allElementsBoundByIndex.compactMap {
-      control -> (identifier: String, label: String, frame: CGRect)? in
-      guard control.exists else { return nil }
+    let snapshot: any XCUIElementSnapshot
+    do {
+      snapshot = try workspace.snapshot()
+    } catch {
+      XCTFail("The complete native workspace Button snapshot must be available: \(error)")
+      return
+    }
+    // Inspect every actual Button from one coherent native AX tree. Reading each
+    // live element attribute separately repeatedly snapshots the whole app.
+    var pending = snapshot.children
+    var controls: [(identifier: String, label: String, frame: CGRect)] = []
+    while let control = pending.popLast() {
+      pending.append(contentsOf: control.children)
+      guard control.elementType == .button else { continue }
       let frame = control.frame
-      guard !frame.isEmpty, app.frame.intersects(frame) else { return nil }
-      return (control.identifier, control.label, frame)
+      guard !frame.isEmpty, viewport.intersects(frame) else { continue }
+      controls.append((control.identifier, control.label, frame))
     }
     XCTAssertFalse(controls.isEmpty)
     let frames = controls.map { "\($0.identifier) [\($0.label)]=\($0.frame)" }
