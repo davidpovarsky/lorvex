@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// Writes through the shipped workspace, checks the original task detail and
@@ -139,10 +140,43 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     app.buttons["task-workspace.lane-choice." + taskID + ".in_progress"].tap()
     expectation(for: NSPredicate(format: "label == %@", language.inProgress), evaluatedWith: lane)
     waitForExpectations(timeout: 10)
-    selectMode("board", app: app, language: language)
-    XCTAssertTrue(app.buttons["task-workspace.open." + taskID].waitForExistence(timeout: 10))
-    attach(app, "Lorvex \(language.rawValue) - board reflects canonical In Progress transition")
-    selectMode("table", app: app, language: language)
+    var boardDragVerified = false
+    if UIDevice.current.userInterfaceIdiom == .pad {
+      clearSearch(app, language: language)
+      let destinationTitle = language.dragTargetPrefix + String(UUID().uuidString.prefix(8))
+      createTask(app, title: destinationTitle)
+      let destinationRow = findTaskButton(named: destinationTitle, app: app)
+      XCTAssertTrue(destinationRow.waitForExistence(timeout: 10))
+      let destinationID = String(destinationRow.identifier.dropFirst("task-workspace.open.".count))
+      selectMode("board", app: app, language: language)
+      let sourceCard = app.buttons["task-workspace.open." + taskID]
+      let destinationCard = app.buttons["task-workspace.open." + destinationID]
+      XCTAssertTrue(sourceCard.waitForExistence(timeout: 10))
+      XCTAssertTrue(destinationCard.waitForExistence(timeout: 10))
+      XCTAssertTrue(app.frame.contains(sourceCard.frame) && app.frame.contains(destinationCard.frame))
+      XCTAssertTrue(sourceCard.isHittable && destinationCard.isHittable)
+      let hierarchy = XCTAttachment(string: app.debugDescription)
+      hierarchy.name = "Lorvex \(language.rawValue) - native board before drag"
+      hierarchy.lifetime = .keepAlways
+      add(hierarchy)
+      attach(app, "Lorvex \(language.rawValue) - adjacent canonical board columns before drag")
+      // AdvancedKanban owns a native DragGesture. A short touch followed by
+      // movement exercises onMove without opening the card context menu.
+      sourceCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        .press(forDuration: 0.05, thenDragTo:
+          destinationCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+      selectMode("table", app: app, language: language)
+      searchFor(title, app: app)
+      expectation(for: NSPredicate(format: "label == %@", language.openLane), evaluatedWith: lane)
+      waitForExpectations(timeout: 10)
+      boardDragVerified = true
+      attach(app, "Lorvex \(language.rawValue) - table confirms native board drag saved Open")
+    } else {
+      selectMode("board", app: app, language: language)
+      XCTAssertTrue(app.buttons["task-workspace.open." + taskID].waitForExistence(timeout: 10))
+      attach(app, "Lorvex \(language.rawValue) - board reflects canonical In Progress transition")
+      selectMode("table", app: app, language: language)
+    }
     let complete = app.buttons["task-workspace.complete." + taskID]
     XCTAssertTrue(complete.isHittable)
     complete.tap()
@@ -165,6 +199,17 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     XCTAssertTrue(persisted.waitForExistence(timeout: 10))
     XCTAssertEqual(app.buttons["task-workspace.complete." + taskID].label, language.reopenTask)
     XCTAssertEqual(app.buttons["task-workspace.date." + taskID].label, savedDateLabel)
+    selectMode("timeline", app: app, language: language)
+    app.buttons["task-workspace.timeline.inspect." + taskID].tap()
+    let persistedPlanned = app.buttons["task-workspace.timeline.planned." + taskID]
+    XCTAssertTrue(persistedPlanned.waitForExistence(timeout: 10))
+    persistedPlanned.tap()
+    let persistedPlannedToggle = app.switches["task-workspace.date.toggle"]
+    XCTAssertTrue(persistedPlannedToggle.waitForExistence(timeout: 5))
+    XCTAssertEqual(persistedPlannedToggle.value as? String, "1")
+    app.buttons["task-workspace.date.cancel"].tap()
+    app.buttons["task-workspace.timeline.close-actions"].tap()
+    selectMode("table", app: app, language: language)
     persisted.tap()
     XCTAssertTrue(app.buttons["task.detail.reopen"].waitForExistence(timeout: 10))
     app.buttons["task.detail.reopen"].tap()
@@ -178,9 +223,11 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       "prerequisiteID": prerequisiteID,
       "taskTitle": title,
       "dueDateLabel": savedDateLabel,
+      "nativeBoardDragVerified": boardDragVerified,
       "restartObserved": true,
       "completedAfterRelaunch": true,
       "dueDatePreservedAfterRelaunch": true,
+      "plannedDatePreservedAfterRelaunch": true,
       "reopenedInCanonicalDetail": true,
     ]
     let encoded = try JSONSerialization.data(withJSONObject: proof, options: [.sortedKeys])
@@ -295,8 +342,10 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
 
     var locale: String { self == .he ? "he_IL" : "en_US" }
     var tasks: String { self == .he ? "משימות" : "Tasks" }
+    var openLane: String { self == .he ? "פתוחות" : "Open" }
     var inProgress: String { self == .he ? "בביצוע" : "In Progress" }
     var taskPrefix: String { self == .he ? "בדיקת משימה " : "Visual task " }
+    var dragTargetPrefix: String { self == .he ? "יעד לגרירה " : "Drag destination " }
     var prerequisitePrefix: String { self == .he ? "הכנה " : "Prepare " }
     var editConnections: String { self == .he ? "עריכת קשרים" : "Edit connections" }
     var removeConnection: String { self == .he ? "הסרת קשר" : "Remove connection" }
