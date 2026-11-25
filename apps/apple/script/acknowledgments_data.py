@@ -193,7 +193,7 @@ PACKAGE_METADATA: dict[str, PackageLicense] = {
 }
 
 
-LOCAL_SDK_REVISION = "bea35c3c2a435d1cc5f7ce93b08a649b104bc10f"
+LOCAL_SDK_REVISION = "6ceb074475843456c7f71850d65c9fee3d046604"
 LOCAL_SDK_LOCK_PATH = ROOT.parents[1] / "HanlinSDK.lock.json"
 LOCAL_SDK_REPOSITORY = "https://github.com/davidpovarsky/hanlin-ai"
 

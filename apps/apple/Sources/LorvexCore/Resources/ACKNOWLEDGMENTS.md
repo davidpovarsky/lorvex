@@ -1582,11 +1582,11 @@ SOFTWARE.
 
 The following components are included through the local Hanlin SDK checkout and are not external SwiftPM dependency pins.
 
-- SDK revision: bea35c3c2a435d1cc5f7ce93b08a649b104bc10f
+- SDK revision: 6ceb074475843456c7f71850d65c9fee3d046604
 
 ### Hanlin SDK
 
-- Source: https://github.com/davidpovarsky/hanlin-ai/blob/bea35c3c2a435d1cc5f7ce93b08a649b104bc10f/LICENSE
+- Source: https://github.com/davidpovarsky/hanlin-ai/blob/6ceb074475843456c7f71850d65c9fee3d046604/LICENSE
 - License: MIT
 
 #### License
@@ -1617,7 +1617,7 @@ SOFTWARE.
 
 ### Swift-JSON (including RhoeJSON)
 
-- Source: https://github.com/davidpovarsky/hanlin-ai/tree/bea35c3c2a435d1cc5f7ce93b08a649b104bc10f/Packages/HanlinAgentSDK/Vendor/Swift-JSON
+- Source: https://github.com/davidpovarsky/hanlin-ai/tree/6ceb074475843456c7f71850d65c9fee3d046604/Packages/HanlinAgentSDK/Vendor/Swift-JSON
 - License: Apache-2.0
 
 #### License and RhoeJSON NOTICE
