@@ -94,6 +94,8 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
 
     var flowConnectionDragVerified = false
     var networkPanFitVerified = false
+    var graphFooterOpenVerified = false
+    var assistantVerifiedModes = Set<String>()
     for mode in ["graph", "board", "timeline", "network", "table"] {
       selectMode(mode, app: app, language: language)
       if mode == "timeline" {
@@ -151,6 +153,11 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         XCTAssertTrue(app.buttons["task-workspace.tab." + mode].waitForExistence(timeout: 10))
       }
       verifyAssistantControlDoesNotCoverWorkspace(app, mode: mode, language: language)
+      assistantVerifiedModes.insert(mode)
+      if mode == "graph" {
+        verifyNativeGraphFooterOpen(app, title: title, language: language)
+        graphFooterOpenVerified = true
+      }
       attach(app, "Lorvex \(language.rawValue) - live \(mode) with connected real tasks")
     }
 
@@ -271,6 +278,9 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       "hanlinRoutineWriteAuthorization": "production-automatic",
       "hanlinCreatedTaskPreservedAfterRelaunch": true,
       "nativeNetworkPanFitVerified": networkPanFitVerified,
+      "nativeGraphFooterOpenVerified": graphFooterOpenVerified,
+      "assistantWorkspaceControlsDoNotOverlap":
+        assistantVerifiedModes == Set(["graph", "board", "timeline", "network", "table"]),
       "nativeBoardDragVerified": boardDragVerified,
       "nativeFlowConnectionDragVerified": flowConnectionDragVerified,
       "dependencyPreservedAfterRelaunch": true,
@@ -379,13 +389,18 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     XCTAssertTrue(assistant.waitForExistence(timeout: 10))
     XCTAssertTrue(assistant.isHittable && app.frame.contains(assistant.frame))
     let assistantFrame = assistant.frame
-    let controls = app.buttons.matching(
-      NSPredicate(format: "identifier BEGINSWITH %@", "task-workspace.")
-    ).allElementsBoundByIndex.filter {
-      $0.exists && !$0.frame.isEmpty && app.frame.intersects($0.frame)
+    let workspace = app.descendants(matching: .any)
+      .matching(identifier: "lorvex.visual.workspace").firstMatch
+    XCTAssertTrue(workspace.waitForExistence(timeout: 10))
+    let controls = workspace.descendants(matching: .button).allElementsBoundByIndex.compactMap {
+      control -> (identifier: String, label: String, frame: CGRect)? in
+      guard control.exists else { return nil }
+      let frame = control.frame
+      guard !frame.isEmpty, app.frame.intersects(frame) else { return nil }
+      return (control.identifier, control.label, frame)
     }
     XCTAssertFalse(controls.isEmpty)
-    let frames = controls.map { "\($0.identifier)=\($0.frame)" }
+    let frames = controls.map { "\($0.identifier) [\($0.label)]=\($0.frame)" }
     let observation = XCTAttachment(string: "hanlin=\(assistantFrame)\n" + frames.joined(separator: "\n"))
     observation.name = "Lorvex \(language.rawValue) - \(mode) assistant and workspace control frames"
     observation.lifetime = .keepAlways
@@ -393,8 +408,30 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     for control in controls {
       XCTAssertFalse(
         assistantFrame.intersects(control.frame),
-        "The Hanlin entry must not cover \(control.identifier).")
+        "The Hanlin entry must not cover \(control.identifier) [\(control.label)].")
     }
+  }
+
+  @MainActor
+  private func verifyNativeGraphFooterOpen(
+    _ app: XCUIApplication, title: String, language: TestLanguage
+  ) {
+    let workspace = app.descendants(matching: .any)
+      .matching(identifier: "lorvex.visual.workspace").firstMatch
+    let open = workspace.buttons[language.openTask]
+    XCTAssertTrue(open.waitForExistence(timeout: 10))
+    XCTAssertTrue(app.frame.contains(open.frame) && open.isHittable)
+    XCTAssertFalse(app.buttons["hanlin.open"].frame.intersects(open.frame))
+    attachHierarchy(app, "Lorvex \(language.rawValue) - native Flow footer before opening selected task")
+    open.tap()
+    XCTAssertTrue(app.buttons["task.detail.complete"].waitForExistence(timeout: 10))
+    let detailTitle = app.staticTexts["task.detail.title"]
+    XCTAssertTrue(detailTitle.waitForExistence(timeout: 10))
+    XCTAssertEqual(detailTitle.label, title)
+    XCTAssertTrue(detailTitle.isHittable)
+    attach(app, "Lorvex \(language.rawValue) - native Flow footer opens the selected canonical task")
+    app.buttons["lorvex.visual.detail.close"].tap()
+    XCTAssertTrue(app.buttons["task-workspace.tab.graph"].waitForExistence(timeout: 10))
   }
 
   @MainActor
@@ -672,6 +709,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     var prerequisitePrefix: String { self == .he ? "הכנה " : "Prepare " }
     var editConnections: String { self == .he ? "עריכת קשרים" : "Edit connections" }
     var removeConnection: String { self == .he ? "הסרת קשר" : "Remove connection" }
+    var openTask: String { self == .he ? "פתיחת משימה" : "Open task" }
     var reopenTask: String { self == .he ? "פתיחת המשימה מחדש" : "Reopen task" }
     var clearSearch: String { self == .he ? "ניקוי חיפוש" : "Clear search" }
     var hasDueDate: String { self == .he ? "יש מועד יעד" : "Has due date" }

@@ -108,6 +108,7 @@ struct MobileTaskDetailContent<Actions: View, PaneActions: View>: View {
             .font(LorvexDesign.Typography.detailTitle)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("task.detail.title")
           statusChips
           if !task.notes.isEmpty, !checklistLeads {
             taskNotes

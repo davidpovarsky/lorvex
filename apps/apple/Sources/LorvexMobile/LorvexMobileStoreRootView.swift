@@ -236,19 +236,23 @@ public struct LorvexMobileStoreRootView: View {
     @ViewBuilder content: @escaping () -> Content
   ) -> some TabContent<MobileTabBarItem> {
     Tab(tab.title, systemImage: tab.systemImage, value: MobileTabBarItem.tab(tab)) {
-      content()
-        .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
-          if let openAssistant {
+      VStack(spacing: 0) {
+        content()
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if let openAssistant {
+          HStack {
+            Spacer(minLength: 0)
             Button(action: openAssistant) {
               Label("AI", systemImage: "sparkles").labelStyle(.titleAndIcon)
             }
             .buttonStyle(.borderedProminent)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
             .accessibilityLabel(assistantAccessibilityLabel)
             .accessibilityIdentifier("hanlin.open")
           }
+          .padding(.horizontal, 18)
+          .padding(.vertical, 8)
         }
+      }
     }
   }
 }
