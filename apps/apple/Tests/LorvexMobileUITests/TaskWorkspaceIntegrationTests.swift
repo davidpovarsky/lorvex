@@ -24,6 +24,9 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let prerequisite = language.prerequisitePrefix + String(UUID().uuidString.prefix(8))
     createTask(app, title: title)
     createTask(app, title: prerequisite)
+    let createdPrerequisite = findTaskButton(named: prerequisite, app: app)
+    XCTAssertTrue(createdPrerequisite.waitForExistence(timeout: 10))
+    let prerequisiteID = String(createdPrerequisite.identifier.dropFirst("task-workspace.open.".count))
 
     app.buttons["task-workspace.options"].tap()
     app.buttons[language.editConnections].tap()
@@ -76,6 +79,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let savedDateLabel = dueDate.label
     clearSearch(app, language: language)
 
+    var flowConnectionDragVerified = false
     for mode in ["graph", "board", "timeline", "network", "table"] {
       selectMode(mode, app: app, language: language)
       if mode == "timeline" {
@@ -109,6 +113,11 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         attach(app, "Lorvex \(language.rawValue) - timeline inspector writes the planned date")
         app.buttons["task-workspace.timeline.close-actions"].tap()
       }
+      if mode == "graph", UIDevice.current.userInterfaceIdiom == .pad {
+        verifyNativeConnectionDrag(
+          app, prerequisiteID: prerequisiteID, dependentID: taskID, language: language)
+        flowConnectionDragVerified = true
+      }
       if mode == "network" || mode == "graph" {
         let node = mode == "network"
           ? app.buttons[title].firstMatch
@@ -127,7 +136,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     searchFor(prerequisite, app: app)
     let prerequisiteButton = findTaskButton(named: prerequisite, app: app)
     XCTAssertTrue(prerequisiteButton.waitForExistence(timeout: 10))
-    let prerequisiteID = String(prerequisiteButton.identifier.dropFirst("task-workspace.open.".count))
+    XCTAssertEqual(prerequisiteButton.identifier, "task-workspace.open." + prerequisiteID)
     let prerequisiteComplete = app.buttons["task-workspace.complete." + prerequisiteID]
     prerequisiteComplete.tap()
     expectation(
@@ -213,6 +222,11 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     app.buttons["task-workspace.date.cancel"].tap()
     app.buttons["task-workspace.timeline.close-actions"].tap()
     selectMode("table", app: app, language: language)
+    openConnectionEditor(app)
+    let persistedConnection = app.buttons[
+      "task-workspace.connection.remove." + prerequisiteID + "." + taskID]
+    XCTAssertTrue(persistedConnection.waitForExistence(timeout: 10))
+    closeConnectionEditor(app)
     persisted.tap()
     XCTAssertTrue(app.buttons["task.detail.reopen"].waitForExistence(timeout: 10))
     app.buttons["task.detail.reopen"].tap()
@@ -227,6 +241,8 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       "taskTitle": title,
       "dueDateLabel": savedDateLabel,
       "nativeBoardDragVerified": boardDragVerified,
+      "nativeFlowConnectionDragVerified": flowConnectionDragVerified,
+      "dependencyPreservedAfterRelaunch": true,
       "restartObserved": true,
       "completedAfterRelaunch": true,
       "dueDatePreservedAfterRelaunch": true,
@@ -238,6 +254,58 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     persistence.name = "Lorvex \(language.rawValue) - workspace persistence receipt"
     persistence.lifetime = .keepAlways
     add(persistence)
+  }
+
+  @MainActor
+  private func verifyNativeConnectionDrag(
+    _ app: XCUIApplication, prerequisiteID: String, dependentID: String,
+    language: TestLanguage
+  ) {
+    let connectionID = "task-workspace.connection.remove." + prerequisiteID + "." + dependentID
+    openConnectionEditor(app)
+    let connection = app.buttons[connectionID]
+    XCTAssertTrue(connection.waitForExistence(timeout: 10))
+    expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: connection)
+    waitForExpectations(timeout: 10)
+    connection.tap()
+    XCTAssertTrue(connection.waitForNonExistence(timeout: 10))
+    closeConnectionEditor(app)
+    app.buttons["task-workspace.graph.arrange"].tap()
+    app.buttons["task-workspace.graph.fit"].tap()
+    let output = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.graph.handle.out." + prerequisiteID).firstMatch
+    let input = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.graph.handle.in." + dependentID).firstMatch
+    XCTAssertTrue(output.waitForExistence(timeout: 10))
+    XCTAssertTrue(input.waitForExistence(timeout: 10))
+    XCTAssertTrue(app.frame.contains(output.frame) && app.frame.contains(input.frame))
+    XCTAssertTrue(output.isHittable && input.isHittable)
+    attach(app, "Lorvex \(language.rawValue) - native Flow endpoints before connecting")
+    output.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+      .press(forDuration: 0.05, thenDragTo:
+        input.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+    openConnectionEditor(app)
+    XCTAssertTrue(connection.waitForExistence(timeout: 10))
+    expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: connection)
+    waitForExpectations(timeout: 10)
+    attach(app, "Lorvex \(language.rawValue) - canonical edge saved by native Flow drag")
+    closeConnectionEditor(app)
+  }
+
+  @MainActor
+  private func openConnectionEditor(_ app: XCUIApplication) {
+    app.buttons["task-workspace.options"].tap()
+    app.buttons["task-workspace.connections"].tap()
+    XCTAssertTrue(app.buttons["task-workspace.connection.done"].waitForExistence(timeout: 10))
+  }
+
+  @MainActor
+  private func closeConnectionEditor(_ app: XCUIApplication) {
+    let done = app.buttons["task-workspace.connection.done"]
+    expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: done)
+    waitForExpectations(timeout: 10)
+    done.tap()
+    XCTAssertTrue(done.waitForNonExistence(timeout: 10))
   }
 
   @MainActor
