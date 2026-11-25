@@ -61,8 +61,12 @@ REQUIRED_UNIT_TESTS = (
     "boardUsesCanonicalBlockedStartAndDoesNotPartiallyReopen",
     "cancelledAndSomedayRemainEditableButAreNotReady",
     "workspaceEditsSurviveStoreReopenAndPreserveIndependentDates",
+    "workspaceIncludesIndependentTasksAndKeepsListAndRootScopes",
+    "workspaceInventoryIsBoundedAndReportsMoreIndependentTasks",
     "toolsWriteRealDependenciesAndReturnLiveViewDescriptors",
     "failedOrMalformedToolNeverCreatesAWorkspaceAndReplayIsStable",
+    "workspaceDescriptorCountsIndependentTasksAcrossStatuses",
+    "visualWorkspaceMutationsConvergeThroughCanonicalCloudSync",
     "catalogValidatesAndIncludes26ScopedTools",
     "readsAndDenyByDefaultCannotModifyTasks",
     "approvedCreateAndIdempotentReplay",
@@ -85,7 +89,7 @@ REQUIRED_UNIT_TESTS = (
     "oracleBindingKeepsCloudKitOffThroughLogoutAndFactoryRecreation",
     "unauthorizedAccessRefreshesExactlyOnceAndKeepsAccountIdentity",
 ) + UNIT_FUNCTIONS
-MINIMUM_UNIT_TESTS = 44  # 4 workspace + 2 workspace agent + 6 agent + 10 core + 5 state + 10 cloud + 7 functions.
+MINIMUM_UNIT_TESTS = 48  # 6 workspace + 3 workspace agent + 6 agent + 10 core + 5 state + 11 cloud + 7 functions.
 DEVICE_TYPES = {
     "iphone": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
     "ipad": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
@@ -149,6 +153,33 @@ def test_cases(nodes: list[dict]):
         if node.get("nodeType") == "Test Case":
             yield node
         yield from test_cases(node.get("children", []))
+
+
+def unit_xml_evidence(output: Path) -> tuple[Path | None, list[dict], list[dict]]:
+    combined = ET.Element("testsuites")
+    sources = []
+    for path in (output / "unit-results.xml", output / "unit-results-swift-testing.xml"):
+        if not path.exists():
+            continue
+        root = ET.parse(path).getroot()
+        suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
+        for suite in suites:
+            combined.append(suite)
+        sources.append({"path": str(path), "sha256": digest(path)})
+    if not sources:
+        return None, [], []
+    destination = output / "unit-results-combined.xml"
+    ET.ElementTree(combined).write(destination, encoding="utf-8", xml_declaration=True)
+    cases = []
+    for case in combined.iter("testcase"):
+        status = "Failed" if case.find("failure") is not None or case.find("error") is not None else (
+            "Skipped" if case.find("skipped") is not None else "Passed")
+        identifier = "/".join((
+            case.get("classname", "").replace(".", "/"),
+            case.get("name", "").split("(", 1)[0],
+        ))
+        cases.append({**case.attrib, "identifier": identifier, "result": status})
+    return destination, cases, sources
 
 
 def stop_process(process: subprocess.Popen) -> None:
@@ -543,8 +574,8 @@ class Controller:
         code, log = self.run("focused-units", self.unit_command(), timeout=3600, check=False)
         passed = []
         suites = set()
-        summary_count = None
-        for raw in log.open():
+        summary_counts = []
+        for raw in log.read_text().splitlines():
             line = re.sub(r"\x1b\[[0-9;]*m", "", raw).strip()
             case = re.match(r"^[✔✓]\ufe0f? Test (?!run with )(.+?) passed after ([0-9.]+) seconds\.", line)
             if case:
@@ -557,22 +588,20 @@ class Controller:
                 suites.add(suite[1].strip('"'))
             summary = re.search(r"Test run with (\d+) tests .*passed", line)
             if summary:
-                summary_count = int(summary[1])
+                summary_counts.append(int(summary[1]))
+        summary_count = sum(summary_counts)
         missing = [name for name in REQUIRED_UNIT_TESTS if not any(name + "(" in x["name"] for x in passed)]
-        xml = self.out / "unit-results.xml"
-        xml_cases = []
-        if xml.exists():
-            for case in ET.parse(xml).iter("testcase"):
-                status = "Failed" if case.find("failure") is not None or case.find("error") is not None else (
-                    "Skipped" if case.find("skipped") is not None else "Passed")
-                xml_cases.append({**case.attrib, "result": status})
+        xml, xml_cases, xml_sources = unit_xml_evidence(self.out)
+        expected_identifiers = {item["identifier"] for item in catalog.values()}
+        xml_identifiers = {item["identifier"] for item in xml_cases}
         missing_identifiers = sorted(
             {item["identifier"] for item in catalog.values()}
             - {item.get("identifier") for item in passed}
         )
         accepted = (
-            code == 0 and not missing_identifiers and summary_count is not None and summary_count == len(passed)
-            and len(passed) >= MINIMUM_UNIT_TESTS and not missing and UNIT_SUITE_NAMES.issubset(suites)
+            code == 0 and not missing_identifiers and bool(summary_counts) and summary_count == len(passed)
+            and len(passed) == MINIMUM_UNIT_TESTS and not missing and UNIT_SUITE_NAMES.issubset(suites)
+            and xml_identifiers == expected_identifiers and len(xml_cases) == len(expected_identifiers)
             and not any(case["result"] != "Passed" for case in xml_cases)
         )
         result = {
@@ -585,8 +614,12 @@ class Controller:
             "missingRequiredIdentifiers": missing_identifiers,
             "expectedCaseCatalog": catalog,
             "log": str(log), "logSHA256": digest(log),
-            "xunitPath": str(xml) if xml.exists() else None,
-            "xunitSHA256": digest(xml) if xml.exists() else None, "xunitCases": xml_cases,
+            "moduleSummaryCounts": summary_counts,
+            "xunitPath": str(xml) if xml else None,
+            "xunitSHA256": digest(xml) if xml else None, "xunitCases": xml_cases,
+            "xunitSources": xml_sources,
+            "missingXMLIdentifiers": sorted(expected_identifiers - xml_identifiers),
+            "unexpectedXMLIdentifiers": sorted(xml_identifiers - expected_identifiers),
         }
         self.receipt["unit"] = result
         write_json(self.out / "unit-receipt.json", result)
