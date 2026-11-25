@@ -125,7 +125,8 @@ struct MobileTaskWorkspaceTests {
     defer { publisher.gate.release() }
     let probes = WorkspacePublicationProbes()
     let store = MobileStore(
-      core: core, widgetSnapshotPublisher: publisher,
+      core: core, taskReminderScheduler: probes, habitReminderScheduler: probes,
+      widgetSnapshotPublisher: publisher,
       setBadge: { value in await probes.recordBadge(value) },
       notificationAuthorizationStatusProvider: {
         await probes.recordReminderAuthorization()
@@ -165,8 +166,13 @@ struct MobileTaskWorkspaceTests {
     #expect(publisher.sources.count == 2)
     let latest = try #require(publisher.sources.last?.today.tasks.first { $0.id == second.id })
     #expect(latest.dependsOn.isEmpty)
-    #expect(await probes.reminderAuthorizations == 2)
-    #expect(await probes.badges.count == 2)
+    let afterVisual = await probes.counts()
+    #expect(afterVisual.tasks == 2)
+    #expect(afterVisual.habits == 2)
+    #expect(afterVisual.badges == 2)
+    // Completed setup deliberately skips the onboarding-only permission read;
+    // the scheduler replacements above measure the actual reminder tail.
+    #expect(afterVisual.authorizations == 0)
 
     // The normal API still awaits the complete publication tail.
     publisher.gate.holdNextPublication()
@@ -181,8 +187,11 @@ struct MobileTaskWorkspaceTests {
     #expect(try await core.loadTask(id: first.id).status == .completed)
     publisher.gate.release()
     #expect(await ordinary.value)
-    #expect(await probes.reminderAuthorizations == 3)
-    #expect(await probes.badges.count == 3)
+    let afterOrdinary = await probes.counts()
+    #expect(afterOrdinary.tasks == 3)
+    #expect(afterOrdinary.habits == 3)
+    #expect(afterOrdinary.badges == 3)
+    #expect(afterOrdinary.authorizations == 0)
     #expect(!store.taskSurfacesFlight.isRunning)
   }
 
@@ -238,9 +247,27 @@ private final class WorkspacePublicationGate: MobileWidgetSnapshotPublishing {
   }
 }
 
-private actor WorkspacePublicationProbes {
-  private(set) var reminderAuthorizations = 0
-  private(set) var badges: [Int] = []
+private actor WorkspacePublicationProbes: TaskReminderScheduling, HabitReminderScheduling {
+  private var taskReminderPasses = 0
+  private var habitReminderPasses = 0
+  private var reminderAuthorizations = 0
+  private var badges: [Int] = []
+
+  func scheduleReminders(_ reminders: [ScheduledTaskReminder]) async -> TaskReminderScheduleReport {
+    taskReminderPasses += 1
+    return .scheduled(reminders.count)
+  }
+
+  func replaceScheduledHabitReminders(
+    for occurrences: [DueHabitReminderOccurrence]
+  ) async -> TaskReminderScheduleReport {
+    habitReminderPasses += 1
+    return .scheduled(occurrences.count)
+  }
+
   func recordReminderAuthorization() { reminderAuthorizations += 1 }
   func recordBadge(_ value: Int) { badges.append(value) }
+  func counts() -> (tasks: Int, habits: Int, badges: Int, authorizations: Int) {
+    (taskReminderPasses, habitReminderPasses, badges.count, reminderAuthorizations)
+  }
 }
