@@ -93,6 +93,26 @@ DEVICE_TYPES = {
 MATRIX = ("iphone-en", "iphone-he", "ipad-en", "ipad-he")
 KIT_URL = "https://github.com/davidpovarsky/task-visualization-kit.git"
 MODES = ("graph", "board", "timeline", "network", "table")
+PLAN_METHOD = "canonicalAgentExecutesNamespacedToolAndContinuesExactlyOnce"
+PLAN_SELECTOR = "HanlinChatGPTPlanTests/" + PLAN_METHOD
+PLAN_INPUTS = {
+    "HanlinChatGPTPlanClient.swift": (
+        "Packages/HanlinPlatform/Sources/HanlinChatCore/HanlinChatGPTPlanClient.swift",
+        "14f8bc46a2590eb483b94d292e05a37d732cb34af207872faf897abe50bc3aab",
+    ),
+    "HanlinChatGPTPlanWire.swift": (
+        "Packages/HanlinPlatform/Sources/HanlinChatCore/HanlinChatGPTPlanWire.swift",
+        "18fed34ca6de1742f18b5b59bd3b4774103acfce57e44803ff537818e8327900",
+    ),
+    "verify_chatgpt_plan_contract.swift": (
+        "Scripts/Tests/verify_chatgpt_plan_contract.swift",
+        "e9726a19dcd4f3ef1487dc5ad548d44825991011dccc1663e8c92e88076057f7",
+    ),
+    "HanlinChatGPTPlanTests.swift": (
+        "Packages/HanlinPlatform/Tests/HanlinChatCoreTests/HanlinChatGPTPlanTests.swift",
+        "d2f061d50a2deabf73847afecd1c78d1577ce6bca1ce4390e5a4161d140bde55",
+    ),
+}
 
 
 def utc() -> str:
@@ -161,6 +181,9 @@ class Controller:
             self.env[f"GIT_CONFIG_KEY_{count}"] = "url." + args.kit_mirror.resolve().as_uri() + ".insteadOf"
             self.env[f"GIT_CONFIG_VALUE_{count}"] = KIT_URL
             self.env["GIT_CONFIG_COUNT"] = str(count + 1)
+        self.ui_env = self.env.copy()
+        if args.ui_developer_dir:
+            self.ui_env["DEVELOPER_DIR"] = str(args.ui_developer_dir.resolve())
         self.receipt = {
             "schemaVersion": 1,
             "sourceSHA": args.expected_sha,
@@ -175,6 +198,8 @@ class Controller:
             "requiredMatrix": list(MATRIX),
             "requiredHostUICases": list(HOST_UI_CASES),
             "buildJobs": 2,
+            "compilerDeveloperDir": self.env.get("DEVELOPER_DIR"),
+            "uiDriverDeveloperDir": self.ui_env.get("DEVELOPER_DIR"),
             "result": "running",
             "steps": [],
             "cases": [],
@@ -198,11 +223,21 @@ class Controller:
         self.receipt["sourceTree"] = self.raw_git("rev-parse", "HEAD^{tree}")
 
     def run(self, name: str, command: list[str], *, timeout: int = 120,
-            check: bool = True) -> tuple[int, Path]:
+            check: bool = True, ui_driver: bool | None = None) -> tuple[int, Path]:
         command = [str(x) for x in command]
+        if ui_driver is None:
+            ui_driver = (
+                command[:2] in (["xcrun", "simctl"], ["xcrun", "xcresulttool"])
+                or (command[0] == "xcodebuild" and "test-without-building" in command)
+            )
+        command_env = self.ui_env if ui_driver else self.env
         log = self.out / "logs" / f"{len(self.receipt['steps']):03d}-{name}.log"
         log.parent.mkdir(parents=True, exist_ok=True)
-        step = {"name": name, "command": command, "startedUTC": utc(), "log": str(log)}
+        step = {
+            "name": name, "command": command, "startedUTC": utc(), "log": str(log),
+            "toolchainRole": "ui-driver" if ui_driver else "compiler",
+            "developerDir": command_env.get("DEVELOPER_DIR"),
+        }
         self.receipt["steps"].append(step)
         self.save()
         started = time.monotonic()
@@ -210,7 +245,7 @@ class Controller:
         try:
             with log.open("w") as stream:
                 process = subprocess.Popen(
-                    command, cwd=self.source, env=self.env, stdout=stream,
+                    command, cwd=self.source, env=command_env, stdout=stream,
                     stderr=subprocess.STDOUT, start_new_session=True
                 )
                 try:
@@ -245,6 +280,17 @@ class Controller:
             "--disable-automatic-resolution", "--skip-update", "--jobs", "2",
             "--no-parallel", "--filter", "|".join(UNIT_SUITES + UNIT_FUNCTIONS),
             "--xunit-output", str(self.out / "unit-results.xml"),
+        ]
+
+    def plan_engine_command(self):
+        harness = (self.args.plan_harness or Path("<configured-plan-harness>")).resolve()
+        return [
+            "xcrun", "swift", "test", "--package-path", str(harness),
+            "--scratch-path", str(harness.parent / "build"),
+            "--cache-path", str(harness.parent / "cache"),
+            "--force-resolved-versions", "--skip-update", "-j", "2",
+            "--disable-xctest", "--enable-swift-testing", "--no-parallel",
+            "--filter", PLAN_SELECTOR, "--xunit-output", str(self.out / "plan-engine-results.xml"),
         ]
 
     def build_command(self):
@@ -284,6 +330,10 @@ class Controller:
             "minimumUnitCases": MINIMUM_UNIT_TESTS,
             "unitCommand": self.unit_command(),
             "nativeBuildCommand": self.build_command(),
+            "freshPlanEngineCommand": self.plan_engine_command(),
+            "freshStandalonePlanContract": "VerifyChatGPTPlanContract.main (all macOS OAuth/wire checks)",
+            "compilerDeveloperDir": self.env.get("DEVELOPER_DIR"),
+            "uiDriverDeveloperDir": self.ui_env.get("DEVELOPER_DIR"),
             "caseCommands": {
                 key: self.ui_command(
                     self.dd / "Build/Products" / f"LorvexMobileUITests.workspace-{key[-2:]}.xctestrun",
@@ -339,11 +389,157 @@ class Controller:
             ("acknowledgments", [sys.executable, str(self.apple / "script/verify_acknowledgments.py")]),
         ):
             self.run(name, command)
+        self.run("ui-driver-version", ["xcodebuild", "-version"], ui_driver=True)
         _, sdk_log = self.run("simulator-sdk", ["xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"])
         self.receipt["simulatorSDK"] = sdk_log.read_text().strip()
         self.save()
 
+    def sdk_plan_acceptance(self):
+        if not self.args.plan_harness:
+            raise RuntimeError("--plan-harness must name the coordinator-owned original SDK regression harness.")
+        harness = self.args.plan_harness.resolve()
+        sdk = harness.parent / "source"
+        fixture = harness.parent / "plan-contract-source"
+        revision = json.loads((self.source / "HanlinSDK.lock.json").read_text())["revision"]
+        sdk_head = subprocess.check_output(["git", "-C", str(sdk), "rev-parse", "HEAD"], text=True).strip()
+        if sdk_head != revision or subprocess.check_output(
+            ["git", "-C", str(sdk), "status", "--porcelain"], text=True
+        ).strip():
+            raise RuntimeError("Plan harness SDK must be clean at the host's exact SDK revision.")
+        inputs = {}
+        for filename, (relative, expected) in PLAN_INPUTS.items():
+            source = harness / "Tests/HanlinChatCoreTests" / filename if filename.endswith("Tests.swift") else fixture / filename
+            if digest(source) != expected:
+                raise RuntimeError("Original pinned Plan fixture changed: " + str(source))
+            if filename in ("HanlinChatGPTPlanClient.swift", "HanlinChatGPTPlanWire.swift"):
+                if digest(self.source / "Vendor/HanlinSDK" / relative) != expected or digest(sdk / relative) != expected:
+                    raise RuntimeError("Installed and harness SDK Plan source disagree.")
+            inputs[relative] = {"path": str(source), "sha256": expected}
+        engine_relative = "Packages/HanlinPlatform/Sources/HanlinChatCore/HanlinAISDKAgentEngine.swift"
+        engine_sha = digest(sdk / engine_relative)
+        if digest(self.source / "Vendor/HanlinSDK" / engine_relative) != engine_sha:
+            raise RuntimeError("The original harness engine differs from the installed app SDK engine.")
+        inputs[engine_relative] = {"path": str(sdk / engine_relative), "sha256": engine_sha}
+        inputs["harness/Package.swift"] = {"path": str(harness / "Package.swift"), "sha256": digest(harness / "Package.swift")}
+        inputs["harness/Package.resolved"] = {"path": str(harness / "Package.resolved"), "sha256": digest(harness / "Package.resolved")}
+        self.receipt["sdkPlanInputs"] = {"sdkRevision": revision, "inputs": inputs}
+        self.save()
+
+        code, log = self.run("fresh-plan-engine", self.plan_engine_command(), timeout=1800, check=False)
+        xml = self.out / "plan-engine-results.xml"
+        cases = []
+        if xml.exists():
+            for case in ET.parse(xml).iter("testcase"):
+                result = "Passed" if all(case.find(key) is None for key in ("failure", "error", "skipped")) else "FailedOrSkipped"
+                cases.append({**case.attrib, "result": result})
+        passed_lines = [
+            line.strip() for line in log.read_text().splitlines()
+            if re.search(r"[✔✓] Test " + PLAN_METHOD + r"\(\) passed after ", line)
+        ]
+        accepted = (
+            code == 0 and len(cases) == 1 and cases[0]["result"] == "Passed"
+            and PLAN_METHOD in cases[0].get("name", "") and len(passed_lines) == 1
+            and re.search(r"Test run with 1 test.*passed", log.read_text()) is not None
+        )
+        engine_record = {
+            "sourceSHA": self.args.expected_sha, "sdkRevision": revision,
+            "testIdentifier": "HanlinChatCoreTests/" + PLAN_SELECTOR,
+            "result": "passed" if accepted else "failed", "exitCode": code,
+            "cases": cases, "passedLines": passed_lines, "inputs": inputs,
+            "log": str(log), "logSHA256": digest(log),
+            "xunitPath": str(xml) if xml.exists() else None,
+            "xunitSHA256": digest(xml) if xml.exists() else None,
+        }
+        self.receipt["sdkPlanEngine"] = engine_record
+        write_json(self.out / "sdk-plan-engine-receipt.json", engine_record)
+        self.save()
+        if not accepted:
+            raise RuntimeError("The exact original ChatGPT Plan engine case did not pass.")
+
+        contract_dir = self.out / "sdk-plan-contract-source"
+        contract_dir.mkdir()
+        contract_files = [
+            "HanlinChatGPTPlanClient.swift", "HanlinChatGPTPlanWire.swift", "verify_chatgpt_plan_contract.swift",
+        ]
+        for filename in contract_files:
+            shutil.copyfile(fixture / filename, contract_dir / filename)
+        binary = self.out / "verify-chatgpt-plan-contract"
+        compile_code, compile_log = self.run("plan-contract-compile", [
+            "xcrun", "swiftc", "-swift-version", "6", "-parse-as-library",
+            *(str(contract_dir / filename) for filename in contract_files), "-o", str(binary),
+        ], timeout=300, check=False)
+        contract_record = {
+            "sourceSHA": self.args.expected_sha, "sdkRevision": revision,
+            "testIdentifier": "Scripts/Tests/verify_chatgpt_plan_contract.swift/VerifyChatGPTPlanContract.main",
+            "inputs": {filename: {"path": str(contract_dir / filename), "sha256": digest(contract_dir / filename)} for filename in contract_files},
+            "compileExitCode": compile_code, "compileLog": str(compile_log),
+            "compileLogSHA256": digest(compile_log), "result": "failed",
+        }
+        if compile_code == 0:
+            run_code, run_log = self.run("plan-contract-execute", [str(binary)], timeout=180, check=False)
+            match = re.search(
+                r"PASS: (\d+) production SIWC OAuth/wire checks \(macOS CryptoKit/Security fixtures, no live account\)\.",
+                run_log.read_text(),
+            )
+            expected_checks = len(re.findall(r"(?m)^\s*count \+= 1\s*$", (contract_dir / "verify_chatgpt_plan_contract.swift").read_text()))
+            contract_record.update({
+                "exitCode": run_code, "log": str(run_log), "logSHA256": digest(run_log),
+                "binary": str(binary), "binarySHA256": digest(binary),
+                "checkCount": int(match[1]) if match else 0, "expectedCheckCount": expected_checks,
+                "result": "passed" if run_code == 0 and match and int(match[1]) == expected_checks else "failed",
+            })
+        self.receipt["sdkPlanContract"] = contract_record
+        write_json(self.out / "sdk-plan-contract-receipt.json", contract_record)
+        self.save()
+        if contract_record["result"] != "passed":
+            raise RuntimeError("The original full macOS ChatGPT Plan OAuth/wire contract did not pass.")
+
+    def unit_catalog(self) -> dict:
+        # Preserve both the human display label and the original Swift test identifier.
+        suite_files = {
+            "LorvexAppleTests/MobileTaskWorkspaceTests.swift": "MobileTaskWorkspaceTests",
+            "LorvexHanlinAgentTests/LorvexHanlinTaskWorkspaceTests.swift": "LorvexHanlinTaskWorkspaceTests",
+            "LorvexHanlinAgentTests/LorvexHanlinAgentTests.swift": "LorvexHanlinAgentTests",
+            "LorvexCoreServiceTests/SwiftLorvexCoreServiceInProgressTests.swift": "SwiftLorvexCoreServiceInProgressTests",
+            "LorvexHanlinAgentTests/LorvexHanlinPresentationStateTests.swift": "LorvexHanlinPresentationStateTests",
+            "LorvexAppleTests/LorvexCloudAccountSyncTests.swift": "LorvexCloudAccountSyncTests",
+        }
+        function_files = {
+            "LorvexAppleTests/AppMetadataTests.swift": "",
+            "LorvexAppleTests/NotificationActionsTests.swift": "",
+            "LorvexAppleTests/MobileReviewTests.swift": "",
+            "LorvexAppleTests/MobileStoreBackgroundAdoptionTests.swift": "",
+        }
+        catalog = {}
+        for relative, suite in {**suite_files, **function_files}.items():
+            path = self.apple / "Tests" / relative
+            pending = False
+            display = None
+            for line in path.read_text().splitlines():
+                if "@Test" in line:
+                    pending = True
+                    named = re.search(r'@Test\("([^"]+)"', line)
+                    display = named[1] if named else None
+                function = re.search(r"\bfunc (\w+)\(", line) if pending else None
+                if not function:
+                    continue
+                pending = False
+                if not suite and function[1] not in UNIT_FUNCTIONS:
+                    continue
+                label = display or function[1] + "()"
+                identifier = "/".join(x for x in (relative.split("/")[0], suite, function[1]) if x)
+                if label in catalog:
+                    raise RuntimeError("Ambiguous native unit case display label: " + label)
+                catalog[label] = {
+                    "identifier": identifier, "function": function[1],
+                    "sourcePath": str(path.relative_to(self.source)), "sourceSHA256": digest(path),
+                }
+        if len(catalog) != MINIMUM_UNIT_TESTS:
+            raise RuntimeError(f"Expected {MINIMUM_UNIT_TESTS} source-declared scoped unit cases, found {len(catalog)}.")
+        return catalog
+
     def units(self):
+        catalog = self.unit_catalog()
         code, log = self.run("focused-units", self.unit_command(), timeout=3600, check=False)
         passed = []
         suites = set()
@@ -352,7 +548,10 @@ class Controller:
             line = re.sub(r"\x1b\[[0-9;]*m", "", raw).strip()
             case = re.match(r"^[✔✓]\ufe0f? Test (?!run with )(.+?) passed after ([0-9.]+) seconds\.", line)
             if case:
-                passed.append({"name": case[1], "result": "Passed", "durationSeconds": float(case[2])})
+                declared = catalog.get(case[1].strip('"'), {})
+                passed.append({
+                    "name": case[1], "result": "Passed", "durationSeconds": float(case[2]), **declared,
+                })
             suite = re.match(r"^[✔✓]\ufe0f? Suite (.+?) passed after ", line)
             if suite:
                 suites.add(suite[1].strip('"'))
@@ -367,8 +566,12 @@ class Controller:
                 status = "Failed" if case.find("failure") is not None or case.find("error") is not None else (
                     "Skipped" if case.find("skipped") is not None else "Passed")
                 xml_cases.append({**case.attrib, "result": status})
+        missing_identifiers = sorted(
+            {item["identifier"] for item in catalog.values()}
+            - {item.get("identifier") for item in passed}
+        )
         accepted = (
-            code == 0 and summary_count is not None and summary_count == len(passed)
+            code == 0 and not missing_identifiers and summary_count is not None and summary_count == len(passed)
             and len(passed) >= MINIMUM_UNIT_TESTS and not missing and UNIT_SUITE_NAMES.issubset(suites)
             and not any(case["result"] != "Passed" for case in xml_cases)
         )
@@ -379,6 +582,8 @@ class Controller:
             "summaryCount": summary_count, "missingRequiredTests": missing,
             "missingRequiredSuites": sorted(UNIT_SUITE_NAMES - suites),
             "minimumRequiredCases": MINIMUM_UNIT_TESTS,
+            "missingRequiredIdentifiers": missing_identifiers,
+            "expectedCaseCatalog": catalog,
             "log": str(log), "logSHA256": digest(log),
             "xunitPath": str(xml) if xml.exists() else None,
             "xunitSHA256": digest(xml) if xml.exists() else None, "xunitCases": xml_cases,
@@ -769,6 +974,7 @@ class Controller:
             try:
                 self.preflight()
                 if self.args.phase in ("unit", "all"):
+                    self.sdk_plan_acceptance()
                     self.units()
                 if self.args.phase in ("build", "all"):
                     self.build()
@@ -806,6 +1012,8 @@ def main() -> int:
     parser.add_argument("--source-packages", type=Path)
     parser.add_argument("--kit-mirror", type=Path)
     parser.add_argument("--developer-dir", type=Path)
+    parser.add_argument("--ui-developer-dir", type=Path, help="Per-process simulator/test driver, separate from the compiler.")
+    parser.add_argument("--plan-harness", type=Path, help="Existing original SDK test harness; required for executing unit/all phases.")
     parser.add_argument("--runtime", default="com.apple.CoreSimulator.SimRuntime.iOS-27-2")
     parser.add_argument("--phase", choices=("unit", "build", "ui", "host-ui", "all"), default="all")
     parser.add_argument("--build-receipt", type=Path, help="Reuse a verified build for this exact SHA during --phase ui or host-ui.")
