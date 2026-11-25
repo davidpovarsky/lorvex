@@ -42,7 +42,7 @@ let package = Package(
         .package(path: "core"),
         // Original shared components; app adapters keep task storage in Lorvex.
         .package(url: "https://github.com/davidpovarsky/task-visualization-kit.git",
-                 revision: "38ee23b0a34d5e9bf62a4b703dcfea71d588d4d9"),
+                 revision: "dd51c8961391635d654447ecad0c3cbbc3a233b0"),
         .package(path: "../../Vendor/HanlinSDK"),
         // Direct test dependency for the immutable canonical SDK integration suite.
         .package(url: "https://github.com/davidpovarsky/swift-ai-sdk.git",
