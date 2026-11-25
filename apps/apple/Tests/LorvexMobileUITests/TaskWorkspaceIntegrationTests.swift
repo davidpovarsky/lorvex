@@ -136,10 +136,10 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       }
       if mode == "network" || mode == "graph" {
         let node = app.buttons["task-workspace.open." + taskID]
-        XCTAssertTrue(
-          node.waitForExistence(timeout: 10),
-          "The native graph must expose the real task as an accessible node.")
         if mode == "network" {
+          XCTAssertTrue(
+            node.waitForExistence(timeout: 10),
+            "The native graph must expose the real task as an accessible node.")
           verifyNativeNetworkPanAndFit(node, app: app, language: language)
           networkPanFitVerified = true
         } else {
@@ -350,9 +350,8 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let sheet = app.otherElements["hanlin.workspace.sheet"]
     XCTAssertTrue(sheet.waitForExistence(timeout: 10))
     let toolbarTask = sheet.buttons["task-workspace.open." + taskID]
-    XCTAssertTrue(toolbarTask.waitForExistence(timeout: 10))
-    XCTAssertEqual(toolbarTask.label, title)
     fitGraphToTask(toolbarTask, app: app, language: language)
+    XCTAssertEqual(toolbarTask.label, title)
     toolbarTask.tap()
     XCTAssertTrue(app.buttons["task.detail.reopen"].waitForExistence(timeout: 10))
     app.buttons["lorvex.visual.detail.close"].tap()
@@ -378,6 +377,9 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let fit = app.buttons["task-workspace.graph.fit"]
     XCTAssertTrue(fit.waitForExistence(timeout: 10))
     fit.tap()
+    XCTAssertTrue(
+      node.waitForExistence(timeout: 10),
+      "Show whole flow must expose the exact canonical task as an accessible node.")
     XCTAssertTrue(node.isHittable && app.frame.contains(node.frame))
     attachHierarchy(app, "Lorvex \(language.rawValue) - graph Fit exposes the canonical task")
   }
