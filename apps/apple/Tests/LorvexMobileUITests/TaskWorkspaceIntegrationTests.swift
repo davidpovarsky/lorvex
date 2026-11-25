@@ -40,6 +40,9 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       app.buttons[language.removeConnection].firstMatch.waitForExistence(timeout: 10),
       "The real saved dependency must appear in the connection editor.")
     let remove = app.buttons[language.removeConnection].firstMatch
+    expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: remove)
+    waitForExpectations(timeout: 10)
+    XCTAssertTrue(remove.isHittable)
     remove.tap()
     XCTAssertTrue(remove.waitForNonExistence(timeout: 10))
     expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: connect)
