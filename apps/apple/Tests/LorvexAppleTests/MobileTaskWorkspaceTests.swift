@@ -1,5 +1,6 @@
 import Foundation
 import LorvexCore
+import LorvexWidgetKitSupport
 import TaskVisualizationKit
 import Testing
 @testable import LorvexMobile
@@ -117,6 +118,82 @@ struct MobileTaskWorkspaceTests {
     #expect(snapshot.warnings.contains(MobileTaskWorkspaceCopy.truncated))
   }
 
+  @Test(.timeLimit(.minutes(1)))
+  func workspaceCommitsBeforeSlowPublicationsAndCoalescesLatestState() async throws {
+    let core = try SwiftLorvexCoreService.inMemory()
+    let publisher = WorkspacePublicationGate()
+    defer { publisher.gate.release() }
+    let probes = WorkspacePublicationProbes()
+    let store = MobileStore(
+      core: core, widgetSnapshotPublisher: publisher,
+      setBadge: { value in await probes.recordBadge(value) },
+      notificationAuthorizationStatusProvider: {
+        await probes.recordReminderAuthorization()
+        return .authorized
+      },
+      defaults: UserDefaults(suiteName: "visual-publication-" + UUID().uuidString)!)
+    let today = try #require(try await core.loadToday().logicalDay)
+    let day = try #require(LorvexDateFormatters.ymdUTC.date(from: today))
+    let first = try await core.createTask(TaskCreateDraft(title: "Prepare", plannedDate: day))
+    let second = try await core.createTask(TaskCreateDraft(title: "Deliver", plannedDate: day))
+    publisher.gate.holdNextPublication()
+    var visualReturned = false
+    let visual = Task {
+      try await store.performVisualTaskAction(.addDependency(
+        prerequisiteID: first.id, dependentID: second.id))
+      visualReturned = true
+    }
+    #expect(await publicationSettled { publisher.gate.isHolding })
+    let returnedBeforePublication = await publicationSettled { visualReturned }
+    #expect(returnedBeforePublication)
+    if !returnedBeforePublication {
+      publisher.gate.release()
+      try await visual.value
+      return
+    }
+    #expect(try await core.loadTask(id: second.id).dependsOn == [first.id])
+    #expect(!store.taskIsMutating(second.id))
+    // A subsequent real edit commits while the first system publication is held.
+    try await store.performVisualTaskAction(.removeDependency(
+      prerequisiteID: first.id, dependentID: second.id))
+    #expect(try await core.loadTask(id: second.id).dependsOn.isEmpty)
+    #expect(await publicationSettled { store.taskSurfacesFlight.isPendingRerun })
+    publisher.gate.release()
+    try await visual.value
+    #expect(await publicationSettled { !store.taskSurfacesFlight.isRunning })
+    #expect(!store.taskSurfacesFlight.isPendingRerun)
+    #expect(publisher.sources.count == 2)
+    let latest = try #require(publisher.sources.last?.today.tasks.first { $0.id == second.id })
+    #expect(latest.dependsOn.isEmpty)
+    #expect(await probes.reminderAuthorizations == 2)
+    #expect(await probes.badges.count == 2)
+
+    // The normal API still awaits the complete publication tail.
+    publisher.gate.holdNextPublication()
+    var ordinaryReturned = false
+    let ordinary = Task {
+      let result = await store.completeTask(first.id)
+      ordinaryReturned = true
+      return result
+    }
+    #expect(await publicationSettled { publisher.gate.isHolding })
+    #expect(!ordinaryReturned)
+    #expect(try await core.loadTask(id: first.id).status == .completed)
+    publisher.gate.release()
+    #expect(await ordinary.value)
+    #expect(await probes.reminderAuthorizations == 3)
+    #expect(await probes.badges.count == 3)
+    #expect(!store.taskSurfacesFlight.isRunning)
+  }
+
+  private func publicationSettled(_ condition: () -> Bool) async -> Bool {
+    for _ in 0..<100 {
+      if condition() { return true }
+      try? await Task.sleep(for: .milliseconds(10))
+    }
+    return condition()
+  }
+
   @Test func workspaceEditsSurviveStoreReopenAndPreserveIndependentDates() async throws {
     let path = FileManager.default.temporaryDirectory
       .appending(path: "lorvex-visual-persistence-" + UUID().uuidString + ".sqlite")
@@ -147,4 +224,23 @@ struct MobileTaskWorkspaceTests {
     #expect(changed.plannedDate == nil)
     #expect(changed.dueDate == due)
   }
+}
+
+@MainActor
+private final class WorkspacePublicationGate: MobileWidgetSnapshotPublishing {
+  let gate = GatedMobileWidgetSnapshotPublisher()
+  private(set) var sources: [WidgetSnapshotSource] = []
+
+  func publish(source: WidgetSnapshotSource) async throws -> WidgetSnapshot {
+    let snapshot = try await gate.publish(source: source)
+    sources.append(source)
+    return snapshot
+  }
+}
+
+private actor WorkspacePublicationProbes {
+  private(set) var reminderAuthorizations = 0
+  private(set) var badges: [Int] = []
+  func recordReminderAuthorization() { reminderAuthorizations += 1 }
+  func recordBadge(_ value: Int) { badges.append(value) }
 }

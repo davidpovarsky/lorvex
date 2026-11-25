@@ -31,7 +31,7 @@ class NativeUnitEvidenceTests(unittest.TestCase):
             "\n".join(
                 [f'✔ Test {label} passed after 0.001 seconds.' for label in self.catalog]
                 + [f'✔ Suite "{suite}" passed after 0.001 seconds.' for suite in native.UNIT_SUITE_NAMES]
-                + [f'✔ Test run with {count} tests passed after 0.001 seconds.' for count in (14, 10, 24)]
+                + [f'✔ Test run with {count} tests passed after 0.001 seconds.' for count in (14, 10, 25)]
             ) + "\n"
         )
         self.controller.run = lambda *args, **kwargs: (0, self.log)
@@ -55,9 +55,9 @@ class NativeUnitEvidenceTests(unittest.TestCase):
         self.write_report("unit-results-swift-testing.xml", self.cases)
         self.controller.units()
         receipt = self.controller.receipt["unit"]
-        self.assertEqual(receipt["caseCount"], 48)
-        self.assertEqual(receipt["moduleSummaryCounts"], [14, 10, 24])
-        self.assertEqual(receipt["summaryCount"], 48)
+        self.assertEqual(receipt["caseCount"], 49)
+        self.assertEqual(receipt["moduleSummaryCounts"], [14, 10, 25])
+        self.assertEqual(receipt["summaryCount"], 49)
         self.assertEqual(receipt["result"], "passed")
         self.assertEqual(len(receipt["xunitSources"]), 1)
 
@@ -66,7 +66,7 @@ class NativeUnitEvidenceTests(unittest.TestCase):
         self.write_report("unit-results-swift-testing.xml", self.cases[5:])
         self.controller.units()
         self.assertEqual(len(self.controller.receipt["unit"]["xunitSources"]), 2)
-        self.assertEqual(len(self.controller.receipt["unit"]["xunitCases"]), 48)
+        self.assertEqual(len(self.controller.receipt["unit"]["xunitCases"]), 49)
 
     def test_rejects_missing_xml_even_when_console_reports_success(self):
         self.assert_rejected()

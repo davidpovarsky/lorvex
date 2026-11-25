@@ -63,6 +63,7 @@ REQUIRED_UNIT_TESTS = (
     "workspaceEditsSurviveStoreReopenAndPreserveIndependentDates",
     "workspaceIncludesIndependentTasksAndKeepsListAndRootScopes",
     "workspaceInventoryIsBoundedAndReportsMoreIndependentTasks",
+    "workspaceCommitsBeforeSlowPublicationsAndCoalescesLatestState",
     "toolsWriteRealDependenciesAndReturnLiveViewDescriptors",
     "failedOrMalformedToolNeverCreatesAWorkspaceAndReplayIsStable",
     "workspaceDescriptorCountsIndependentTasksAcrossStatuses",
@@ -89,7 +90,7 @@ REQUIRED_UNIT_TESTS = (
     "oracleBindingKeepsCloudKitOffThroughLogoutAndFactoryRecreation",
     "unauthorizedAccessRefreshesExactlyOnceAndKeepsAccountIdentity",
 ) + UNIT_FUNCTIONS
-MINIMUM_UNIT_TESTS = 48  # 6 workspace + 3 workspace agent + 6 agent + 10 core + 5 state + 11 cloud + 7 functions.
+MINIMUM_UNIT_TESTS = 49  # 7 workspace + 3 workspace agent + 6 agent + 10 core + 5 state + 11 cloud + 7 functions.
 DEVICE_TYPES = {
     "iphone": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
     "ipad": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",

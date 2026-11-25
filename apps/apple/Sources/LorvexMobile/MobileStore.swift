@@ -267,6 +267,9 @@ public final class MobileStore {
   /// the reminders in parallel against the same notification center.
   @ObservationIgnored let habitSurfacesFlight = RefreshSingleFlight<Void>()
 
+  /// Serializes task publications and folds rapid writes into one latest-state rerun.
+  @ObservationIgnored let taskSurfacesFlight = RefreshSingleFlight<Void>()
+
   let core: any LorvexCoreServicing
   public var assistantCore: any LorvexCoreServicing { core }
   let feedbackProvider: any LorvexFeedbackProviding

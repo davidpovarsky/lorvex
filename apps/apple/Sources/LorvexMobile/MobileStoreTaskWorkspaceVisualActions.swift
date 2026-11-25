@@ -25,35 +25,41 @@ extension MobileStore {
   }
 
   /// The component receives success only after the existing mutation pipeline
-  /// confirms the write. Core validation, outbox, reminders and cache invalidation
-  /// are shared with the normal task editor. Never persist a canvas-local model.
+  /// confirms the durable write and refreshes local state. The canonical
+  /// widget/reminder/badge tail is queued without keeping the editor busy;
+  /// overlapping writes coalesce into a latest-state pass. Never persist a
+  /// canvas-local model.
   public func performVisualTaskAction(_ action: TaskWorkspaceAction) async throws {
     let success: Bool
     switch action {
     case .setCompleted(let id, let completed):
-      success = completed ? await completeTask(id) : await reopenTask(id)
+      success = completed
+        ? await completeTask(id, publication: .deferred)
+        : await reopenTask(id, publication: .deferred)
     case .moveTask(let id, let laneID):
       switch laneID {
       case "open":
         let task = try await core.loadTask(id: id)
-        success = task.status == .inProgress ? await pauseTask(id) : await reopenTask(id)
+        success = task.status == .inProgress
+          ? await pauseTask(id, publication: .deferred)
+          : await reopenTask(id, publication: .deferred)
       case "in_progress":
         // Preserve the canonical transition: finished/Someday tasks must first
         // be reopened. A rejected drop never makes a partial two-step mutation.
-        success = await startTask(id)
-      case "someday": success = await markTaskSomeday(id)
-      case "completed": success = await completeTask(id)
-      case "cancelled": success = await cancelTask(id)
+        success = await startTask(id, publication: .deferred)
+      case "someday": success = await markTaskSomeday(id, publication: .deferred)
+      case "completed": success = await completeTask(id, publication: .deferred)
+      case "cancelled": success = await cancelTask(id, publication: .deferred)
       default: throw MobileTaskWorkspaceActionError(message: MobileTaskWorkspaceCopy.failed)
       }
     case .setDueDate(let id, let date):
-      success = await mutateTaskReturningTask(id: id) {
+      success = await mutateTaskReturningTask(id: id, publication: .deferred) {
         try await core.updateTask(TaskUpdateDraft(
           id: id,
           dueDate: date.map { .set(PlannedDayBridge.storageDate(forLocalInstant: $0)) } ?? .clear))
       }
     case .setPlannedDate(let id, let date):
-      success = await mutateTaskReturningTask(id: id) {
+      success = await mutateTaskReturningTask(id: id, publication: .deferred) {
         try await core.updateTask(TaskUpdateDraft(
           id: id,
           plannedDate: date.map { .set(PlannedDayBridge.storageDate(forLocalInstant: $0)) } ?? .clear))
@@ -76,7 +82,7 @@ extension MobileStore {
   private func changeVisualDependency(
     prerequisiteID: String, dependentID: String, adding: Bool
   ) async -> Bool {
-    await mutateTaskReturningTask(id: dependentID) {
+    await mutateTaskReturningTask(id: dependentID, publication: .deferred) {
       // Read fresh inside the mutation operation. Only this field is patched;
       // title, dates and other metadata edited by a peer remain untouched.
       let current = try await core.loadTask(id: dependentID)

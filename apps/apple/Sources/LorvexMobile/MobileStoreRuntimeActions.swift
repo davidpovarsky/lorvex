@@ -305,6 +305,7 @@ extension MobileStore {
   func mutateTaskReturningToday(
     id taskID: LorvexTask.ID? = nil,
     affectedIDs: [LorvexTask.ID] = [],
+    publication: MobileTaskMutationPublication = .awaited,
     _ operation: () async throws -> TodaySnapshot
   ) async -> Bool {
     guard beginTaskMutation(id: taskID) else { return false }
@@ -344,9 +345,7 @@ extension MobileStore {
       // The write and the reads that show it are done; the publishes below
       // reach the network and the OS, so the task's controls come back first.
       endMutation()
-      await publishMobileSyncSurfaces()
-      await rescheduleReminders()
-      await updateBadge()
+      await publishTaskMutationSurfaces(publication)
       return true
     } catch {
       await presentUserFacingError(error)
@@ -357,6 +356,7 @@ extension MobileStore {
   @discardableResult
   func mutateTaskReturningTask(
     id taskID: LorvexTask.ID? = nil,
+    publication: MobileTaskMutationPublication = .awaited,
     _ operation: () async throws -> LorvexTask
   ) async -> Bool {
     guard beginTaskMutation(id: taskID) else { return false }
@@ -382,9 +382,7 @@ extension MobileStore {
       // The write and the reads that show it are done; the publishes below
       // reach the network and the OS, so the task's controls come back first.
       endMutation()
-      await publishMobileSyncSurfaces()
-      await rescheduleReminders()
-      await updateBadge()
+      await publishTaskMutationSurfaces(publication)
       return true
     } catch {
       await presentUserFacingError(error)

@@ -14,17 +14,17 @@ extension MobileStore {
     invalidateTaskViews()
     await reloadReviewEvidenceAfterTaskMutation()
     feedbackProvider.playFeedback(.captureSubmitted)
-    Task {
-      await publishMobileSyncSurfaces()
-      await rescheduleReminders()
-      await updateBadge()
-    }
+    Task { await publishTaskMutationSurfaces(.awaited) }
     return task
   }
 
   @discardableResult
   public func completeTask(_ id: LorvexTask.ID) async -> Bool {
-    let didMutate = await mutateTaskReturningToday(id: id) {
+    await completeTask(id, publication: .awaited)
+  }
+
+  func completeTask(_ id: LorvexTask.ID, publication: MobileTaskMutationPublication) async -> Bool {
+    let didMutate = await mutateTaskReturningToday(id: id, publication: publication) {
       try await core.completeTask(id: id)
     }
     if didMutate {
@@ -36,7 +36,11 @@ extension MobileStore {
 
   @discardableResult
   public func cancelTask(_ id: LorvexTask.ID) async -> Bool {
-    let result = await mutateTaskReturningToday(id: id) {
+    await cancelTask(id, publication: .awaited)
+  }
+
+  func cancelTask(_ id: LorvexTask.ID, publication: MobileTaskMutationPublication) async -> Bool {
+    let result = await mutateTaskReturningToday(id: id, publication: publication) {
       try await core.cancelTask(id: id)
     }
     if result {
@@ -48,7 +52,11 @@ extension MobileStore {
 
   @discardableResult
   public func reopenTask(_ id: LorvexTask.ID) async -> Bool {
-    let result = await mutateTaskReturningToday(id: id) {
+    await reopenTask(id, publication: .awaited)
+  }
+
+  func reopenTask(_ id: LorvexTask.ID, publication: MobileTaskMutationPublication) async -> Bool {
+    let result = await mutateTaskReturningToday(id: id, publication: publication) {
       try await core.reopenTask(id: id)
     }
     if result { feedbackProvider.playFeedback(.taskReopened) }
@@ -83,7 +91,11 @@ extension MobileStore {
   /// A dependency-blocked start surfaces the core's typed error.
   @discardableResult
   public func startTask(_ id: LorvexTask.ID) async -> Bool {
-    let result = await mutateTaskReturningToday(id: id) {
+    await startTask(id, publication: .awaited)
+  }
+
+  func startTask(_ id: LorvexTask.ID, publication: MobileTaskMutationPublication) async -> Bool {
+    let result = await mutateTaskReturningToday(id: id, publication: publication) {
       try await core.startTask(id: id)
     }
     if result { feedbackProvider.playFeedback(.taskReopened) }
@@ -94,7 +106,11 @@ extension MobileStore {
   /// defer count stay as they are.
   @discardableResult
   public func pauseTask(_ id: LorvexTask.ID) async -> Bool {
-    let result = await mutateTaskReturningToday(id: id) {
+    await pauseTask(id, publication: .awaited)
+  }
+
+  func pauseTask(_ id: LorvexTask.ID, publication: MobileTaskMutationPublication) async -> Bool {
+    let result = await mutateTaskReturningToday(id: id, publication: publication) {
       try await core.pauseTask(id: id)
     }
     if result { feedbackProvider.playFeedback(.taskReopened) }
@@ -118,7 +134,11 @@ extension MobileStore {
   /// action and the MCP `set_task_someday` tool; reversed via ``reopenTask(_:)``.
   @discardableResult
   public func markTaskSomeday(_ id: LorvexTask.ID) async -> Bool {
-    let didMutate = await mutateTaskReturningTask(id: id) {
+    await markTaskSomeday(id, publication: .awaited)
+  }
+
+  func markTaskSomeday(_ id: LorvexTask.ID, publication: MobileTaskMutationPublication) async -> Bool {
+    let didMutate = await mutateTaskReturningTask(id: id, publication: publication) {
       try await core.markTaskSomeday(id: id)
     }
     if didMutate {
