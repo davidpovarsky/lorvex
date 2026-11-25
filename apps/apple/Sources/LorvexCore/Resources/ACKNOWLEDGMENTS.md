@@ -1547,7 +1547,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## TaskVisualizationKit a78c84e1df369ea7c93cf4b23d4f5d8d60e25293
+## TaskVisualizationKit 76d3bb2cebba89ac6d4d898980f151fe33922d40
 
 - Repository: https://github.com/davidpovarsky/task-visualization-kit.git
 - License: MIT
