@@ -31,38 +31,89 @@ enum MobileTaskWorkspaceProjection {
           subtaskCount: task.checklistItems.count,
           completedSubtaskCount: task.checklistItems.filter { $0.completedAt != nil }.count)
       },
+      // TaskVisualTone supplies the kit's semantic lane tokens.
       lanes: [
-        .init(id: "open", title: MobileTaskWorkspaceCopy.open, tone: .blue),
-        .init(id: "in_progress", title: MobileTaskWorkspaceCopy.inProgress, tone: .orange),
-        .init(id: "someday", title: MobileTaskWorkspaceCopy.someday, tone: .purple),
-        .init(id: "completed", title: MobileTaskWorkspaceCopy.completed, tone: .green),
-        .init(id: "cancelled", title: MobileTaskWorkspaceCopy.cancelled, tone: .neutral)
+        .init(id: "open", title: MobileTaskWorkspaceCopy.open, tone: TaskVisualTone.blue),
+        .init(id: "in_progress", title: MobileTaskWorkspaceCopy.inProgress, tone: TaskVisualTone.orange),
+        .init(id: "someday", title: MobileTaskWorkspaceCopy.someday, tone: TaskVisualTone.purple),
+        .init(id: "completed", title: MobileTaskWorkspaceCopy.completed, tone: TaskVisualTone.green),
+        .init(id: "cancelled", title: MobileTaskWorkspaceCopy.cancelled, tone: TaskVisualTone.neutral)
       ],
       warnings: warnings, allowsPlannedDate: true)
   }
 }
 
 enum MobileTaskWorkspaceCopy {
-  static var title: String { text("visualTasks.title", "Task workspace") }
-  static var subtitle: String { text("visualTasks.subtitle", "Explore dependencies, boards and your task timeline.") }
-  static var open: String { text("visualTasks.open", "Open") }
-  static var inProgress: String { text("visualTasks.inProgress", "In Progress") }
-  static var someday: String { text("visualTasks.someday", "Someday") }
-  static var completed: String { text("visualTasks.completed", "Completed") }
-  static var cancelled: String { text("visualTasks.cancelled", "Cancelled") }
-  static var truncated: String { text("visualTasks.truncated", "This graph reached its display limit. Open a list or a specific task to focus the workspace.") }
-  static var hiddenDependencies: String { text("visualTasks.hiddenDependencies", "Some prerequisites are outside this view. Blocking rules still use the complete task graph.") }
-  static var failed: String { text("visualTasks.failed", "The change could not be saved. Review the task and try again.") }
-  static var unavailable: String { text("visualTasks.unavailable", "The task workspace could not be loaded.") }
-  static var retry: String { text("visualTasks.retry", "Try again") }
-  static var refresh: String { text("visualTasks.refresh", "Refresh workspace") }
-  static var add: String { text("visualTasks.add", "Add Task") }
-  static var titlePrompt: String { text("visualTasks.titlePrompt", "Task title") }
-  static var notes: String { text("visualTasks.notes", "Notes") }
-  static var close: String { text("common.close", "Close") }
-  static var cancel: String { text("common.cancel", "Cancel") }
-
-  private static func text(_ key: String, _ fallback: String) -> String {
-    MobileL10n.bundle.localizedString(forKey: key, value: fallback, table: "Localizable")
+  static var title: String {
+    String(localized: "visualTasks.title", defaultValue: "Task workspace",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var subtitle: String {
+    String(localized: "visualTasks.subtitle", defaultValue: "Explore dependencies, boards and your task timeline.",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var open: String {
+    String(localized: "visualTasks.open", defaultValue: "Open",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var inProgress: String {
+    String(localized: "visualTasks.inProgress", defaultValue: "In Progress",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var someday: String {
+    String(localized: "visualTasks.someday", defaultValue: "Someday",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var completed: String {
+    String(localized: "visualTasks.completed", defaultValue: "Completed",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var cancelled: String {
+    String(localized: "visualTasks.cancelled", defaultValue: "Cancelled",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var truncated: String {
+    String(localized: "visualTasks.truncated", defaultValue: "This graph reached its display limit. Open a list or a specific task to focus the workspace.",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var hiddenDependencies: String {
+    String(localized: "visualTasks.hiddenDependencies", defaultValue: "Some prerequisites are outside this view. Blocking rules still use the complete task graph.",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var failed: String {
+    String(localized: "visualTasks.failed", defaultValue: "The change could not be saved. Review the task and try again.",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var unavailable: String {
+    String(localized: "visualTasks.unavailable", defaultValue: "The task workspace could not be loaded.",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var retry: String {
+    String(localized: "visualTasks.retry", defaultValue: "Try again",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var refresh: String {
+    String(localized: "visualTasks.refresh", defaultValue: "Refresh workspace",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var add: String {
+    String(localized: "visualTasks.add", defaultValue: "Add Task",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var titlePrompt: String {
+    String(localized: "visualTasks.titlePrompt", defaultValue: "Task title",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var notes: String {
+    String(localized: "visualTasks.notes", defaultValue: "Notes",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var close: String {
+    String(localized: "common.done", defaultValue: "Done",
+      table: "Localizable", bundle: MobileL10n.bundle)
+  }
+  static var cancel: String {
+    String(localized: "common.cancel", defaultValue: "Cancel",
+      table: "Localizable", bundle: MobileL10n.bundle)
   }
 }

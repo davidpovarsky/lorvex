@@ -140,10 +140,10 @@ Example plan (supply the final source SHA after integration and dependency pinni
 ```sh
 /opt/homebrew/bin/python3.12 apps/apple/script/verify_task_workspace_native.py \
   --expected-sha FINAL_40_CHARACTER_SHA \
-  --output /Users/m1/builds/lorvex-visual-173-20261125/evidence/acceptance-RUN_ID \
-  --derived-data /Users/m1/caches/DerivedData/lorvex-visual-173-20261125 \
-  --source-packages /Users/m1/caches/DerivedData/lorvex-visual-173-20261125/SourcePackages \
-  --kit-mirror /Users/m1/builds/task-visualization-kit-20261125/kit.git
+  --output ~/builds/lorvex-visual-173-20261125/evidence/acceptance-RUN_ID \
+  --derived-data ~/caches/DerivedData/lorvex-visual-173-20261125 \
+  --source-packages ~/caches/DerivedData/lorvex-visual-173-20261125/SourcePackages \
+  --kit-mirror ~/builds/task-visualization-kit-20261125/kit.git
 ```
 
 Add `--execute` only for the assigned Mac slot. The optional `--phase`

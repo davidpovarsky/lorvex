@@ -65,7 +65,7 @@ public struct MobileTaskWorkspaceView: View {
             .accessibilityIdentifier("lorvex.visual.retry")
         }
         .padding(12)
-        .background(.orange.opacity(0.12))
+        .background(LorvexDesign.Palette.warning.opacity(0.12))
       }
       if let snapshot {
         TaskWorkspaceView(
@@ -162,7 +162,7 @@ private struct MobileVisualTaskCreateSheet: View {
           .accessibilityIdentifier("lorvex.visual.create.title")
         TextField(MobileTaskWorkspaceCopy.notes, text: $notes, axis: .vertical)
           .lineLimit(3...6)
-        if let error { Text(error).foregroundStyle(.red) }
+        if let error { Text(error).foregroundStyle(LorvexDesign.Palette.error) }
       }
       .navigationTitle(MobileTaskWorkspaceCopy.add)
       .toolbar {

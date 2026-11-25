@@ -5,35 +5,35 @@
   "hanlinSDK": "bea35c3c2a435d1cc5f7ce93b08a649b104bc10f",
   "taskVisualizationKit": "a78c84e1df369ea7c93cf4b23d4f5d8d60e25293",
   "runner": "scaleway-mac",
-  "nativeSource": "/Users/m1/builds/lorvex-visual-173-20261125/source",
-  "derivedData": "/Users/m1/caches/DerivedData/lorvex-visual-173-20261125",
+  "nativeSource": "~/builds/lorvex-visual-173-20261125/source",
+  "derivedData": "~/caches/DerivedData/lorvex-visual-173-20261125",
   "dependencyResolution": [
     {
       "name": "sdk-check",
       "command": [
         "/opt/homebrew/bin/python3.12",
-        "/Users/m1/builds/lorvex-visual-173-20261125/source/apps/apple/script/install_hanlin_sdk.py",
+        "~/builds/lorvex-visual-173-20261125/source/apps/apple/script/install_hanlin_sdk.py",
         "--check"
       ],
       "exit_code": 0,
       "started_at": "2026-11-24T23:04:52.001253+00:00",
-      "log": "/Users/m1/builds/lorvex-visual-173-20261125/evidence/sdk-check.log"
+      "log": "~/builds/lorvex-visual-173-20261125/evidence/sdk-check.log"
     },
     {
       "name": "xcodegen",
       "command": [
         "/opt/homebrew/bin/xcodegen",
         "--spec",
-        "/Users/m1/builds/lorvex-visual-173-20261125/source/apps/apple/Config/XcodeGen/project.yml",
+        "~/builds/lorvex-visual-173-20261125/source/apps/apple/Config/XcodeGen/project.yml",
         "--project",
-        "/Users/m1/builds/lorvex-visual-173-20261125/source/apps/apple/dist/xcode-visual-173",
+        "~/builds/lorvex-visual-173-20261125/source/apps/apple/dist/xcode-visual-173",
         "--project-root",
-        "/Users/m1/builds/lorvex-visual-173-20261125/source/apps/apple",
+        "~/builds/lorvex-visual-173-20261125/source/apps/apple",
         "--quiet"
       ],
       "exit_code": 0,
       "started_at": "2026-11-24T23:05:08.652233+00:00",
-      "log": "/Users/m1/builds/lorvex-visual-173-20261125/evidence/xcodegen.log"
+      "log": "~/builds/lorvex-visual-173-20261125/evidence/xcodegen.log"
     },
     {
       "name": "swift-resolve",
@@ -41,14 +41,14 @@
         "swift",
         "package",
         "--package-path",
-        "/Users/m1/builds/lorvex-visual-173-20261125/source/apps/apple",
+        "~/builds/lorvex-visual-173-20261125/source/apps/apple",
         "--scratch-path",
-        "/Users/m1/caches/DerivedData/lorvex-visual-173-20261125/SwiftPM",
+        "~/caches/DerivedData/lorvex-visual-173-20261125/SwiftPM",
         "resolve"
       ],
       "exit_code": 0,
       "started_at": "2026-11-24T23:05:45.026584+00:00",
-      "log": "/Users/m1/builds/lorvex-visual-173-20261125/evidence/swift-resolve.log"
+      "log": "~/builds/lorvex-visual-173-20261125/evidence/swift-resolve.log"
     },
     {
       "name": "xcode-resolve",
@@ -56,19 +56,19 @@
         "xcodebuild",
         "-resolvePackageDependencies",
         "-project",
-        "/Users/m1/builds/lorvex-visual-173-20261125/source/apps/apple/dist/xcode-visual-173/LorvexAppleNative.xcodeproj",
+        "~/builds/lorvex-visual-173-20261125/source/apps/apple/dist/xcode-visual-173/LorvexAppleNative.xcodeproj",
         "-scheme",
         "LorvexMobileApp",
         "-derivedDataPath",
-        "/Users/m1/caches/DerivedData/lorvex-visual-173-20261125",
+        "~/caches/DerivedData/lorvex-visual-173-20261125",
         "-clonedSourcePackagesDirPath",
-        "/Users/m1/caches/DerivedData/lorvex-visual-173-20261125/SourcePackages",
+        "~/caches/DerivedData/lorvex-visual-173-20261125/SourcePackages",
         "-scmProvider",
         "system"
       ],
       "exit_code": 0,
       "started_at": "2026-11-24T23:06:40.277711+00:00",
-      "log": "/Users/m1/builds/lorvex-visual-173-20261125/evidence/xcode-resolve.log"
+      "log": "~/builds/lorvex-visual-173-20261125/evidence/xcode-resolve.log"
     }
   ],
   "lockSHA256": {
@@ -88,6 +88,7 @@
   "notes": [
     "Xcode resolution writes the full native graph to the local core lock; the captured graph is committed as Config/XcodeGen/Package.resolved and the original one-package core lock is retained.",
     "The private kit Git URL override is process-scoped; canonical URLs remain in both locks.",
-    "UI acceptance is parameterized by the test runner LORVEX_TEST_LANGUAGE environment variable and awaits the coordinated Mac heavy slot."
+    "UI acceptance is parameterized by the test runner LORVEX_TEST_LANGUAGE environment variable and awaits the coordinated Mac heavy slot.",
+    "Runner home paths are normalized to ~; the original preparation receipt is retained outside the repository."
   ]
 }
