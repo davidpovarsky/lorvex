@@ -509,8 +509,12 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     var result: [NativeBoardCardObservation] = []
     let prefix = "task-workspace.board.card."
     while let element = pending.popLast() {
-      pending.append(contentsOf: element.children)
-      guard element.identifier.hasPrefix(prefix) else { continue }
+      guard element.identifier.hasPrefix(prefix) else {
+        pending.append(contentsOf: element.children)
+        continue
+      }
+      // Capture the outer draggable container once. Its native descendants may
+      // inherit the same identifier; they are not additional board cards.
       let id = String(element.identifier.dropFirst(prefix.count))
       XCTAssertFalse(id.isEmpty)
       XCTAssertTrue(seen.insert(id).inserted, "Native card IDs must be unique within a column.")
