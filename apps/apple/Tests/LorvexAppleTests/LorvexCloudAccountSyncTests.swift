@@ -102,7 +102,7 @@ struct LorvexCloudAccountSyncTests {
     #expect(received.notes == "Keep notes")
     let snapshot = try await secondStore.loadVisualTaskWorkspace()
     #expect(Set(snapshot.tasks.map(\.id)) == Set([firstTask.id, secondTask.id]))
-    #expect(snapshot.tasks.allSatisfy(\.isCompleted))
+    #expect(snapshot.tasks.allSatisfy { $0.isCompleted })
 
     try await secondStore.performVisualTaskAction(.removeDependency(
       prerequisiteID: firstTask.id, dependentID: secondTask.id))
