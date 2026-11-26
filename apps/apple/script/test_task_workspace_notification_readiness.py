@@ -3,10 +3,11 @@
 from pathlib import Path
 from types import SimpleNamespace
 import hashlib
-import subprocess
+import ctypes
+import struct
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import task_workspace_notification_readiness as readiness
 
 
@@ -31,38 +32,70 @@ class OwnedReadinessDiagnosticTests(unittest.TestCase):
         log.write_text("sample completed")
         return 0, log
 
-    def observe(self, *, app=None, parent="launchd_sim", changed=False, inventory_timeout=False):
+    def observe(self, *, app=None, parent="launchd_sim", changed=False,
+                changed_start=False, inventory_result=None):
         calls = {}
-        def run(command, **kwargs):
-            self.assertEqual(kwargs["timeout"], 5)
-            if command[1] == "-axo":
-                if inventory_timeout:
-                    raise subprocess.TimeoutExpired(command, 5)
-                text = ("201 100 /sim/SpringBoard\n"
-                        "202 100 /sim/usernotificationsd\n"
-                        "301 300 /foreign/SpringBoard\n"
-                        "302 300 /foreign/usernotificationsd\n")
-            else:
-                pid = int(command[2])
-                calls[pid] = calls.get(pid, 0) + 1
-                if pid == 200:
-                    path = self.app if app is None else app
-                    if changed and calls[pid] > 1:
-                        path = "/foreign/LorvexMobileApp"
-                    text = f"200 100 {path}\n"
-                elif pid == 100:
-                    text = f"100 1 /sim/{parent}\n"
-                elif pid == 201:
-                    text = "201 100 /sim/SpringBoard\n"
-                elif pid == 202:
-                    text = "202 100 /sim/usernotificationsd\n"
-                else:
-                    self.fail(f"Unexpected process inspection: {pid}")
-            return subprocess.CompletedProcess(command, 0, text, "")
-        return run
+        snapshots = {}
+        records = {
+            100: (1, f"/sim/{parent}"),
+            200: (100, self.app if app is None else app),
+            201: (100, "/sim/SpringBoard"),
+            202: (100, "/sim/usernotificationsd"),
+            # A child can be reparented after enumeration. The observer must
+            # check its current identity instead of trusting the PID list.
+            301: (300, "/foreign/SpringBoard"),
+            302: (300, "/foreign/usernotificationsd"),
+        }
+
+        def pid_info(pid, flavor, argument, output, capacity):
+            self.assertEqual((flavor, argument), (3, 0))
+            self.assertIn(pid, records)
+            calls[pid] = calls.get(pid, 0) + 1
+            parent_pid, path = records[pid]
+            start_seconds = 1000 + pid
+            if pid == 200 and calls[pid] > 1:
+                if changed:
+                    path = "/foreign/LorvexMobileApp"
+                if changed_start:
+                    start_seconds += 1
+            snapshots[pid] = path
+            name = Path(path).name.encode()
+            # Public macOS proc_bsdinfo ABI, independently encoded as bytes:
+            # twelve uint32s, two fixed names, six 32-bit fields, two uint64s.
+            raw = struct.pack(
+                "<12I16s32s5Ii2Q",
+                0, 2, 0, pid, parent_pid, 501, 20, 501, 20, 501, 20, 0,
+                name[:15], name[:31],
+                0, pid, 0, 0, 0, 0, start_seconds, 0,
+            )
+            self.assertEqual(capacity, len(raw))
+            ctypes.memmove(output, raw, len(raw))
+            return len(raw)
+
+        def pid_path(pid, output, capacity):
+            raw = snapshots[pid].encode() + b"\0"
+            self.assertLessEqual(len(raw), capacity)
+            ctypes.memmove(output, raw, len(raw))
+            return len(raw)
+
+        def child_pids(parent_pid, output, capacity):
+            self.assertEqual(parent_pid, 100)
+            self.assertEqual(capacity, ctypes.sizeof(output))
+            if inventory_result is not None:
+                return inventory_result
+            children = [201, 202, 301, 302]
+            for index, pid in enumerate(children):
+                output[index] = pid
+            return len(children)
+
+        return SimpleNamespace(
+            proc_pidinfo=Mock(side_effect=pid_info),
+            proc_pidpath=Mock(side_effect=pid_path),
+            proc_listchildpids=Mock(side_effect=child_pids),
+        )
 
     def execute(self, observer):
-        with patch.object(readiness.subprocess, "run", side_effect=observer):
+        with patch("ctypes.CDLL", return_value=observer):
             return readiness.capture_timeout_diagnostics(
                 self.controller, "ipad-en", self.device, 200, 1, self.folder)
 
@@ -83,16 +116,23 @@ class OwnedReadinessDiagnosticTests(unittest.TestCase):
                 self.assertEqual(self.sampled, [])
 
     def test_skips_a_pid_whose_identity_changed_before_sampling(self):
-        result = self.execute(self.observe(changed=True))
-        self.assertNotIn(200, self.sampled)
-        app = next(item for item in result["processes"] if item["role"] == "application")
-        self.assertEqual(app["result"], "unavailable")
-        self.assertIn("identity changed", app["reason"])
+        for options in ({"changed": True}, {"changed_start": True}):
+            with self.subTest(options=options):
+                self.sampled.clear()
+                result = self.execute(self.observe(**options))
+                self.assertNotIn(200, self.sampled)
+                app = next(item for item in result["processes"] if item["role"] == "application")
+                self.assertEqual(app["result"], "unavailable")
+                self.assertIn("identity changed", app["reason"])
 
-    def test_bounded_inventory_timeout_does_not_block_owned_app_sample(self):
-        result = self.execute(self.observe(inventory_timeout=True))
-        self.assertEqual(self.sampled, [200])
-        self.assertEqual(result["serviceDiscovery"], "TimeoutExpired")
+    def test_unavailable_scoped_inventory_does_not_block_owned_app_sample(self):
+        for inventory_result in (-1, 512):
+            with self.subTest(inventory_result=inventory_result):
+                self.sampled.clear()
+                result = self.execute(self.observe(inventory_result=inventory_result))
+                self.assertEqual(self.sampled, [200])
+                self.assertEqual(result["result"], "completed")
+                self.assertIn("unavailable or truncated", result["serviceDiscovery"])
 
 
 if __name__ == "__main__":
