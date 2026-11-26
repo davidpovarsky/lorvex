@@ -3,13 +3,27 @@ from pathlib import Path
 import hashlib,json,os,re,subprocess,time,uuid
 def capture_timeout_diagnostics(controller,key,simulator,pid,number,folder):
  """Sample only the app and services proved to belong to this owned simulator."""
+ import ctypes
  c=controller
- evidence={"result":"unavailable","processes":[],"startedUTC":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()}
+ evidence={"result":"unavailable","processes":[],"collectionMethod":"scoped-libproc","startedUTC":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()}
+ # The ps command can block inside its privileged process inventory on a busy
+ # host, even after its subprocess timeout. Read only the known app identity
+ # and that simulator launchd's direct children through the public libproc ABI.
+ class BSDInfo(ctypes.Structure):
+  _fields_=[(name,ctypes.c_uint32) for name in ("flags","status","xstatus","pid","ppid","uid","gid","ruid","rgid","svuid","svgid","reserved")]+[("comm",ctypes.c_char*16),("name",ctypes.c_char*32)]+[(name,ctypes.c_uint32) for name in ("nfiles","pgid","jobc","tdev","tpgid")]+[("nice",ctypes.c_int32),("startSeconds",ctypes.c_uint64),("startMicroseconds",ctypes.c_uint64)]
+ library=ctypes.CDLL("/usr/lib/libproc.dylib",use_errno=True)
+ library.proc_pidinfo.argtypes=[ctypes.c_int,ctypes.c_int,ctypes.c_uint64,ctypes.c_void_p,ctypes.c_int]
+ library.proc_pidinfo.restype=ctypes.c_int
+ library.proc_pidpath.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_uint32]
+ library.proc_pidpath.restype=ctypes.c_int
+ library.proc_listchildpids.argtypes=[ctypes.c_int,ctypes.c_void_p,ctypes.c_int]
+ library.proc_listchildpids.restype=ctypes.c_int
  def process_record(target):
-  observed=subprocess.run(["ps","-p",str(target),"-o","pid=,ppid=,comm="],env=c.ui_env,capture_output=True,text=True,timeout=5)
-  fields=observed.stdout.strip().split(None,2)
-  if observed.returncode!=0 or len(fields)!=3:return None
-  return {"pid":int(fields[0]),"parentPID":int(fields[1]),"command":fields[2]}
+  info=BSDInfo()
+  if library.proc_pidinfo(target,3,0,ctypes.byref(info),ctypes.sizeof(info))!=ctypes.sizeof(info):return None
+  path=ctypes.create_string_buffer(4096)
+  if library.proc_pidpath(target,path,len(path))<=0:return None
+  return {"pid":int(info.pid),"parentPID":int(info.ppid),"command":path.value.decode(errors="replace"),"startSeconds":int(info.startSeconds),"startMicroseconds":int(info.startMicroseconds)}
  try:
   app=process_record(pid)
   if not app or f"/Devices/{simulator}/" not in app["command"] or Path(app["command"]).name!="LorvexMobileApp":
@@ -21,23 +35,19 @@ def capture_timeout_diagnostics(controller,key,simulator,pid,number,folder):
    return evidence
   evidence["simulatorLaunchd"]=parent
   candidates=[("application",app)]
-  try:
-   inventory=subprocess.run(["ps","-axo","pid=,ppid=,comm="],env=c.ui_env,capture_output=True,text=True,timeout=5)
-   if inventory.returncode==0:
-    services={"SpringBoard":[],"usernotificationsd":[]}
-    for line in inventory.stdout.splitlines():
-     fields=line.strip().split(None,2)
-     if len(fields)!=3:continue
-     entry={"pid":int(fields[0]),"parentPID":int(fields[1]),"command":fields[2]}
-     role=Path(entry["command"]).name
-     if entry["parentPID"]==app["parentPID"] and role in ("SpringBoard","usernotificationsd"):
-      services[role].append(entry)
-    for role,entries in services.items():
-     if len(entries)==1:candidates.append((role,entries[0]))
-     elif entries:evidence[role+"Discovery"]="ambiguous owned service process; not sampled"
-   else:evidence["serviceDiscovery"]="process inventory unavailable"
-  except (subprocess.TimeoutExpired,ValueError) as error:
-   evidence["serviceDiscovery"]=type(error).__name__
+  children=(ctypes.c_int*512)()
+  count=library.proc_listchildpids(app["parentPID"],children,ctypes.sizeof(children))
+  if 0<=count<len(children):
+   services={"SpringBoard":[],"usernotificationsd":[]}
+   for child in children[:count]:
+    entry=process_record(child)
+    if not entry:continue
+    role=Path(entry["command"]).name
+    if entry["parentPID"]==app["parentPID"] and role in services:services[role].append(entry)
+   for role,entries in services.items():
+    if len(entries)==1:candidates.append((role,entries[0]))
+    elif entries:evidence[role+"Discovery"]="ambiguous owned service process; not sampled"
+  else:evidence["serviceDiscovery"]="scoped child process inventory unavailable or truncated"
   for role,expected in candidates:
    record={"role":role,**expected,"result":"unavailable"}
    evidence["processes"].append(record)
