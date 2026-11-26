@@ -97,7 +97,7 @@ class RuntimeBinaryClosureTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
+        self.root = Path(self.temporary.name).resolve()
         self.products = self.root / "Products"
         self.app = self.products / "Debug-iphonesimulator/App.app"
         self.runner = self.products / "Debug-iphonesimulator/UITests-Runner.app"
