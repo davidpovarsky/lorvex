@@ -279,7 +279,7 @@ struct LorvexCloudAccountSyncTests {
   }
 }
 
-private func makeCloudTransport(
+func makeCloudTransport(
   core: any CloudSyncEngineStore, peer: CloudAccountTestPeer
 ) -> LorvexCloudAccountTransport {
   LorvexCloudAccountTransport(
@@ -291,7 +291,7 @@ private func makeCloudTransport(
     request: { try await peer.send($0) })
 }
 
-private actor CloudAccountTestGate {
+actor CloudAccountTestGate {
   private var waiting: CheckedContinuation<Void, Never>?
   private var release: CheckedContinuation<Void, Never>?
   private var entered = false
@@ -318,9 +318,9 @@ private actor CloudAccountTestGate {
   }
 }
 
-private actor CloudAccountTestPeer {
+actor CloudAccountTestPeer {
   private var envelopes: [SyncEnvelope]
-  private let gate: CloudAccountTestGate?
+  private var gate: CloudAccountTestGate?
   private var offline = false
   private var loseReceipt = false
   private var rejectAccess = false
@@ -361,7 +361,12 @@ private actor CloudAccountTestPeer {
       return try response(["error": "expired"], url: url, status: 401)
     }
     if path.hasSuffix("/sync/changes") {
-      if let gate { await gate.enter() }
+      if let gate {
+        // The gate controls the first HTTP response only. Subsequent requests
+        // exercise a real follow-up cycle after suspension or cancellation.
+        self.gate = nil
+        await gate.enter()
+      }
       let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
       let cursor = Int(query?.first(where: { $0.name == "cursor" })?.value ?? "") ?? 0
       let selected = Array(envelopes.dropFirst(cursor))

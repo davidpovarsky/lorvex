@@ -211,7 +211,7 @@ struct LorvexMobileApp: App {
           ReminderBackgroundRefresh.schedule()
           // Send what this device queued, then give up the App Group
           // database's locks before the system suspends this process.
-          BackgroundSyncFlush.flushThenSuspend(store: store)
+          BackgroundSyncFlush.flushThenSuspend(store: store, cloudAccount: cloudAccount)
         }
       #endif
     }

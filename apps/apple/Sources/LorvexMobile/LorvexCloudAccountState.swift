@@ -22,6 +22,7 @@ public final class LorvexCloudAccountState {
   @ObservationIgnored private var wantsPolling = false
   @ObservationIgnored private var pollingGeneration: UInt64 = 0
   @ObservationIgnored private var accountRevision: UInt64 = 0
+  @ObservationIgnored private var syncWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
 
   public convenience init(
     core: any CloudSyncEngineStore,
@@ -79,15 +80,22 @@ public final class LorvexCloudAccountState {
   }
 
   public func syncNow() async {
-    guard !isSyncing, let accountID else { return }
+    guard !(_Concurrency.Task<Never, Never>.isCancelled), !isSyncing, let accountID else { return }
     let revision = accountRevision
     isSyncing = true
-    defer { isSyncing = false }
+    defer {
+      isSyncing = false
+      let completed = Array(syncWaiters.values)
+      syncWaiters.removeAll()
+      for waiter in completed { waiter.resume() }
+    }
     do {
       await disableICloud()
-      guard revision == accountRevision, self.accountID == accountID else { return }
+      guard !(_Concurrency.Task<Never, Never>.isCancelled),
+            revision == accountRevision, self.accountID == accountID else { return }
       let result = try await transport.sync()
-      guard revision == accountRevision, self.accountID == result.accountID else { return }
+      guard !(_Concurrency.Task<Never, Never>.isCancelled),
+            revision == accountRevision, self.accountID == result.accountID else { return }
       lastSent = result.sent
       lastReceived = result.received
       lastConflicts = result.serverConflicts
@@ -99,6 +107,41 @@ public final class LorvexCloudAccountState {
     } catch {
       guard revision == accountRevision else { return }
       status = String(localized: "cloud.account.sync_paused", defaultValue: "Sync paused: ", table: "Localizable", bundle: MobileL10n.bundle) + error.localizedDescription
+    }
+  }
+
+  /// Runs after the app has saved its drafts, inside its existing iOS background
+  /// task. A cancelled foreground poll can still be unwinding a network call;
+  /// wait for that cycle before draining the newly committed durable outbox.
+  /// Cancellation releases the waiter without waiting for the old HTTP request,
+  /// and a changed account can never inherit this background operation.
+  public func flushBeforeSuspension() async {
+    let revision = accountRevision
+    guard let accountID else { return }
+    while isSyncing {
+      await waitForSyncCompletion()
+      guard !(_Concurrency.Task<Never, Never>.isCancelled),
+            revision == accountRevision, self.accountID == accountID else { return }
+    }
+    guard !(_Concurrency.Task<Never, Never>.isCancelled),
+          revision == accountRevision, self.accountID == accountID else { return }
+    await syncNow()
+  }
+
+  private func waitForSyncCompletion() async {
+    let id = UUID()
+    await withTaskCancellationHandler {
+      await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+        guard isSyncing, !(_Concurrency.Task<Never, Never>.isCancelled) else {
+          continuation.resume()
+          return
+        }
+        syncWaiters[id] = continuation
+      }
+    } onCancel: { [weak self] in
+      _Concurrency.Task { @MainActor [weak self] in
+        self?.syncWaiters.removeValue(forKey: id)?.resume()
+      }
     }
   }
 

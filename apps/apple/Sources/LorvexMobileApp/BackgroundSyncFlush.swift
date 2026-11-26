@@ -22,7 +22,9 @@ import LorvexMobile
   @MainActor
   enum BackgroundSyncFlush {
     @discardableResult
-    static func flushThenSuspend(store: MobileStore) -> Task<Void, Never>? {
+    static func flushThenSuspend(
+      store: MobileStore, cloudAccount: LorvexCloudAccountState? = nil
+    ) -> Task<Void, Never>? {
       BackgroundDatabaseWork.begin()
       let flush = Flush()
       flush.taskID = UIApplication.shared.beginBackgroundTask(withName: "Lorvex sync") {
@@ -38,6 +40,11 @@ import LorvexMobile
         await store.flushAutosaveDraftsBeforeSuspension()
         // An autosave already in flight may finish after expiration. Keep that save,
         // but do not start a new sync after this flush gave up its database ownership.
+        guard flush.canContinue else { return }
+        // Lorvex Cloud owns the canonical outbox while CloudKit is disabled.
+        // Join its cancelled foreground poll and flush the just-saved drafts
+        // within this same OS background budget; do not start a separate task.
+        await cloudAccount?.flushBeforeSuspension()
         guard flush.canContinue else { return }
         await store.flushCloudSyncBeforeSuspension()
       }
