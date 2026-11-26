@@ -397,6 +397,10 @@ class Controller:
 
     def preflight(self):
         self.assert_source()
+        self.receipt["controllerProcess"] = {
+            "pid": os.getpid(), "parentPID": os.getppid(),
+            "executable": str(Path(sys.executable).resolve()),
+        }
         self.receipt["inputSHA256"] = {
             name: digest(self.source / name) for name in (
                 "HanlinSDK.lock.json", "apps/apple/Package.swift",
@@ -430,7 +434,7 @@ class Controller:
             ("selected-developer", ["xcode-select", "-p"]),
             ("disk", ["df", "-h", str(self.dd)]),
             ("memory", ["memory_pressure"]),
-            ("processes", ["ps", "-axo", "pid,%cpu,%mem,comm"]),
+            ("load", ["sysctl", "vm.loadavg"]),
             ("sdk-check", [sys.executable, str(self.apple / "script/install_hanlin_sdk.py"), "--check"]),
             ("acknowledgments", [sys.executable, str(self.apple / "script/verify_acknowledgments.py")]),
         ):
