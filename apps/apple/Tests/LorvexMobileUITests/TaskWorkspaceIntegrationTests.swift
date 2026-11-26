@@ -250,6 +250,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         assistantVerifiedModes == Set(["graph", "board", "timeline", "network", "table"]),
       "nativeBoardDragVerified": boardDragVerified,
       "nativeBoardColumnControlsVerified": boardDragVerified,
+      "nativeBoardActionsMenuVerified": boardDragVerified,
       "nativeBoardScrollVerified": boardScrollVerified,
       "nativeFlowConnectionDragVerified": flowConnectionDragVerified,
       "dependencyPreservedAfterRelaunch": true,
@@ -547,6 +548,29 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       .matching(identifier: "task-workspace.board.column.open").firstMatch
     let sourceColumn = app.descendants(matching: .any)
       .matching(identifier: "task-workspace.board.column.in_progress").firstMatch
+    // Commands remain available through their own native menu, leaving the
+    // card body free for the unchanged system lift-and-drop gesture below.
+    let actions = app.buttons["task-workspace.board.actions." + taskID]
+    XCTAssertTrue(actions.waitForExistence(timeout: 5))
+    XCTAssertTrue(actions.isHittable && app.frame.contains(actions.frame))
+    XCTAssertGreaterThanOrEqual(actions.frame.width, 44)
+    XCTAssertGreaterThanOrEqual(actions.frame.height, 44)
+    let dismissMenu = app.buttons["task-workspace.tab.board"]
+      .coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+    actions.tap()
+    let openCommand = app.buttons[language.openTask]
+    XCTAssertTrue(openCommand.waitForExistence(timeout: 5))
+    XCTAssertTrue(openCommand.isEnabled && openCommand.isHittable)
+    let laneCommands = language == .he
+      ? ["פתוחות", "בהמשך", "הושלמו", "בוטלו"]
+      : ["Open", "Someday", "Completed", "Cancelled"]
+    for title in laneCommands {
+      let command = app.buttons[title]
+      XCTAssertTrue(command.exists && command.isEnabled && command.isHittable)
+    }
+    attachHierarchy(app, "Lorvex \(language.rawValue) - explicit Board menu preserves task commands")
+    dismissMenu.tap()
+    XCTAssertTrue(openCommand.waitForNonExistence(timeout: 5))
     let collapse = app.buttons["task-workspace.board.collapse.open"]
     XCTAssertTrue(destinationColumn.waitForExistence(timeout: 10))
     XCTAssertTrue(collapse.isHittable)
