@@ -156642,6 +156642,1301 @@
           }
         }
       }
+    },
+    "cloud.account.error.not_signed_in": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول إلى حساب Lorvex Cloud أولًا"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রথমে আপনার Lorvex Cloud অ্যাকাউন্টে সাইন ইন করুন"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melden Sie sich zuerst bei Ihrem Lorvex-Cloud-Konto an"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Συνδεθείτε πρώτα στον λογαριασμό σας στο Lorvex Cloud"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to your Lorvex Cloud account first"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión primero en tu cuenta de Lorvex Cloud"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابتدا به حساب Lorvex Cloud خود وارد شوید"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous d’abord à votre compte Lorvex Cloud"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "יש להתחבר תחילה לחשבון Lorvex Cloud שלך"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पहले अपने Lorvex Cloud खाते में साइन इन करें"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masuk ke akun Lorvex Cloud Anda terlebih dahulu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi prima al tuo account Lorvex Cloud"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まずLorvex Cloudアカウントにサインインしてください"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "먼저 Lorvex Cloud 계정에 로그인하세요"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रथम तुमच्या Lorvex Cloud खात्यात साइन इन करा"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log masuk ke akaun Lorvex Cloud anda dahulu"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meld u eerst aan bij uw Lorvex Cloud-account"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw zaloguj się na swoje konto Lorvex Cloud"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre primeiro na sua conta do Lorvex Cloud"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autentifică-te mai întâi în contul tău Lorvex Cloud"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала войдите в свою учётную запись Lorvex Cloud"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "முதலில் உங்கள் Lorvex Cloud கணக்கில் உள்நுழையவும்"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ముందుగా మీ Lorvex Cloud ఖాతాలో సైన్ ఇన్ చేయండి"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลงชื่อเข้าใช้บัญชี Lorvex Cloud ของคุณก่อน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce Lorvex Cloud hesabınıza giriş yapın"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спочатку ввійдіть у свій обліковий запис Lorvex Cloud"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "پہلے اپنے Lorvex Cloud اکاؤنٹ میں سائن ان کریں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy đăng nhập vào tài khoản Lorvex Cloud của bạn trước"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先登录你的 Lorvex Cloud 账户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請先登入你的 Lorvex Cloud 帳號"
+          }
+        }
+      }
+    },
+    "cloud.account.error.different_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قاعدة بيانات هذا iPad مرتبطة بالفعل بحساب Lorvex Cloud آخر. صدّر نسخة احتياطية وأعد ضبط هذا الجهاز قبل تبديل الحسابات."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই iPad-এর ডেটাবেস ইতিমধ্যেই অন্য একটি Lorvex Cloud অ্যাকাউন্টের সঙ্গে যুক্ত। অ্যাকাউন্ট বদলানোর আগে একটি ব্যাকআপ এক্সপোর্ট করুন এবং এই ডিভাইসটি রিসেট করুন।"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese iPad-Datenbank gehört bereits zu einem anderen Lorvex-Cloud-Konto. Exportieren Sie eine Sicherung und setzen Sie dieses Gerät zurück, bevor Sie das Konto wechseln."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η βάση δεδομένων αυτού του iPad ανήκει ήδη σε άλλον λογαριασμό Lorvex Cloud. Εξαγάγετε ένα αντίγραφο ασφαλείας και επαναφέρετε αυτή τη συσκευή πριν αλλάξετε λογαριασμό."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This iPad database already belongs to another Lorvex Cloud account. Export a backup and reset this device before switching accounts."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La base de datos de este iPad ya pertenece a otra cuenta de Lorvex Cloud. Exporta una copia de seguridad y restablece este dispositivo antes de cambiar de cuenta."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "پایگاه دادهٔ این iPad از قبل به حساب Lorvex Cloud دیگری تعلق دارد. پیش از تغییر حساب، یک نسخهٔ پشتیبان صادر کنید و این دستگاه را بازنشانی کنید."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La base de données de cet iPad appartient déjà à un autre compte Lorvex Cloud. Exportez une sauvegarde et réinitialisez cet appareil avant de changer de compte."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "מסד הנתונים באייפד הזה כבר שייך לחשבון Lorvex Cloud אחר. יש לייצא גיבוי ולאפס את המכשיר לפני החלפת חשבון."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस iPad का डेटाबेस पहले से किसी दूसरे Lorvex Cloud खाते से जुड़ा है। खाता बदलने से पहले बैकअप एक्सपोर्ट करें और इस डिवाइस को रीसेट करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Database iPad ini sudah menjadi milik akun Lorvex Cloud lain. Ekspor cadangan dan atur ulang perangkat ini sebelum berganti akun."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il database di questo iPad appartiene già a un altro account Lorvex Cloud. Esporta un backup e ripristina questo dispositivo prima di cambiare account."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このiPadのデータベースは、すでに別のLorvex Cloudアカウントに属しています。アカウントを切り替える前に、バックアップを書き出して、このデバイスをリセットしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 iPad의 데이터베이스는 이미 다른 Lorvex Cloud 계정에 속해 있습니다. 계정을 전환하기 전에 백업을 내보내고 이 기기를 재설정하세요."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "या iPad चा डेटाबेस आधीपासून दुसऱ्या Lorvex Cloud खात्याचा आहे. खाते बदलण्यापूर्वी बॅकअप निर्यात करा आणि हे डिव्हाइस रीसेट करा."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pangkalan data iPad ini sudah dimiliki oleh akaun Lorvex Cloud yang lain. Eksport sandaran dan tetapkan semula peranti ini sebelum menukar akaun."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De database op deze iPad hoort al bij een ander Lorvex Cloud-account. Exporteer een reservekopie en stel dit apparaat opnieuw in voordat u van account wisselt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baza danych tego iPada należy już do innego konta Lorvex Cloud. Przed zmianą konta wyeksportuj kopię zapasową i wyzeruj to urządzenie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O banco de dados deste iPad já pertence a outra conta do Lorvex Cloud. Exporte um backup e redefina este dispositivo antes de trocar de conta."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baza de date a acestui iPad aparține deja altui cont Lorvex Cloud. Exportă o copie de siguranță și resetează acest dispozitiv înainte de a schimba contul."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "База данных этого iPad уже принадлежит другой учётной записи Lorvex Cloud. Экспортируйте резервную копию и сбросьте это устройство перед сменой учётной записи."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்த iPad தரவுத்தளம் ஏற்கெனவே வேறொரு Lorvex Cloud கணக்கிற்குச் சொந்தமானது. கணக்கை மாற்றுவதற்கு முன் காப்புப்பிரதியை ஏற்றுமதி செய்து இந்தச் சாதனத்தை மீட்டமைக்கவும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఈ iPad డేటాబేస్ ఇప్పటికే మరొక Lorvex Cloud ఖాతాకు చెందినది. ఖాతాలను మార్చే ముందు బ్యాకప్‌ను ఎగుమతి చేసి ఈ పరికరాన్ని రీసెట్ చేయండి."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ฐานข้อมูลบน iPad เครื่องนี้เป็นของบัญชี Lorvex Cloud อื่นอยู่แล้ว ส่งออกข้อมูลสำรองและรีเซ็ตอุปกรณ์นี้ก่อนเปลี่ยนบัญชี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu iPad'in veritabanı zaten başka bir Lorvex Cloud hesabına ait. Hesap değiştirmeden önce bir yedek dışa aktarın ve bu aygıtı sıfırlayın."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "База даних цього iPad уже належить іншому обліковому запису Lorvex Cloud. Експортуйте резервну копію та скиньте цей пристрій перед зміною облікового запису."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اس iPad کا ڈیٹابیس پہلے ہی کسی دوسرے Lorvex Cloud اکاؤنٹ سے منسلک ہے۔ اکاؤنٹ تبدیل کرنے سے پہلے بیک اپ ایکسپورٹ کریں اور اس ڈیوائس کو ری سیٹ کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cơ sở dữ liệu trên iPad này đã thuộc về một tài khoản Lorvex Cloud khác. Hãy xuất bản sao lưu và đặt lại thiết bị này trước khi đổi tài khoản."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 iPad 的数据库已属于另一个 Lorvex Cloud 账户。切换账户前，请导出备份并重置此设备。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 iPad 的資料庫已屬於另一個 Lorvex Cloud 帳號。切換帳號前，請匯出備份並重置此裝置。"
+          }
+        }
+      }
+    },
+    "cloud.account.error.session_changed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تغيّر حساب Lorvex Cloud. ستُستأنف المزامنة باستخدام الحساب الحالي."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud অ্যাকাউন্ট পরিবর্তিত হয়েছে। বর্তমান অ্যাকাউন্ট দিয়ে সিঙ্ক আবার শুরু হবে।"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Lorvex-Cloud-Konto wurde geändert. Die Synchronisierung wird mit dem aktuellen Konto fortgesetzt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο λογαριασμός Lorvex Cloud άλλαξε. Ο συγχρονισμός θα συνεχιστεί με τον τρέχοντα λογαριασμό."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Lorvex Cloud account changed. Sync will resume with the current account."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cuenta de Lorvex Cloud ha cambiado. La sincronización se reanudará con la cuenta actual."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حساب Lorvex Cloud تغییر کرد. همگام‌سازی با حساب فعلی از سر گرفته می‌شود."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le compte Lorvex Cloud a changé. La synchronisation reprendra avec le compte actuel."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "חשבון Lorvex Cloud השתנה. הסנכרון יתחדש עם החשבון הנוכחי."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud खाता बदल गया है। सिंक मौजूदा खाते के साथ फिर शुरू होगा।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akun Lorvex Cloud telah berubah. Sinkronisasi akan dilanjutkan dengan akun saat ini."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’account Lorvex Cloud è cambiato. La sincronizzazione riprenderà con l’account attuale."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloudアカウントが変更されました。現在のアカウントで同期を再開します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud 계정이 변경되었습니다. 현재 계정으로 동기화를 재개합니다."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud खाते बदलले आहे. सध्याच्या खात्यासह सिंक पुन्हा सुरू होईल."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akaun Lorvex Cloud telah berubah. Penyegerakan akan disambung semula dengan akaun semasa."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het Lorvex Cloud-account is gewijzigd. De synchronisatie wordt hervat met het huidige account."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto Lorvex Cloud zostało zmienione. Synchronizacja zostanie wznowiona z bieżącym kontem."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A conta do Lorvex Cloud foi alterada. A sincronização será retomada com a conta atual."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contul Lorvex Cloud s-a schimbat. Sincronizarea va continua cu contul actual."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Учётная запись Lorvex Cloud изменилась. Синхронизация возобновится с текущей учётной записью."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud கணக்கு மாற்றப்பட்டது. தற்போதைய கணக்குடன் ஒத்திசைவு மீண்டும் தொடங்கும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud ఖాతా మారింది. ప్రస్తుత ఖాతాతో సమకాలీకరణ మళ్లీ ప్రారంభమవుతుంది."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บัญชี Lorvex Cloud เปลี่ยนไปแล้ว การซิงค์จะดำเนินต่อด้วยบัญชีปัจจุบัน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud hesabı değişti. Eşitleme mevcut hesapla devam edecek."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обліковий запис Lorvex Cloud змінився. Синхронізація відновиться з поточним обліковим записом."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud اکاؤنٹ تبدیل ہو گیا ہے۔ موجودہ اکاؤنٹ کے ساتھ مطابقت پذیری دوبارہ شروع ہو جائے گی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản Lorvex Cloud đã thay đổi. Quá trình đồng bộ sẽ tiếp tục với tài khoản hiện tại."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud 账户已更改。同步将使用当前账户继续。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud 帳號已變更。同步將使用目前的帳號繼續。"
+          }
+        }
+      }
+    },
+    "cloud.account.error.service_prefix": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خطأ HTTP في Lorvex Cloud: "
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud-এর HTTP ত্রুটি: "
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex-Cloud-HTTP-Fehler: "
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σφάλμα HTTP του Lorvex Cloud: "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP "
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error HTTP de Lorvex Cloud: "
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خطای HTTP در Lorvex Cloud: "
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erreur HTTP de Lorvex Cloud : "
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "שגיאת HTTP בענן Lorvex: "
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP त्रुटि: "
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kesalahan HTTP Lorvex Cloud: "
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Errore HTTP di Lorvex Cloud: "
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex CloudのHTTPエラー: "
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP 오류: "
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP त्रुटी: "
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ralat HTTP Lorvex Cloud: "
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP-fout van Lorvex Cloud: "
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Błąd HTTP Lorvex Cloud: "
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erro HTTP do Lorvex Cloud: "
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eroare HTTP Lorvex Cloud: "
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ошибка HTTP Lorvex Cloud: "
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP பிழை: "
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP లోపం: "
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อผิดพลาด HTTP ของ Lorvex Cloud: "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP hatası: "
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Помилка HTTP Lorvex Cloud: "
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud کی HTTP خرابی: "
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lỗi HTTP của Lorvex Cloud: "
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP 错误："
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud HTTP 錯誤："
+          }
+        }
+      }
+    },
+    "cloud.account.error.invalid_response": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أعاد Lorvex Cloud استجابة غير صالحة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud থেকে একটি অবৈধ উত্তর এসেছে"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud hat eine ungültige Antwort zurückgegeben"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Lorvex Cloud επέστρεψε μη έγκυρη απόκριση"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud returned an invalid response"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud devolvió una respuesta no válida"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud پاسخ نامعتبری برگرداند"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud a renvoyé une réponse non valide"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "התקבלה תגובה לא תקינה מ־Lorvex Cloud"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud से अमान्य जवाब मिला"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud mengembalikan respons yang tidak valid"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud ha restituito una risposta non valida"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloudから無効な応答が返されました"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud가 잘못된 응답을 반환했습니다"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud ने अवैध प्रतिसाद दिला"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud mengembalikan respons yang tidak sah"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud heeft een ongeldig antwoord teruggegeven"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud zwrócił nieprawidłową odpowiedź"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Lorvex Cloud retornou uma resposta inválida"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud a returnat un răspuns nevalid"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud вернул недопустимый ответ"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud தவறான பதிலை வழங்கியது"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud చెల్లని ప్రతిస్పందనను ఇచ్చింది"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud ส่งการตอบกลับที่ไม่ถูกต้อง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud geçersiz bir yanıt döndürdü"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud повернув недійсну відповідь"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud نے ایک غلط جواب واپس کیا"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud trả về phản hồi không hợp lệ"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud 返回了无效响应"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud 傳回了無效的回應"
+          }
+        }
+      }
+    },
+    "cloud.account.error.keychain_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر حفظ بيانات تسجيل الدخول في سلسلة مفاتيح iPad"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad-এর Keychain-এ সাইন-ইনের তথ্য সংরক্ষণ করা যায়নি"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Anmeldedaten konnten nicht im iPad-Schlüsselbund gespeichert werden"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δεν ήταν δυνατή η αποθήκευση των στοιχείων σύνδεσης στην Κλειδοθήκη του iPad"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to store credentials in the iPad Keychain"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron guardar las credenciales en el llavero del iPad"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ذخیرهٔ اطلاعات ورود در Keychain آیپد امکان‌پذیر نبود"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d’enregistrer les identifiants dans le trousseau de l’iPad"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "לא ניתן לשמור את פרטי ההתחברות ב־Keychain של האייפד"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad के Keychain में साइन-इन जानकारी सेव नहीं की जा सकी"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak dapat menyimpan kredensial di Keychain iPad"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare le credenziali nel Portachiavi dell’iPad"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPadのキーチェーンに認証情報を保存できませんでした"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad 키체인에 로그인 정보를 저장할 수 없습니다"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad च्या Keychain मध्ये साइन-इन माहिती साठवता आली नाही"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tidak dapat menyimpan maklumat log masuk dalam Keychain iPad"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De aanmeldgegevens konden niet in de iPad-sleutelhanger worden opgeslagen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można zapisać danych logowania w pęku kluczy iPada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível salvar as credenciais nas Chaves do iPad"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu s-au putut stoca datele de autentificare în Keychain pe iPad"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось сохранить данные входа в Связке ключей iPad"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad Keychain-இல் உள்நுழைவுத் தகவலைச் சேமிக்க முடியவில்லை"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad Keychainలో సైన్-ఇన్ వివరాలను నిల్వ చేయలేకపోయింది"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่สามารถบันทึกข้อมูลลงชื่อเข้าใช้ในพวงกุญแจของ iPad"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giriş bilgileri iPad Anahtar Zinciri'ne kaydedilemedi"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося зберегти дані входу у В’язці ключів iPad"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPad کے Keychain میں سائن ان کی معلومات محفوظ نہیں کی جا سکیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể lưu thông tin đăng nhập vào Chuỗi khóa của iPad"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法将登录凭据存储到 iPad 钥匙串中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法將登入憑證儲存至 iPad 鑰匙圈"
+          }
+        }
+      }
+    },
+    "cloud.account.error.sync_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذّر على Lorvex Cloud إكمال دفعة المزامنة هذه. تم الاحتفاظ بتغييراتك المحلية."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud এই সিঙ্ক ব্যাচটি শেষ করতে পারেনি। আপনার স্থানীয় পরিবর্তনগুলো সংরক্ষিত আছে।"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud konnte diesen Synchronisierungsdurchlauf nicht abschließen. Ihre lokalen Änderungen bleiben erhalten."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το Lorvex Cloud δεν μπόρεσε να ολοκληρώσει αυτή την παρτίδα συγχρονισμού. Οι τοπικές αλλαγές σας διατηρούνται."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud could not finish this sync batch. Your local changes are retained."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud no pudo completar este lote de sincronización. Tus cambios locales se conservan."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud نتوانست این دستهٔ همگام‌سازی را تکمیل کند. تغییرات محلی شما حفظ شده‌اند."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud n’a pas pu terminer ce lot de synchronisation. Vos modifications locales sont conservées."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "לא ניתן להשלים את פעולת הסנכרון עם Lorvex Cloud. השינויים המקומיים שלך נשמרו."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud इस सिंक बैच को पूरा नहीं कर सका। आपके स्थानीय बदलाव सुरक्षित हैं।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud tidak dapat menyelesaikan kelompok sinkronisasi ini. Perubahan lokal Anda tetap tersimpan."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud non ha potuto completare questo gruppo di sincronizzazione. Le modifiche locali sono conservate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloudは今回の同期処理を完了できませんでした。ローカルの変更は保持されています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud가 이번 동기화 작업을 완료하지 못했습니다. 로컬 변경 사항은 보존됩니다."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud ला हा सिंक संच पूर्ण करता आला नाही. तुमचे स्थानिक बदल जतन केले आहेत."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud tidak dapat melengkapkan kelompok penyegerakan ini. Perubahan setempat anda dikekalkan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud kon deze synchronisatiebatch niet voltooien. Uw lokale wijzigingen blijven bewaard."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud nie mógł ukończyć tej partii synchronizacji. Twoje lokalne zmiany zostały zachowane."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Lorvex Cloud não conseguiu concluir este lote de sincronização. Suas alterações locais foram preservadas."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud nu a putut finaliza acest lot de sincronizare. Modificările locale sunt păstrate."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud не удалось завершить этот пакет синхронизации. Ваши локальные изменения сохранены."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud இந்த ஒத்திசைவுத் தொகுதியை முடிக்க முடியவில்லை. உங்கள் உள்ளூர் மாற்றங்கள் தக்கவைக்கப்பட்டுள்ளன."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud ఈ సమకాలీకరణ బ్యాచ్‌ను పూర్తి చేయలేకపోయింది. మీ స్థానిక మార్పులు భద్రంగా ఉన్నాయి."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud ไม่สามารถซิงค์ชุดข้อมูลนี้ให้เสร็จได้ การเปลี่ยนแปลงในอุปกรณ์ของคุณยังคงอยู่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud bu eşitleme grubunu tamamlayamadı. Yerel değişiklikleriniz korunuyor."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud не вдалося завершити цей пакет синхронізації. Ваші локальні зміни збережено."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud مطابقت پذیری کا یہ بیچ مکمل نہیں کر سکا۔ آپ کی مقامی تبدیلیاں محفوظ ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud không thể hoàn tất đợt đồng bộ này. Các thay đổi cục bộ của bạn vẫn được giữ lại."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud 未能完成此批次同步。你的本地更改已保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lorvex Cloud 無法完成此批次同步。你的本機變更已保留。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

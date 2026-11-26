@@ -15,14 +15,21 @@ public enum LorvexCloudAccountError: Error, LocalizedError, Sendable {
 
   public var errorDescription: String? {
     switch self {
-    case .notSignedIn: "Sign in to your Lorvex Cloud account first"
+    case .notSignedIn: String(localized: "cloud.account.error.not_signed_in",
+             defaultValue: "Sign in to your Lorvex Cloud account first", table: "Localizable", bundle: MobileL10n.bundle)
     case .differentAccount:
-      "This iPad database already belongs to another Lorvex Cloud account. Export a backup and reset this device before switching accounts."
-    case .sessionChanged: "The Lorvex Cloud account changed. Sync will resume with the current account."
-    case .service(let code): "Lorvex Cloud HTTP " + String(code)
-    case .invalidResponse: "Lorvex Cloud returned an invalid response"
-    case .inaccessibleKeychain: "Unable to store credentials in the iPad Keychain"
-    case .syncFailed: "Lorvex Cloud could not finish this sync batch. Your local changes are retained."
+      String(localized: "cloud.account.error.different_account",
+             defaultValue: "This iPad database already belongs to another Lorvex Cloud account. Export a backup and reset this device before switching accounts.", table: "Localizable", bundle: MobileL10n.bundle)
+    case .sessionChanged: String(localized: "cloud.account.error.session_changed",
+             defaultValue: "The Lorvex Cloud account changed. Sync will resume with the current account.", table: "Localizable", bundle: MobileL10n.bundle)
+    case .service(let code): String(localized: "cloud.account.error.service_prefix",
+             defaultValue: "Lorvex Cloud HTTP ", table: "Localizable", bundle: MobileL10n.bundle) + String(code)
+    case .invalidResponse: String(localized: "cloud.account.error.invalid_response",
+             defaultValue: "Lorvex Cloud returned an invalid response", table: "Localizable", bundle: MobileL10n.bundle)
+    case .inaccessibleKeychain: String(localized: "cloud.account.error.keychain_unavailable",
+             defaultValue: "Unable to store credentials in the iPad Keychain", table: "Localizable", bundle: MobileL10n.bundle)
+    case .syncFailed: String(localized: "cloud.account.error.sync_failed",
+             defaultValue: "Lorvex Cloud could not finish this sync batch. Your local changes are retained.", table: "Localizable", bundle: MobileL10n.bundle)
     }
   }
 }
