@@ -589,6 +589,46 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       .matching(identifier: "task-workspace.board.card." + destinationID).firstMatch
     XCTAssertTrue(source.waitForExistence(timeout: 10))
     XCTAssertTrue(destination.waitForExistence(timeout: 10))
+    let board = app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.board").firstMatch
+    XCTAssertTrue(board.waitForExistence(timeout: 5))
+    // Expanding the adjacent column can leave only a narrow strip of the
+    // draggable card on screen. Reveal its whole body before the original lift.
+    for _ in 0..<5 {
+      let boardViewport = board.frame.intersection(app.frame)
+      let horizontalViewport = boardViewport.insetBy(dx: 12, dy: 0)
+      let frame = source.frame
+      guard !boardViewport.isEmpty, !frame.isEmpty,
+            frame.width <= horizontalViewport.width else {
+        XCTFail("The full native Board card must fit in the observed viewport.")
+        throw NSError(domain: "NativeBoardAcceptance", code: 2)
+      }
+      if frame.minX >= horizontalViewport.minX && frame.maxX <= horizontalViewport.maxX {
+        break
+      }
+      let shift = frame.minX < horizontalViewport.minX
+        ? horizontalViewport.minX - frame.minX
+        : horizontalViewport.maxX - frame.maxX
+      let panY = min(sourceColumn.frame.maxY, destinationColumn.frame.maxY,
+        boardViewport.maxY) - 16
+      guard panY > max(source.frame.maxY, destination.frame.maxY) + 12 else {
+        XCTFail("Horizontal Board reveal must begin in the observed empty column space.")
+        throw NSError(domain: "NativeBoardAcceptance", code: 3)
+      }
+      let panX = shift > 0 ? horizontalViewport.minX + 20 : horizontalViewport.maxX - 20
+      let distance = min(abs(shift), horizontalViewport.width - 40) * (shift > 0 ? 1 : -1)
+      let origin = app.coordinate(withNormalizedOffset: .zero)
+      let panStart = origin.withOffset(CGVector(dx: panX, dy: panY))
+      let panEnd = origin.withOffset(CGVector(dx: panX + distance, dy: panY))
+      panStart.press(forDuration: 0.1, thenDragTo: panEnd)
+    }
+    let fullSourceViewport = sourceColumn.frame.intersection(board.frame)
+      .intersection(app.frame).insetBy(dx: 2, dy: 6)
+    guard !source.frame.isEmpty && fullSourceViewport.contains(source.frame) else {
+      attachHierarchy(app, "Lorvex \(language.rawValue) - Board drag source not fully visible")
+      XCTFail("The full native Board source card must be visible before the original lift.")
+      throw NSError(domain: "NativeBoardAcceptance", code: 4)
+    }
     let viewport = app.frame
     let sourceFrame = source.frame
     let destinationFrame = destination.frame
@@ -606,6 +646,19 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     let to = destination.coordinate(withNormalizedOffset: CGVector(
       dx: (destinationVisible.midX - destinationFrame.minX) / destinationFrame.width,
       dy: (destinationVisible.midY - destinationFrame.minY) / destinationFrame.height))
+    for (card, point, id) in [(source, from.screenPoint, taskID),
+                              (destination, to.screenPoint, destinationID)] {
+      let buttons = card.descendants(matching: .button).allElementsBoundByIndex
+      let required: Set<String> = ["task-workspace.open." + id,
+        "task-workspace.complete." + id, "task-workspace.board.actions." + id]
+      guard required.isSubset(of: Set(buttons.map(\.identifier))),
+            buttons.allSatisfy({ !$0.frame.isEmpty }),
+            !buttons.contains(where: { $0.frame.insetBy(dx: -4, dy: -4).contains(point) }) else {
+        attachHierarchy(app, "Lorvex \(language.rawValue) - Board drag point overlaps a button")
+        XCTFail("A native Board drag must use the actual card body outside every inner button.")
+        throw NSError(domain: "NativeBoardAcceptance", code: 5)
+      }
+    }
     let observation = XCTAttachment(string:
       "source=\(sourceFrame) visible=\(sourceVisible) nativePoint=\(from.screenPoint)\n"
       + "destination=\(destinationFrame) visible=\(destinationVisible) nativePoint=\(to.screenPoint)")
