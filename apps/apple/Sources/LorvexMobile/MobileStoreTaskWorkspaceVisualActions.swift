@@ -17,7 +17,7 @@ extension MobileStore {
     let blocked = try await core.blockedTaskIDs(in: tasks)
     try Task.checkCancellation()
     cacheTasks(tasks)
-    let names = Dictionary((lists?.lists ?? []).map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+    let names = Dictionary((lists?.lists ?? []).map { ($0.id, $0.displayName) }, uniquingKeysWith: { first, _ in first })
     return MobileTaskWorkspaceProjection.snapshot(
       tasks: tasks, blockedIDs: blocked, isTruncated: workspace.truncated,
       title: rootTitle ?? listID.flatMap { names[$0] } ?? MobileTaskWorkspaceCopy.title,

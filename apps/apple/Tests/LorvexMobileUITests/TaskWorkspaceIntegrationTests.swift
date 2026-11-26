@@ -548,6 +548,15 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       .matching(identifier: "task-workspace.board.column.open").firstMatch
     let sourceColumn = app.descendants(matching: .any)
       .matching(identifier: "task-workspace.board.column.in_progress").firstMatch
+    let collapse = app.buttons["task-workspace.board.collapse.open"]
+    XCTAssertTrue(destinationColumn.waitForExistence(timeout: 10))
+    XCTAssertTrue(collapse.isHittable)
+    collapse.tap()
+    XCTAssertTrue(destinationColumn.waitForNonExistence(timeout: 5))
+    XCTAssertTrue(collapse.isHittable && app.frame.contains(collapse.frame))
+    XCTAssertGreaterThanOrEqual(collapse.frame.width, 44)
+    XCTAssertGreaterThanOrEqual(collapse.frame.height, 44)
+    attach(app, "Lorvex \(language.rawValue) - collapsed column retains its native expand control")
     // Commands remain available through their own native menu, leaving the
     // card body free for the unchanged system lift-and-drop gesture below.
     let actions = app.buttons["task-workspace.board.actions." + taskID]
@@ -571,15 +580,6 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     attachHierarchy(app, "Lorvex \(language.rawValue) - explicit Board menu preserves task commands")
     dismissMenu.tap()
     XCTAssertTrue(openCommand.waitForNonExistence(timeout: 5))
-    let collapse = app.buttons["task-workspace.board.collapse.open"]
-    XCTAssertTrue(destinationColumn.waitForExistence(timeout: 10))
-    XCTAssertTrue(collapse.isHittable)
-    collapse.tap()
-    XCTAssertTrue(destinationColumn.waitForNonExistence(timeout: 5))
-    XCTAssertTrue(collapse.isHittable && app.frame.contains(collapse.frame))
-    XCTAssertGreaterThanOrEqual(collapse.frame.width, 44)
-    XCTAssertGreaterThanOrEqual(collapse.frame.height, 44)
-    attach(app, "Lorvex \(language.rawValue) - collapsed column retains its native expand control")
     collapse.tap()
     XCTAssertTrue(destinationColumn.waitForExistence(timeout: 5))
     XCTAssertTrue(sourceColumn.waitForExistence(timeout: 5))
