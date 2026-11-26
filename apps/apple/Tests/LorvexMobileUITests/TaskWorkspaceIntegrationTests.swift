@@ -704,7 +704,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     add(gesture)
     // This short card-centred touch moves through at most 120 display points.
     // It must scroll immediately; the separate 0.8s gesture tests system lift.
-    start.press(forDuration: 0.05, thenDragTo: end)
+    start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
     let after = try nativeBoardCards(in: column, viewport: viewport)
     let beforeIDs = Set(before.map(\.id))
     let afterIDs = Set(after.map(\.id))

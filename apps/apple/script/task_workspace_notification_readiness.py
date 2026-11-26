@@ -67,7 +67,8 @@ def prepare(controller,key,simulator,application):
  binary=product/"LorvexMobileApp";binary_hash=c.load_build()["binarySHA256"][str(binary)]
  assert c.raw_git("rev-parse","HEAD")==c.args.expected_sha
  assert hashlib.sha256(binary.read_bytes()).hexdigest()==binary_hash
- evidence={"schemaVersion":1,"sourceSHA":c.args.expected_sha,"simulatorID":simulator,"sameBuiltApplication":str(product),"applicationBinarySHA256":binary_hash,"helperSHA256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),"startedUTC":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),"providerFixtureEnabled":False,"cloudSync":"off","realNotificationAPIRequired":True,"attempts":[],"result":"running"}
+ clock=__import__("datetime")
+ evidence={"schemaVersion":2,"collectionMethod":"persisted-log-show","sourceSHA":c.args.expected_sha,"simulatorID":simulator,"sameBuiltApplication":str(product),"applicationBinarySHA256":binary_hash,"helperSHA256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),"startedUTC":clock.datetime.now(clock.timezone.utc).isoformat(),"providerFixtureEnabled":False,"cloudSync":"off","realNotificationAPIRequired":True,"attempts":[],"result":"running"}
  record["systemServiceReadiness"]=evidence;c.save()
  c.run(key+"-readiness-install",["xcrun","simctl","install",simulator,str(product)],timeout=180)
  env=c.ui_env.copy()
@@ -81,11 +82,9 @@ def prepare(controller,key,simulator,application):
    c.run(key+"-readiness-recovery-shutdown",["xcrun","simctl","shutdown",simulator],timeout=60)
    c.run(key+"-readiness-recovery-boot",["xcrun","simctl","boot",simulator],timeout=60)
    c.run(key+"-readiness-recovery-boot-ready",["xcrun","simctl","bootstatus",simulator,"-b"],timeout=180)
-  path=folder/f"attempt-{number}-notification-stream.log";handle=path.open("wb")
-  command=["xcrun","simctl","spawn",simulator,"log","stream","--style","compact","--level","debug","--predicate",predicate]
-  observer=subprocess.Popen(command,env=c.ui_env,stdout=handle,stderr=subprocess.STDOUT,start_new_session=True)
+  local_start=clock.datetime.now().astimezone()
   started=time.monotonic()
-  attempt={"number":number,"stream":str(path),"streamCommand":command,"maximumReadinessSeconds":180,"result":"running"}
+  attempt={"number":number,"collectionMethod":"persisted-log-show","startedUTC":local_start.astimezone(clock.timezone.utc).isoformat(),"logStartLocal":local_start.strftime("%Y-%m-%d %H:%M:%S"),"logTimeZoneOffsetSeconds":int(local_start.utcoffset().total_seconds()),"maximumReadinessSeconds":180,"queries":[],"result":"running"}
   evidence["attempts"].append(attempt);c.save()
   original_env=c.ui_env
   try:
@@ -93,34 +92,47 @@ def prepare(controller,key,simulator,application):
    _,launch_log=c.run(key+f"-readiness-launch-{number}",["xcrun","simctl","launch",simulator,"com.itorah.lorvex","-setupCompleted","YES","-AppleLanguages","("+language+")","-AppleLocale","he_IL" if language=="he" else "en_US"],timeout=45)
    match=re.search(r"com\.itorah\.lorvex:\s*(\d+)",launch_log.read_text());assert match,"Missing launched app PID"
    pid=int(match.group(1));attempt["applicationPID"]=pid;c.save()
+   # Read persisted events in short bounded queries. A continuous debug stream
+   # previously coincided with a 170s first notification request on this host.
+   # Readiness still requires actual ordered callbacks before the same deadline.
+   next_query=10.0
    while time.monotonic()-started<180:
-    current=path.read_text(errors="replace")
-    lines=[line for line in current.splitlines() if f"LorvexMobileApp[{pid}:" in line and "[com.apple.UserNotifications:" in line]
+    until_query=next_query-(time.monotonic()-started)
+    if until_query>0:
+     time.sleep(min(1,until_query));continue
+    remaining=180-(time.monotonic()-started)
+    if remaining<=0:break
+    query_number=len(attempt["queries"])+1
+    command=["xcrun","simctl","spawn",simulator,"log","show","--style","compact","--info","--debug","--start",attempt["logStartLocal"],"--predicate",predicate]
+    query_started=clock.datetime.now(clock.timezone.utc).isoformat()
+    elapsed_before=round(time.monotonic()-started,3)
+    code,path=c.run(key+f"-readiness-log-show-{number}-{query_number}",command,timeout=min(20,remaining),check=False)
+    elapsed=time.monotonic()-started
+    query={"number":query_number,"command":command,"path":str(path),"sha256":hashlib.sha256(path.read_bytes()).hexdigest(),"exitCode":code,"startedUTC":query_started,"finishedUTC":clock.datetime.now(clock.timezone.utc).isoformat(),"elapsedBeforeQuerySeconds":elapsed_before,"observedElapsedSeconds":elapsed}
+    attempt["queries"].append(query)
+    lines=[line for line in path.read_text(errors="replace").splitlines() if f"LorvexMobileApp[{pid}:" in line and "[com.apple.UserNotifications:" in line and "[com.itorah.lorvex]" in line]
     received=[i for i,line in enumerate(lines) if re.search(r"Got \d+ pending notification \[ hasCompletionHandler: 1 \]",line)]
     badge=[i for i,line in enumerate(lines) if "Set badge count [ hasCompletionHandler: 1 hasError: 0 ]" in line]
-    if received and badge and any(b>received[0] for b in badge):
-     attempt.update(result="passed",pendingCallbackLines=[lines[i] for i in received],badgeCallbackLines=[lines[i] for i in badge])
-     break
-    if observer.poll() is not None:raise RuntimeError("Readiness OS log observer ended before completion")
-    time.sleep(1)
+    if code==0 and elapsed<=180 and received and badge and any(b>received[0] for b in badge):
+     attempt.update(result="passed",callbackQueryNumber=query_number,pendingCallbackLines=[lines[i] for i in received],badgeCallbackLines=[lines[i] for i in badge])
+     c.save();break
+    c.save()
+    next_query=max(next_query+10,time.monotonic()-started+5)
    attempt["readinessElapsedSeconds"]=round(time.monotonic()-started,3)
    if attempt["result"]!="passed":
     attempt["result"]="service-not-ready-before-deadline"
     attempt["timeoutDiagnostics"]=capture_timeout_diagnostics(c,key,simulator,pid,number,folder)
   finally:
    c.ui_env=original_env
-   if observer.poll() is None:
-    observer.terminate()
-    try:observer.wait(timeout=3)
-    except subprocess.TimeoutExpired:observer.kill();observer.wait()
-   handle.close();attempt.update(elapsedSeconds=round(time.monotonic()-started,3),streamSHA256=hashlib.sha256(path.read_bytes()).hexdigest(),observerExitCode=observer.returncode)
+   attempt["elapsedSeconds"]=round(time.monotonic()-started,3)
+   attempt["finishedUTC"]=clock.datetime.now(clock.timezone.utc).isoformat()
    c.run(key+f"-readiness-terminate-{number}",["xcrun","simctl","terminate",simulator,"com.itorah.lorvex"],timeout=30,check=False)
    c.save()
   if attempt["result"]=="passed":
    evidence["result"]="passed";evidence["usedOwnedDeviceReboot"]=number==2;break
  if evidence["result"]!="passed":
   evidence["result"]="failed";evidence["usedOwnedDeviceReboot"]=len(evidence["attempts"])>1
- evidence["finishedUTC"]=__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+ evidence["finishedUTC"]=clock.datetime.now(clock.timezone.utc).isoformat()
  (folder/"receipt.json").write_text(json.dumps(evidence,indent=2)+"\n");record["systemServiceReadinessReceipt"]={"path":str(folder/"receipt.json"),"sha256":hashlib.sha256((folder/"receipt.json").read_bytes()).hexdigest()};c.save()
- if evidence["result"]!="passed":raise RuntimeError("Real notification enumeration and badge callback never became ready; no UI case executed.")
+ if evidence["result"]!="passed":raise RuntimeError("Real notification enumeration and badge callback never became ready before the deadline; no UI case executed.")
  assert hashlib.sha256(binary.read_bytes()).hexdigest()==binary_hash
