@@ -205,7 +205,11 @@ def decode_embedded_profile(profile_path: Path) -> dict:
 
     ``security cms -D -i`` only parses the profile's own local signature — no
     network access or Apple account is involved."""
-    output = subprocess.check_output(["security", "cms", "-D", "-i", str(profile_path)])
+    args = ["security", "cms", "-D", "-i", str(profile_path)]
+    keychain = os.environ.get("APPLE_SIGNING_KEYCHAIN")
+    if keychain:
+        args.extend(["-k", keychain])
+    output = subprocess.check_output(args)
     return plistlib.loads(output)
 
 
