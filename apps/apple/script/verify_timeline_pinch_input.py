@@ -83,7 +83,7 @@ def compare(event: dict, observed: dict) -> dict:
         raise ValueError("Invalid observed zoom")
     factor = final / initial
     expected = before * factor
-    if expected >= 1600:
+    if expected >= 1600 or after >= 1600:
         raise ValueError("Clamped gesture cannot prove proportional zoom")
     error = (after / expected) - 1
     if after <= before * 1.05 or after > 1600 or abs(error) > RELATIVE_TOLERANCE:

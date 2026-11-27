@@ -66,6 +66,15 @@ class PinchInputTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "original requested"):
             pinch.compare(self.event, self.observed)
 
+    def test_clamped_output_within_tolerance_is_rejected(self):
+        self.observed.update(beforePercent=100, afterPercent=1600)
+        for index, path in enumerate(self.event["eventPaths"]):
+            for point, distance in zip(path["pointerEvents"], [1.0, 8.0, 15.0]):
+                point["coordinate.x"] = index * distance
+                point["coordinate.y"] = 0.0
+        with self.assertRaisesRegex(ValueError, "Clamped"):
+            pinch.compare(self.event, self.observed)
+
     def test_clamping_cannot_hide_accumulation(self):
         self.observed["beforePercent"] = 900
         self.observed["afterPercent"] = 1600
