@@ -150,9 +150,16 @@ public final class LorvexHanlinAssistantState {
       conversationID = scope.conversationID
       messages = (snapshot?.messages ?? []).map { $0.restoredForDisplay() }
       draft = snapshot?.draft ?? ""
-      dashboard = messages.reversed().lazy.flatMap { $0.activities.reversed() }
-        .first(where: { $0.name == "get_summary" && $0.phase == .completed })
-        .flatMap { try? JSONDecoder().decode(LorvexHanlinSummary.self, from: Data($0.result.utf8)) }
+      dashboard = nil
+      for message in messages.reversed() {
+        if let activity = message.activities.reversed().first(where: {
+          $0.name == "get_summary" && $0.phase == .completed
+        }) {
+          let summaryData = Data(activity.result.utf8)
+          dashboard = try? JSONDecoder().decode(LorvexHanlinSummary.self, from: summaryData)
+          break
+        }
+      }
       lastHistoryCheckpoint = nil
       isConversationReady = true
       contentRevision &+= 1
