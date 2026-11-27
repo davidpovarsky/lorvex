@@ -20,16 +20,21 @@ final class TaskMatrixIntegrationTests: XCTestCase {
     let prerequisiteTitle = language.prerequisitePrefix + String(UUID().uuidString.prefix(8))
     createTask(app, title: title)
     createTask(app, title: prerequisiteTitle)
+    selectWorkspaceTable(app)
+    setWorkspaceSearch(title, app: app, language: language)
     let task = app.buttons.matching(NSPredicate(
       format: "identifier BEGINSWITH %@ AND label == %@", "task-workspace.open.", title)).firstMatch
+    XCTAssertTrue(task.waitForExistence(timeout: 10))
+    let id = String(task.identifier.dropFirst("task-workspace.open.".count))
+    XCTAssertFalse(id.isEmpty)
+    setWorkspaceSearch(prerequisiteTitle, app: app, language: language)
     let prerequisite = app.buttons.matching(NSPredicate(
       format: "identifier BEGINSWITH %@ AND label == %@", "task-workspace.open.", prerequisiteTitle)).firstMatch
-    XCTAssertTrue(task.waitForExistence(timeout: 10))
     XCTAssertTrue(prerequisite.waitForExistence(timeout: 10))
-    let id = String(task.identifier.dropFirst("task-workspace.open.".count))
     let prerequisiteID = String(prerequisite.identifier.dropFirst("task-workspace.open.".count))
-    XCTAssertFalse(id.isEmpty)
+    XCTAssertFalse(prerequisiteID.isEmpty)
     XCTAssertNotEqual(id, prerequisiteID)
+    setWorkspaceSearch("", app: app, language: language)
     app.buttons["task-workspace.options"].tap()
     app.buttons[language.editConnections].tap()
     app.buttons["task-workspace.connection.prerequisite"].tap()
@@ -150,6 +155,45 @@ final class TaskMatrixIntegrationTests: XCTestCase {
   }
 
   @MainActor
+  private func selectWorkspaceTable(_ app: XCUIApplication) {
+    let tab = app.buttons["task-workspace.tab.table"]
+    XCTAssertTrue(tab.waitForExistence(timeout: 10))
+    let strip = app.scrollViews.containing(.button, identifier: tab.identifier).firstMatch
+    XCTAssertTrue(strip.waitForExistence(timeout: 5))
+    for _ in 0..<5 {
+      let viewport = strip.frame.intersection(app.frame)
+      if !tab.frame.isEmpty && viewport.contains(tab.frame) { break }
+      if tab.frame.maxX > viewport.maxX { strip.swipeLeft() }
+      else if tab.frame.minX < viewport.minX { strip.swipeRight() }
+      else { break }
+    }
+    XCTAssertFalse(tab.frame.isEmpty)
+    XCTAssertTrue(strip.frame.intersection(app.frame).contains(tab.frame))
+    XCTAssertTrue(tab.isHittable)
+    tab.tap()
+    expectation(for: NSPredicate(format: "selected == true"), evaluatedWith: tab)
+    waitForExpectations(timeout: 5)
+    XCTAssertTrue(app.descendants(matching: .any)
+      .matching(identifier: "task-workspace.table").firstMatch.waitForExistence(timeout: 10))
+  }
+
+  @MainActor
+  private func setWorkspaceSearch(_ value: String, app: XCUIApplication, language: Language) {
+    let clear = app.buttons[language.clearSearch]
+    if clear.exists {
+      clear.tap()
+      XCTAssertTrue(clear.waitForNonExistence(timeout: 5))
+    }
+    let field = app.textFields["task-workspace.search"]
+    XCTAssertTrue(field.waitForExistence(timeout: 5))
+    if !value.isEmpty {
+      field.tap()
+      field.typeText(value + "\n")
+      XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+  }
+
+  @MainActor
   private func selectConnection(_ title: String, app: XCUIApplication) {
     let choice = app.collectionViews.buttons[title]
     XCTAssertTrue(choice.waitForExistence(timeout: 5))
@@ -248,6 +292,7 @@ final class TaskMatrixIntegrationTests: XCTestCase {
     case en, he
     var locale: String { self == .he ? "he_IL" : "en_US" }
     var tasks: String { self == .he ? "משימות" : "Tasks" }
+    var clearSearch: String { self == .he ? "ניקוי חיפוש" : "Clear search" }
     var matrix: String { self == .he ? "מטריצה" : "Matrix" }
     var taskPrefix: String { self == .he ? "בדיקת מטריצה " : "Matrix task " }
     var prerequisitePrefix: String { self == .he ? "הכנה למטריצה " : "Matrix preparation " }

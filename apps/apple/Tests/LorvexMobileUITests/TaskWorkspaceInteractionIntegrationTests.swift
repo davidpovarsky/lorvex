@@ -135,6 +135,18 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
       "The selected title must occupy its own footer rather than covering the canvas.")
     capture(app, "Lorvex Zoom \(language.rawValue) - Network postzoom date edits and stable selected footer")
 
+    // Schedule two existing dense tasks through the canonical editor so the
+    // real two-finger pinch has a fully visible, three-row native surface.
+    selectMode("table", app: app)
+    for index in 1...2 {
+      setSearch(prefix + language.denseTask(index), app: app, language: language)
+      tapVisible(app.buttons["task-workspace.date." + scopedIDs[index + 1]], app: app)
+      setDatePresence(true, app: app)
+      app.buttons["task-workspace.date.save"].tap()
+      XCTAssertTrue(app.buttons["task-workspace.date.save"].waitForNonExistence(timeout: 10))
+    }
+    setSearch(prefix, app: app, language: language)
+
     // The real shared Timeline control changes the actual chart domain. Its
     // numeric accessibility value binds the observed scale before using a row.
     selectMode("timeline", app: app)
@@ -171,6 +183,7 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     XCTAssertEqual(timelineBeforePinch, timelineControl, accuracy: 0.1)
     let timelineRangeBeforePinch = try timelineVisibleRange(app, language: language)
     let timelineChart = element("task-workspace.timeline.chart", app: app)
+    try await revealTimelineChart(timelineChart, app: app)
     tapTargetIsVisible(timelineChart, app: app)
     capture(app, "Lorvex Zoom \(language.rawValue) - Timeline control baseline before real pinch")
     timelineChart.pinch(withScale: 1.25, velocity: 0.6)
@@ -383,6 +396,57 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
       return stableSamples >= 2
     }
     return result
+  }
+
+  @MainActor
+  private func revealTimelineChart(_ chart: XCUIElement, app: XCUIApplication) async throws {
+    let scroll = app.scrollViews["task-workspace.timeline"]
+    XCTAssertTrue(scroll.waitForExistence(timeout: 10))
+    for attempt in 0...4 {
+      let frames = try await stableFrames([scroll, chart], app: app)
+      let viewport = frames[0].intersection(app.frame).insetBy(dx: 8, dy: 8)
+      let frame = frames[1]
+      guard !viewport.isNull, !viewport.isEmpty,
+        frame.width <= viewport.width, frame.height <= viewport.height,
+        frame.minX >= viewport.minX, frame.maxX <= viewport.maxX
+      else {
+        XCTFail("The complete Timeline pinch surface cannot fit its actual scroll viewport.")
+        throw AcceptanceError.condition("Timeline pinch surface cannot fit")
+      }
+      if viewport.contains(frame) {
+        let geometry = XCTAttachment(
+          string: "scroll=\(frames[0])\ninsetViewport=\(viewport)\nchart=\(frame)\nphysicalScrolls=\(attempt)")
+        geometry.name = "Lorvex Timeline pinch prepared native geometry"
+        geometry.lifetime = .keepAlways
+        add(geometry)
+        return
+      }
+      guard attempt < 4 else { break }
+      let overlap = frame.intersection(viewport)
+      guard !overlap.isNull, !overlap.isEmpty else {
+        XCTFail("Timeline chart has no visible drag origin.")
+        throw AcceptanceError.condition("Timeline chart not visible")
+      }
+      let lower = viewport.minY - frame.minY
+      let upper = viewport.maxY - frame.maxY
+      let reserve = min(CGFloat(8), max(0, upper - lower) / 2)
+      let requestedDy = frame.maxY > viewport.maxY ? upper - reserve : lower + reserve
+      let start = CGPoint(x: overlap.midX, y: overlap.midY)
+      let dy = max(viewport.minY - start.y, min(viewport.maxY - start.y, requestedDy))
+      let origin = scroll.coordinate(withNormalizedOffset: .zero)
+      let from = origin.withOffset(CGVector(
+        dx: start.x - frames[0].minX, dy: start.y - frames[0].minY))
+      let to = from.withOffset(CGVector(dx: 0, dy: dy))
+      from.press(forDuration: 0.05, thenDragTo: to)
+      try await until("The physical Timeline scroll did not move the chart into view") {
+        guard chart.exists else { return false }
+        let current = chart.frame
+        return viewport.contains(current)
+          || (dy < 0 ? current.minY < frame.minY : current.minY > frame.minY)
+      }
+    }
+    XCTFail("The whole Timeline chart is still clipped after bounded native scrolling.")
+    throw AcceptanceError.condition("Timeline chart remains clipped")
   }
 
   @MainActor

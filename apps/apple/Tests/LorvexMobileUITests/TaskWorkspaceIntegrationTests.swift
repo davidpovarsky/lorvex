@@ -370,26 +370,56 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       XCTFail("The complete native workspace Button snapshot must be available: \(error)")
       return
     }
-    // Inspect every actual Button from one coherent native AX tree. Reading each
-    // live element attribute separately repeatedly snapshots the whole app.
-    var pending = snapshot.children
-    var controls: [(identifier: String, label: String, frame: CGRect)] = []
-    while let control = pending.popLast() {
-      pending.append(contentsOf: control.children)
+    // Keep one coherent native AX tree. Scroll views also expose offscreen
+    // descendant frames, so test only the pixels inside their real clipping
+    // viewports. Other containers are not assumed to clip. Do not filter by
+    // isHittable: a genuinely covered control must still fail this assertion.
+    var pending = snapshot.children.map {
+      (node: $0, visibleClip: viewport, scrollClips: [String]())
+    }
+    var controls: [(identifier: String, label: String, visibleFrame: CGRect)] = []
+    var observations: [String] = []
+    while let entry = pending.popLast() {
+      let control = entry.node
+      var visibleClip = entry.visibleClip
+      var scrollClips = entry.scrollClips
+      if control.elementType == .scrollView {
+        let frame = control.frame
+        guard frame.minX.isFinite, frame.minY.isFinite,
+          frame.width.isFinite, frame.height.isFinite, !frame.isEmpty
+        else {
+          XCTFail("A native scroll viewport must have finite, nonempty geometry: \(control.identifier) \(frame)")
+          return
+        }
+        visibleClip = visibleClip.intersection(frame)
+        scrollClips.append("\(control.identifier)=\(frame)")
+      }
+      pending.append(contentsOf: control.children.map {
+        (node: $0, visibleClip: visibleClip, scrollClips: scrollClips)
+      })
       guard control.elementType == .button else { continue }
-      let frame = control.frame
-      guard !frame.isEmpty, viewport.intersects(frame) else { continue }
-      controls.append((control.identifier, control.label, frame))
+      let rawFrame = control.frame
+      guard rawFrame.minX.isFinite, rawFrame.minY.isFinite,
+        rawFrame.width.isFinite, rawFrame.height.isFinite
+      else {
+        XCTFail("A native workspace Button must have finite geometry: \(control.identifier) \(rawFrame)")
+        return
+      }
+      let visibleFrame = rawFrame.intersection(visibleClip)
+      observations.append(
+        "\(control.identifier) [\(control.label)] raw=\(rawFrame) visible=\(visibleFrame) scrollClips=\(scrollClips)")
+      guard !visibleFrame.isNull, !visibleFrame.isEmpty else { continue }
+      controls.append((control.identifier, control.label, visibleFrame))
     }
     XCTAssertFalse(controls.isEmpty)
-    let frames = controls.map { "\($0.identifier) [\($0.label)]=\($0.frame)" }
-    let observation = XCTAttachment(string: "hanlin=\(assistantFrame)\n" + frames.joined(separator: "\n"))
+    let observation = XCTAttachment(
+      string: "hanlin=\(assistantFrame)\nviewport=\(viewport)\n" + observations.joined(separator: "\n"))
     observation.name = "Lorvex \(language.rawValue) - \(mode) assistant and workspace control frames"
     observation.lifetime = .keepAlways
     add(observation)
     for control in controls {
       XCTAssertFalse(
-        assistantFrame.intersects(control.frame),
+        assistantFrame.intersects(control.visibleFrame),
         "The Hanlin entry must not cover \(control.identifier) [\(control.label)].")
     }
   }
