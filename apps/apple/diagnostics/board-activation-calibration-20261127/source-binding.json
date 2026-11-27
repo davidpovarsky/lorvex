@@ -1,0 +1,25 @@
+{
+  "diagnosticOnly": true,
+  "originalAcceptanceChanged": false,
+  "installedLorvexProductSourceSHA": "02e7a9b3ac475b0c2b2738ad153c18d6ed650d64",
+  "installedKitRevision": "aa3ba7b28b5f62457c07c4452e72752d99824525",
+  "originalHelperSourceSHA256": "5706b1e343b24e0a8b6e6ba39af0a9f728a696ea41de4698229b7dc9c9cc442d",
+  "sourceTaskID": "01a21daf-f1d7-74c5-a763-25b8300e1926",
+  "destinationTaskID": "01a21db3-a128-7da5-958e-8a98afe18214",
+  "holds": [
+    0.8,
+    1.5
+  ],
+  "device": "0B6E1EC1-284A-424C-B28C-75B894C3FE5D",
+  "controlVariants": [
+    "String legacy draggable",
+    "Codable JSON legacy draggable"
+  ],
+  "helperDifferences": [
+    "Remove full original test method; retain private helpers",
+    "Use existing isolated source/destination tasks to preserve matched geometry",
+    "Parameterize only diagnostic-copy hold; original0.8 remains untouched",
+    "Original canonical-lane assertion remains in diagnostic helper"
+  ],
+  "caseCount": 6
+}
