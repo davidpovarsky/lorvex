@@ -143,15 +143,51 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     XCTAssertTrue(timelineScale.waitForExistence(timeout: 10))
     let timelineBefore = try timelineZoomPercent(timelineScale, language: language)
     XCTAssertEqual(timelineBefore, 100, accuracy: 0.1)
+    let timelineFullRange = try timelineVisibleRange(app, language: language)
     capture(app, "Lorvex Zoom \(language.rawValue) - Timeline before real zoom control")
     tapVisible(app.buttons["task-workspace.timeline.zoom-in"], app: app)
     try await until("The actual Timeline control must increase the chart zoom") {
       guard let value = try? timelineZoomPercent(timelineScale, language: language) else { return false }
       return value > timelineBefore
     }
+    let timelineControl = try timelineZoomPercent(timelineScale, language: language)
+    XCTAssertGreaterThan(timelineControl, timelineBefore)
+    XCTAssertLessThanOrEqual(timelineControl, 1_600)
+    let timelineControlRange = try timelineVisibleRange(app, language: language)
+    XCTAssertLessThan(timelineControlRange.duration, timelineFullRange.duration - 60)
+    let timelineEarlierRange = try await moveTimelineToBoundary("earlier", zoom: timelineControl,
+      fullRange: timelineFullRange, app: app, language: language)
+    let timelineLaterRange = try await moveTimelineToBoundary("later", zoom: timelineControl,
+      fullRange: timelineFullRange, app: app, language: language)
+    XCTAssertLessThan(timelineEarlierRange.lower, timelineControlRange.lower)
+    XCTAssertGreaterThan(timelineLaterRange.lower, timelineEarlierRange.lower)
+    tapVisible(app.buttons["task-workspace.timeline.fit"], app: app)
+    XCTAssertEqual(try timelineZoomPercent(timelineScale, language: language), 100, accuracy: 0.1)
+    let timelineFitRange = try timelineVisibleRange(app, language: language)
+    XCTAssertEqual(timelineFitRange.label, timelineFullRange.label,
+      "Fit must restore the full observed range after real Earlier and Later actions.")
+    tapVisible(app.buttons["task-workspace.timeline.zoom-in"], app: app)
+    let timelineBeforePinch = try timelineZoomPercent(timelineScale, language: language)
+    XCTAssertEqual(timelineBeforePinch, timelineControl, accuracy: 0.1)
+    let timelineRangeBeforePinch = try timelineVisibleRange(app, language: language)
+    let timelineChart = element("task-workspace.timeline.chart", app: app)
+    tapTargetIsVisible(timelineChart, app: app)
+    capture(app, "Lorvex Zoom \(language.rawValue) - Timeline control baseline before real pinch")
+    timelineChart.pinch(withScale: 1.25, velocity: 0.6)
+    try await until("The actual two-finger Timeline pinch must increase the displayed scale") {
+      guard let value = try? timelineZoomPercent(timelineScale, language: language) else { return false }
+      return value > timelineBeforePinch * 1.05
+    }
     let timelineAfter = try timelineZoomPercent(timelineScale, language: language)
-    XCTAssertGreaterThan(timelineAfter, timelineBefore)
+    let timelinePinchRatio = timelineAfter / timelineBeforePinch
+    XCTAssertGreaterThan(timelinePinchRatio, 1.05)
+    XCTAssertLessThan(timelinePinchRatio, 1.6)
     XCTAssertLessThanOrEqual(timelineAfter, 1_600)
+    let timelineRangeAfterPinch = try timelineVisibleRange(app, language: language)
+    XCTAssertNotEqual(timelineRangeAfterPinch.label, timelineRangeBeforePinch.label)
+    XCTAssertLessThan(timelineRangeAfterPinch.duration, timelineRangeBeforePinch.duration - 60,
+      "The real pinch must narrow the actual rendered date range, not only change a percentage label.")
+    assertTimelineRange(timelineRangeAfterPinch, liesWithin: timelineFullRange)
     tapVisible(app.buttons["task-workspace.timeline.inspect." + taskID], app: app)
     let timelineDetail = element("task-workspace.timeline.detail." + taskID, app: app)
     XCTAssertTrue(timelineDetail.waitForExistence(timeout: 10))
@@ -286,8 +322,18 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
       "flowPostzoomCanonicalDateEdits": true,
       "networkPostzoomCanonicalDateEdits": true,
       "networkSelectedFooterAndViewportStable": true,
-      "timelineZoom": ["beforePercent": timelineBefore, "afterPercent": timelineAfter,
-                       "control": "task-workspace.timeline.zoom-in"],
+      "timelineZoom": ["beforePercent": timelineBefore, "controlPercent": timelineControl,
+                       "beforePinchPercent": timelineBeforePinch, "afterPercent": timelineAfter,
+                       "requestedPinchScale": 1.25, "observedPinchRatio": timelinePinchRatio,
+                       "control": "task-workspace.timeline.zoom-in",
+                       "pinchSurface": "task-workspace.timeline.chart",
+                       "fullRange": timelineFullRange.proof, "controlRange": timelineControlRange.proof,
+                       "earlierRange": timelineEarlierRange.proof, "laterRange": timelineLaterRange.proof,
+                       "fitRange": timelineFitRange.proof,
+                       "beforePinchRange": timelineRangeBeforePinch.proof,
+                       "afterPinchRange": timelineRangeAfterPinch.proof],
+      "timelineActualPinchAndVisibleRangeVerified": true,
+      "timelineEarlierLaterAndFitVerified": true,
       "timelinePostzoomTargetAndCanonicalDateEdits": true,
       "timelineDateCancellationPreserved": true,
       "timelineZoomSurvivedTabRemountAndRestart": true,
@@ -350,6 +396,67 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
       .doubleValue
     XCTAssertTrue(value.isFinite)
     return value
+  }
+
+  private struct TimelineRange {
+    let label: String
+    let lower: Date
+    let upper: Date
+    var duration: TimeInterval { upper.timeIntervalSince(lower) }
+    var proof: [String: Any] {
+      ["label": label, "lowerEpochSeconds": lower.timeIntervalSince1970,
+       "upperEpochSeconds": upper.timeIntervalSince1970, "durationSeconds": duration]
+    }
+  }
+
+  @MainActor
+  private func timelineVisibleRange(_ app: XCUIApplication, language: Language) throws -> TimelineRange {
+    let range = app.staticTexts["task-workspace.timeline.visible-range"]
+    XCTAssertTrue(range.waitForExistence(timeout: 10))
+    let label = range.label
+    let endpoints = label.components(separatedBy: " – ")
+    guard endpoints.count == 2 else {
+      XCTFail("Timeline must expose its actual lower and upper dates: " + label)
+      throw AcceptanceError.condition("Timeline range endpoints")
+    }
+    // This is the same locale-aware style used by the real shared range label.
+    let style = Date.FormatStyle(date: .abbreviated, time: .shortened).locale(Locale(identifier: language.locale))
+    let lower = try style.parseStrategy.parse(endpoints[0])
+    let upper = try style.parseStrategy.parse(endpoints[1])
+    XCTAssertLessThan(lower, upper)
+    return TimelineRange(label: label, lower: lower, upper: upper)
+  }
+
+  private func assertTimelineRange(_ range: TimelineRange, liesWithin fullRange: TimelineRange) {
+    // The actual UI formats to minutes; allow that display precision, not an
+    // arbitrary pixel or panning allowance.
+    XCTAssertGreaterThanOrEqual(range.lower.timeIntervalSince(fullRange.lower), -60)
+    XCTAssertLessThanOrEqual(range.upper.timeIntervalSince(fullRange.upper), 60)
+  }
+
+  @MainActor
+  private func moveTimelineToBoundary(_ direction: String, zoom: Double, fullRange: TimelineRange,
+                                      app: XCUIApplication, language: Language) async throws -> TimelineRange {
+    let control = app.buttons["task-workspace.timeline." + direction]
+    XCTAssertTrue(control.waitForExistence(timeout: 10))
+    XCTAssertTrue(control.isEnabled)
+    let initial = try timelineVisibleRange(app, language: language)
+    var current = initial
+    for _ in 0..<6 where control.isEnabled {
+      let previous = current.label
+      tapVisible(control, app: app)
+      try await until("The actual Timeline date control must change its visible dates") {
+        app.staticTexts["task-workspace.timeline.visible-range"].label != previous
+      }
+      current = try timelineVisibleRange(app, language: language)
+      XCTAssertEqual(try timelineZoomPercent(element("task-workspace.timeline.zoom-scale", app: app),
+        language: language), zoom, accuracy: 0.1)
+      XCTAssertEqual(current.duration, initial.duration, accuracy: 120)
+      assertTimelineRange(current, liesWithin: fullRange)
+    }
+    XCTAssertFalse(control.isEnabled, "The real date control must stop at the task-domain boundary.")
+    XCTAssertNotEqual(current.label, initial.label)
+    return current
   }
 
   private func frameDifference(_ a: CGRect, _ b: CGRect) -> CGFloat {
