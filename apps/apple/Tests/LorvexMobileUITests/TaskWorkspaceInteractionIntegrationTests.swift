@@ -79,6 +79,7 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     try await until("The zoomed Flow completion hit target must update its canonical task") {
       prerequisiteComplete.label == language.reopenTask
     }
+    try assertWorkspacePresentationFits(app)
     capture(app, "Lorvex Zoom \(language.rawValue) - Flow postzoom canonical dates and connector drag")
 
     // Eight real scoped tasks produce a useful dense-label source screenshot.
@@ -396,6 +397,51 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
       return stableSamples >= 2
     }
     return result
+  }
+
+  @MainActor
+  private func assertWorkspacePresentationFits(_ app: XCUIApplication) throws {
+    let snapshot = try app.snapshot()
+    var pending: [any XCUIElementSnapshot] = [snapshot]
+    var nodes: [any XCUIElementSnapshot] = []
+    while let node = pending.popLast() {
+      nodes.append(node)
+      pending.append(contentsOf: node.children)
+    }
+    func required(_ identifier: String) throws -> any XCUIElementSnapshot {
+      let matches = nodes.filter { $0.identifier == identifier }
+      XCTAssertEqual(matches.count, 1, "Expected one native layout element: " + identifier)
+      return try XCTUnwrap(matches.first)
+    }
+    let picker = try required("lorvex.visual.presentation")
+    let workspace = try required("task-workspace")
+    let assistant = try required("hanlin.open")
+    var segmentFrames: [CGRect] = []
+    pending = picker.children
+    while let node = pending.popLast() {
+      if node.elementType == .button { segmentFrames.append(node.frame) }
+      pending.append(contentsOf: node.children)
+    }
+    XCTAssertEqual(segmentFrames.count, 2)
+    let frames = [snapshot.frame, picker.frame, workspace.frame, assistant.frame] + segmentFrames
+    guard frames.allSatisfy({
+      $0.minX.isFinite && $0.minY.isFinite && $0.width.isFinite && $0.height.isFinite && !$0.isEmpty
+    }) else {
+      XCTFail("The complete workspace layout must have finite, nonempty native geometry.")
+      throw AcceptanceError.condition("Invalid workspace layout geometry")
+    }
+    let pickerBounds = segmentFrames.reduce(picker.frame) { $0.union($1) }
+    let geometry = XCTAttachment(
+      string: "app=\(snapshot.frame)\npicker=\(picker.frame)\nsegments=\(segmentFrames)\ncompletePicker=\(pickerBounds)\nworkspace=\(workspace.frame)\nhanlin=\(assistant.frame)")
+    geometry.name = "Lorvex selected Flow complete presentation geometry"
+    geometry.lifetime = .keepAlways
+    add(geometry)
+    XCTAssertTrue(snapshot.frame.contains(pickerBounds))
+    XCTAssertTrue(snapshot.frame.contains(workspace.frame))
+    XCTAssertLessThanOrEqual(pickerBounds.maxY, workspace.frame.minY,
+      "The selected workspace must not cover any part of its presentation picker.")
+    XCTAssertLessThanOrEqual(workspace.frame.maxY, assistant.frame.minY,
+      "The selected workspace and its footer must fit above the Hanlin entry.")
   }
 
   @MainActor

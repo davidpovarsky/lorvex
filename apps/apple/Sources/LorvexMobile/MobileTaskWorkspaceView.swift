@@ -47,6 +47,9 @@ public struct MobileTaskWorkspaceView: View {
       else {
         workspace
           .navigationTitle(MobileTaskWorkspaceCopy.title)
+          #if os(iOS)
+          .navigationBarTitleDisplayMode(.inline)
+          #endif
           .toolbar {
             Button(MobileTaskWorkspaceCopy.refresh, systemImage: "arrow.clockwise") {
               Task { await reload() }
