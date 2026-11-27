@@ -157937,6 +157937,1120 @@
           }
         }
       }
+    },
+    "visualTasks.matrix.title": {
+      "comment": "Live task Matrix presentation; urgency uses due day, independently of planned day.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مصفوفة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ম্যাট্রিক্স"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matrixansicht"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πίνακας"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matrix"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matriz"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ماتریس"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matrice"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "מטריצה"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मैट्रिक्स"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matriks"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matrice"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マトリクス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "매트릭스"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मॅट्रिक्स"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matriks"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taakmatrix"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Macierz"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matriz"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matrice"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Матрица"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அணி"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మ్యాట్రిక్స్"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมทริกซ์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matris"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Матриця"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میٹرکس"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ma trận"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "矩阵"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "矩陣"
+          }
+        }
+      }
+    },
+    "visualTasks.matrix.due": {
+      "comment": "Live task Matrix presentation; urgency uses due day, independently of planned day.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "موعدها اليوم أو متأخرة"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সময়সীমা আজ বা পেরিয়ে গেছে"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heute fällig oder überfällig"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Λήγει σήμερα ή έχει καθυστερήσει"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due today or overdue"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vence hoy o está atrasada"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مهلت امروز یا گذشته"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échéance aujourd’hui ou dépassée"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "המועד האחרון היום או חלף"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समय-सीमा आज या बीत चुकी"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tenggat hari ini atau terlewat"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scade oggi o è scaduta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "期限が今日または期限切れ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마감일이 오늘이거나 지남"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुदत आज किंवा उलटलेली"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarikh akhir hari ini atau terlepas"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vandaag vervallen of te laat"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termin dziś lub przekroczony"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prazo hoje ou vencido"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termen astăzi sau depășit"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Срок сегодня или просрочен"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கெடு இன்று அல்லது கடந்துவிட்டது"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "గడువు నేడు లేదా దాటిపోయింది"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ครบกำหนดวันนี้หรือเกินกำหนด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün son gün veya gecikmiş"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Термін сьогодні або прострочено"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آخری تاریخ آج یا گزر چکی"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đến hạn hôm nay hoặc quá hạn"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今天到期或已逾期"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今天到期或已逾期"
+          }
+        }
+      }
+    },
+    "visualTasks.matrix.later": {
+      "comment": "Live task Matrix presentation; urgency uses due day, independently of planned day.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "موعدها لاحقًا أو بلا موعد نهائي"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সময়সীমা পরে বা নির্ধারিত নয়"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Später fällig oder ohne Frist"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Λήγει αργότερα ή χωρίς προθεσμία"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due later or no due date"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vence después o sin fecha límite"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مهلت بعدی یا بدون مهلت"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échéance ultérieure ou sans échéance"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "מועד אחרון עתידי או ללא מועד"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समय-सीमा बाद में या तय नहीं"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tenggat nanti atau tanpa tenggat"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scade più tardi o senza scadenza"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "期限が後日または未設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마감일이 나중이거나 없음"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुदत नंतर किंवा ठरलेली नाही"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarikh akhir kemudian atau tiada"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latere deadline of geen deadline"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termin później lub bez terminu"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prazo futuro ou sem prazo"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termen ulterior sau fără termen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Срок позже или не задан"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கெடு பின்னர் அல்லது இல்லை"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "గడువు తర్వాత లేదా నిర్ణయించలేదు"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ครบกำหนดภายหลังหรือไม่มีกำหนด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son gün ileride veya belirtilmemiş"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Термін пізніше або не задано"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آخری تاریخ بعد میں یا مقرر نہیں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đến hạn sau hoặc không có hạn"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "稍后到期或无截止日期"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "稍後到期或無截止日期"
+          }
+        }
+      }
+    },
+    "visualTasks.matrix.legend": {
+      "comment": "Live task Matrix presentation; urgency uses due day, independently of planned day.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تُحدَّد الأولوية الزمنية حسب الموعد النهائي. ويظل يوم العمل المخطط مستقلًا."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "জরুরিতা নির্ধারিত হয় সময়সীমা অনুযায়ী। পরিকল্পিত কাজের দিন আলাদা থাকে।"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Dringlichkeit richtet sich nach der Frist. Der geplante Arbeitstag bleibt unabhängig."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το επείγον καθορίζεται από την προθεσμία. Η προγραμματισμένη ημέρα παραμένει ανεξάρτητη."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urgency follows the deadline. The planned day remains independent."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La urgencia depende de la fecha límite. El día planificado es independiente."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فوریت بر اساس مهلت تعیین می‌شود. روز برنامه‌ریزی‌شده مستقل می‌ماند."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’urgence dépend de l’échéance. Le jour prévu reste indépendant."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הדחיפות נקבעת לפי המועד האחרון. יום הביצוע המתוכנן נשאר עצמאי."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तात्कालिकता समय-सीमा से तय होती है। नियोजित कार्य-दिन स्वतंत्र रहता है।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urgensi ditentukan oleh tenggat. Hari kerja yang direncanakan tetap terpisah."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’urgenza dipende dalla scadenza. Il giorno pianificato resta indipendente."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "緊急度は期限で決まります。予定作業日は独立しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "긴급도는 마감일을 기준으로 합니다. 계획된 작업일은 별개입니다."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तातडी मुदतीनुसार ठरते. नियोजित कामाचा दिवस स्वतंत्र राहतो."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kesegeraan ditentukan oleh tarikh akhir. Hari kerja yang dirancang kekal berasingan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De urgentie volgt de deadline. De geplande werkdag blijft onafhankelijk."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilność zależy od terminu. Zaplanowany dzień pracy pozostaje niezależny."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A urgência depende do prazo. O dia planejado permanece independente."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urgența depinde de termenul-limită. Ziua planificată rămâne independentă."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Срочность определяется крайним сроком. Запланированный день не зависит от него."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அவசரம் காலக்கெடுவால் தீர்மானிக்கப்படுகிறது. திட்டமிட்ட வேலை நாள் தனியாக இருக்கும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "అత్యవసరత గడువును బట్టి నిర్ణయించబడుతుంది. ప్రణాళిక వేసిన పని రోజు స్వతంత్రంగా ఉంటుంది."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ความเร่งด่วนขึ้นอยู่กับกำหนดส่ง วันทำงานที่วางแผนไว้ยังคงแยกจากกัน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aciliyet son tarihe göre belirlenir. Planlanan çalışma günü bağımsız kalır."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Терміновість визначається кінцевим строком. Запланований день залишається незалежним."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فوری ضرورت آخری تاریخ کے مطابق طے ہوتی ہے۔ منصوبہ بند کام کا دن الگ رہتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mức độ khẩn cấp phụ thuộc vào hạn chót. Ngày dự kiến làm việc vẫn độc lập."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紧急程度由截止日期决定，计划工作日保持独立。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "緊急程度由截止日期決定，計畫工作日保持獨立。"
+          }
+        }
+      }
+    },
+    "cloud.account.error.reconciliation_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحتاج المزامنة إلى التحقق من عملية رفع سابقة. تم حفظ تغييراتك المحلية. حاول المزامنة مجددًا؛ وإذا استمرت المشكلة، فاتصل بالدعم."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সিঙ্ককে আগের একটি আপলোড যাচাই করতে হবে। আপনার স্থানীয় পরিবর্তনগুলি সংরক্ষিত আছে। আবার সিঙ্ক করুন; সমস্যা চলতে থাকলে সহায়তার সঙ্গে যোগাযোগ করুন।"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Synchronisierung muss einen früheren Upload überprüfen. Deine lokalen Änderungen sind gespeichert. Synchronisiere erneut. Falls das Problem weiterhin besteht, kontaktiere den Support."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο συγχρονισμός πρέπει να επαληθεύσει μια προηγούμενη μεταφόρτωση. Οι τοπικές αλλαγές σας έχουν αποθηκευτεί. Δοκιμάστε ξανά συγχρονισμό· αν το πρόβλημα επιμένει, επικοινωνήστε με την υποστήριξη."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync needs to verify an earlier upload. Your local changes are saved. Try Sync again; if this continues, contact support."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sincronización necesita verificar una carga anterior. Tus cambios locales están guardados. Intenta sincronizar de nuevo; si el problema continúa, contacta con soporte."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "همگام‌سازی باید بارگذاری قبلی را بررسی کند. تغییرات محلی شما ذخیره شده‌اند. دوباره همگام‌سازی کنید؛ اگر مشکل ادامه داشت، با پشتیبانی تماس بگیرید."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La synchronisation doit vérifier un envoi précédent. Vos modifications locales sont enregistrées. Réessayez de synchroniser ; si le problème persiste, contactez l’assistance."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הסנכרון צריך לאמת העלאה קודמת. השינויים המקומיים נשמרו. נסו לסנכרן שוב; אם הבעיה נמשכת, פנו לתמיכה."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सिंक को पिछले अपलोड की पुष्टि करनी है। आपके स्थानीय बदलाव सहेजे गए हैं। फिर से सिंक करें; समस्या बनी रहे तो सहायता से संपर्क करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinkronisasi perlu memverifikasi unggahan sebelumnya. Perubahan lokal Anda tersimpan. Coba sinkronkan lagi; jika masalah berlanjut, hubungi dukungan."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sincronizzazione deve verificare un caricamento precedente. Le modifiche locali sono salvate. Prova a sincronizzare di nuovo; se il problema persiste, contatta l’assistenza."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以前のアップロードを確認する必要があります。ローカルの変更は保存されています。もう一度同期してください。問題が続く場合はサポートにお問い合わせください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동기화가 이전 업로드를 확인해야 합니다. 로컬 변경 사항은 저장되어 있습니다. 다시 동기화해 보세요. 문제가 계속되면 지원팀에 문의하세요."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समक्रमणाला आधीचे अपलोड पडताळणे आवश्यक आहे. तुमचे स्थानिक बदल जतन केले आहेत. पुन्हा समक्रमित करा; समस्या कायम राहिल्यास सहाय्याशी संपर्क साधा."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Penyegerakan perlu mengesahkan muat naik terdahulu. Perubahan setempat anda telah disimpan. Cuba segerakkan lagi; jika masalah berterusan, hubungi sokongan."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De synchronisatie moet een eerdere upload controleren. Je lokale wijzigingen zijn opgeslagen. Probeer opnieuw te synchroniseren; neem contact op met ondersteuning als het probleem aanhoudt."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronizacja musi zweryfikować wcześniejsze przesłanie. Twoje lokalne zmiany są zapisane. Spróbuj zsynchronizować ponownie; jeśli problem będzie się powtarzał, skontaktuj się z pomocą techniczną."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A sincronização precisa verificar um envio anterior. Suas alterações locais estão salvas. Tente sincronizar novamente; se o problema persistir, entre em contato com o suporte."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizarea trebuie să verifice o încărcare anterioară. Modificările locale sunt salvate. Încercați din nou sincronizarea; dacă problema persistă, contactați asistența."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Синхронизации нужно проверить предыдущую загрузку. Локальные изменения сохранены. Повторите синхронизацию; если проблема останется, обратитесь в поддержку."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஒத்திசைவு முந்தைய பதிவேற்றத்தைச் சரிபார்க்க வேண்டும். உங்கள் உள்ளூர் மாற்றங்கள் சேமிக்கப்பட்டுள்ளன. மீண்டும் ஒத்திசைக்கவும்; சிக்கல் தொடர்ந்தால் ஆதரவைத் தொடர்புகொள்ளவும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సమకాలీకరణ గత అప్‌లోడ్‌ను ధృవీకరించాలి. మీ స్థానిక మార్పులు సేవ్ అయ్యాయి. మళ్లీ సమకాలీకరించండి; సమస్య కొనసాగితే సహాయాన్ని సంప్రదించండి."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การซิงค์ต้องตรวจสอบการอัปโหลดก่อนหน้า การเปลี่ยนแปลงในเครื่องของคุณได้รับการบันทึกแล้ว ลองซิงค์อีกครั้ง หากยังมีปัญหา โปรดติดต่อฝ่ายสนับสนุน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşitlemenin önceki bir yüklemeyi doğrulaması gerekiyor. Yerel değişiklikleriniz kaydedildi. Yeniden eşitlemeyi deneyin; sorun devam ederse destekle iletişime geçin."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Синхронізація має перевірити попереднє завантаження. Локальні зміни збережено. Спробуйте синхронізувати знову; якщо проблема залишається, зверніться до підтримки."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مطابقت پذیری کو پچھلے اپ لوڈ کی تصدیق کرنی ہے۔ آپ کی مقامی تبدیلیاں محفوظ ہیں۔ دوبارہ مطابقت پذیر کریں؛ مسئلہ برقرار رہے تو معاونت سے رابطہ کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng bộ cần xác minh lần tải lên trước đó. Các thay đổi cục bộ của bạn đã được lưu. Hãy thử đồng bộ lại; nếu sự cố tiếp diễn, hãy liên hệ bộ phận hỗ trợ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步需要验证之前的上传。本地更改已保存。请再次尝试同步；如果问题仍然存在，请联系支持团队。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步需要驗證先前的上傳。本機變更已儲存。請再次嘗試同步；如果問題持續發生，請聯絡支援團隊。"
+          }
+        }
+      }
+    },
+    "cloud.account.error.idempotency_conflict": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عثرت المزامنة على سجلات رفع متعارضة. تم حفظ تغييراتك المحلية. اتصل بالدعم للمتابعة بأمان."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সিঙ্কে পরস্পরবিরোধী আপলোড রেকর্ড পাওয়া গেছে। আপনার স্থানীয় পরিবর্তনগুলি সংরক্ষিত আছে। নিরাপদে চালিয়ে যেতে সহায়তার সঙ্গে যোগাযোগ করুন।"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Synchronisierung hat widersprüchliche Upload-Einträge gefunden. Deine lokalen Änderungen sind gespeichert. Kontaktiere den Support, um sicher fortzufahren."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο συγχρονισμός βρήκε αντικρουόμενες εγγραφές μεταφόρτωσης. Οι τοπικές αλλαγές σας έχουν αποθηκευτεί. Επικοινωνήστε με την υποστήριξη για ασφαλή συνέχιση."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync found conflicting upload records. Your local changes are saved. Contact support to resume safely."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sincronización encontró registros de carga en conflicto. Tus cambios locales están guardados. Contacta con soporte para continuar de forma segura."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "همگام‌سازی سوابق بارگذاری متناقضی پیدا کرد. تغییرات محلی شما ذخیره شده‌اند. برای ادامهٔ ایمن با پشتیبانی تماس بگیرید."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La synchronisation a détecté des enregistrements d’envoi contradictoires. Vos modifications locales sont enregistrées. Contactez l’assistance pour reprendre en toute sécurité."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הסנכרון מצא רשומות העלאה סותרות. השינויים המקומיים נשמרו. פנו לתמיכה כדי להמשיך בבטחה."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सिंक को परस्पर विरोधी अपलोड रिकॉर्ड मिले हैं। आपके स्थानीय बदलाव सहेजे गए हैं। सुरक्षित रूप से आगे बढ़ने के लिए सहायता से संपर्क करें।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinkronisasi menemukan catatan unggahan yang bertentangan. Perubahan lokal Anda tersimpan. Hubungi dukungan untuk melanjutkan dengan aman."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sincronizzazione ha rilevato registrazioni di caricamento in conflitto. Le modifiche locali sono salvate. Contatta l’assistenza per riprendere in sicurezza."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同期で競合するアップロード記録が見つかりました。ローカルの変更は保存されています。安全に再開するにはサポートにお問い合わせください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동기화 중 충돌하는 업로드 기록을 발견했습니다. 로컬 변경 사항은 저장되어 있습니다. 안전하게 재개하려면 지원팀에 문의하세요."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समक्रमणाला परस्परविरोधी अपलोड नोंदी आढळल्या. तुमचे स्थानिक बदल जतन केले आहेत. सुरक्षितपणे पुढे जाण्यासाठी सहाय्याशी संपर्क साधा."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Penyegerakan menemui rekod muat naik yang bercanggah. Perubahan setempat anda telah disimpan. Hubungi sokongan untuk meneruskan dengan selamat."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De synchronisatie heeft tegenstrijdige uploadgegevens gevonden. Je lokale wijzigingen zijn opgeslagen. Neem contact op met ondersteuning om veilig verder te gaan."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronizacja znalazła sprzeczne zapisy przesyłania. Twoje lokalne zmiany są zapisane. Skontaktuj się z pomocą techniczną, aby bezpiecznie kontynuować."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A sincronização encontrou registros de envio conflitantes. Suas alterações locais estão salvas. Entre em contato com o suporte para continuar com segurança."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronizarea a găsit înregistrări de încărcare contradictorii. Modificările locale sunt salvate. Contactați asistența pentru a continua în siguranță."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Синхронизация обнаружила противоречивые записи загрузок. Локальные изменения сохранены. Обратитесь в поддержку, чтобы безопасно продолжить."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஒத்திசைவு முரண்படும் பதிவேற்றப் பதிவுகளைக் கண்டறிந்தது. உங்கள் உள்ளூர் மாற்றங்கள் சேமிக்கப்பட்டுள்ளன. பாதுகாப்பாகத் தொடர ஆதரவைத் தொடர்புகொள்ளவும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సమకాలీకరణకు పరస్పర విరుద్ధమైన అప్‌లోడ్ రికార్డులు కనిపించాయి. మీ స్థానిక మార్పులు సేవ్ అయ్యాయి. సురక్షితంగా కొనసాగడానికి సహాయాన్ని సంప్రదించండి."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การซิงค์พบข้อมูลการอัปโหลดที่ขัดแย้งกัน การเปลี่ยนแปลงในเครื่องของคุณได้รับการบันทึกแล้ว โปรดติดต่อฝ่ายสนับสนุนเพื่อดำเนินการต่ออย่างปลอดภัย"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşitleme, çelişen yükleme kayıtları buldu. Yerel değişiklikleriniz kaydedildi. Güvenle devam etmek için destekle iletişime geçin."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Синхронізація виявила суперечливі записи завантажень. Локальні зміни збережено. Зверніться до підтримки, щоб безпечно продовжити."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مطابقت پذیری کو متضاد اپ لوڈ ریکارڈ ملے ہیں۔ آپ کی مقامی تبدیلیاں محفوظ ہیں۔ محفوظ طریقے سے جاری رکھنے کے لیے معاونت سے رابطہ کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng bộ tìm thấy các bản ghi tải lên xung đột. Các thay đổi cục bộ của bạn đã được lưu. Hãy liên hệ bộ phận hỗ trợ để tiếp tục an toàn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步发现存在冲突的上传记录。本地更改已保存。请联系支持团队以安全恢复同步。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步發現互相衝突的上傳記錄。本機變更已儲存。請聯絡支援團隊以安全恢復同步。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

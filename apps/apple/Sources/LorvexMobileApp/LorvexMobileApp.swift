@@ -52,10 +52,14 @@ struct LorvexMobileApp: App {
         disableICloud: { [weak builtStore] in
           await builtStore?.setCloudSyncModeFromSettings(.off)
         },
+        didChangeAccount: { [weak builtStore] accountID in
+          builtStore?.taskWorkspacePreferences.accountDidChange(accountID)
+        },
         didSync: { [weak builtStore] in
           _ = await builtStore?.refresh()
         })
     }
+    builtStore.taskWorkspacePreferences.followAccount { [weak cloud] in cloud?.accountID }
     _cloudAccount = State(initialValue: cloud)
     _chatGPTAccount = State(initialValue: LorvexChatGPTAccountState())
     _hanlinAssistant = State(initialValue: LorvexHanlinAssistantState(
@@ -119,6 +123,7 @@ struct LorvexMobileApp: App {
           cloudAccount: cloudAccount, chatGPTAccount: chatGPTAccount)
       }
       .lorvexMobileSystemEntrypoints(store: store)
+      .environment(\.lorvexTaskWorkspaceAccountID, cloudAccount?.accountID)
       .confirmationDialog(
         "Allow this change from ChatGPT?",
         isPresented: Binding(

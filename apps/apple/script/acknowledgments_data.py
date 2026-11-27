@@ -115,6 +115,12 @@ PACKAGE_METADATA: dict[str, PackageLicense] = {
         extra_text_file="iosMath.LICENSE.txt",
         extra_text_label="License and Latin Modern Math font notices (GUST Font License)",
     ),
+    "opentelemetry-swift-core": PackageLicense(
+        display_name="OpenTelemetry Swift Core",
+        spdx="Apache-2.0",
+        extra_text_file="opentelemetry-swift-core.LICENSE.txt",
+        extra_text_label="License",
+    ),
     "swift-ai-sdk": PackageLicense(
         display_name="swift-ai-sdk",
         spdx="Apache-2.0",
@@ -193,7 +199,7 @@ PACKAGE_METADATA: dict[str, PackageLicense] = {
 }
 
 
-LOCAL_SDK_REVISION = "6ceb074475843456c7f71850d65c9fee3d046604"
+LOCAL_SDK_REVISION = "018981a3af55f4e524c3c3886003991eb243e7c3"
 LOCAL_SDK_LOCK_PATH = ROOT.parents[1] / "HanlinSDK.lock.json"
 LOCAL_SDK_REPOSITORY = "https://github.com/davidpovarsky/hanlin-ai"
 

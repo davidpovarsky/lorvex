@@ -180,3 +180,7 @@
 "Make dependent_id wait for prerequisite_id through canonical cycle validation" = "Make dependent_id wait for prerequisite_id through canonical cycle validation";
 
 "Remove this prerequisite relation without changing other task fields" = "Remove this prerequisite relation without changing other task fields";
+
+"The saved conversation could not be read. Its existing data has been preserved." = "The saved conversation could not be read. Its existing data has been preserved.";
+"The conversation could not be saved. Its existing data has been preserved." = "The conversation could not be saved. Its existing data has been preserved.";
+"Opening conversation…" = "Opening conversation…";

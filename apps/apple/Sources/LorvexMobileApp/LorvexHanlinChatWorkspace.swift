@@ -33,7 +33,7 @@ struct LorvexHanlinChatWorkspace: View {
                                     .accessibilityIdentifier("hanlin.empty")
                             }
                             ForEach(assistant.messages) { entry in
-                                LorvexHanlinMessageRow(message: entry, width: geometry.size.width - 32) {
+                                LorvexHanlinMessageRow(message: entry, assistant: assistant, width: geometry.size.width - 32) {
                                     requestScroll(proxy)
                                 }
                                 .id(entry.id)
@@ -105,6 +105,8 @@ struct LorvexHanlinChatWorkspace: View {
                     showModelSettings: showModelSettings,
                     showRemoteBridgeSettings: showRemoteBridgeSettings,
                     send: send, stop: { _Concurrency.Task { await assistant.cancel() } })
+                    .disabled(!assistant.isRunning && (assistant.isRestoringConversation ||
+                              (assistant.conversationScope != nil && !assistant.isConversationReady)))
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                         if height.isFinite, height > 0, abs(height - composerHeight) > 1 { composerHeight = height }
                     }
@@ -139,6 +141,7 @@ private struct LorvexHanlinScrollMetrics: Equatable {
 private struct LorvexHanlinMessageRow: View {
     @Environment(\.openURL) private var openURL
     let message: LorvexHanlinMessage
+    let assistant: LorvexHanlinAssistantState
     let width: CGFloat
     let onRendered: @MainActor @Sendable () -> Void
     @State private var showsSources = false
@@ -160,7 +163,7 @@ private struct LorvexHanlinMessageRow: View {
                 HanlinAssistantMessageBubble(isResponding: message.status == .streaming) {
                     Text("Hanlin").font(HanlinTypography.caption).foregroundStyle(.secondary)
                     if !message.reasoning.isEmpty || !message.activities.isEmpty {
-                        LorvexHanlinActivityView(message: message)
+                        LorvexHanlinActivityView(message: message, assistant: assistant)
                     }
                     if !message.text.isEmpty {
                         HanlinMarkdownView(text: message.text, onRendered: onRendered)
@@ -187,21 +190,28 @@ private struct LorvexHanlinMessageRow: View {
 @MainActor
 private struct LorvexHanlinActivityView: View {
     let message: LorvexHanlinMessage
-    @State private var reasoningExpanded = false
+    let assistant: LorvexHanlinAssistantState
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if !message.reasoning.isEmpty {
-                DisclosureGroup(isExpanded: $reasoningExpanded) {
+                DisclosureGroup(isExpanded: Binding(
+                    get: { message.reasoningExpanded },
+                    set: { assistant.setReasoningExpanded($0, messageID: message.id) })) {
                     HanlinMarkdownView(text: message.reasoning)
                 } label: {
                     HanlinActivityHierarchyHeader(title: String(localized: "Thinking"), symbol: "brain",
-                        isExpanded: reasoningExpanded,
+                        isExpanded: message.reasoningExpanded,
                         isActive: message.status == .streaming && message.text.isEmpty)
                 }
                 .disclosureGroupStyle(HanlinActivityDisclosureStyle())
             }
-            ForEach(message.activities) { activity in LorvexHanlinToolRow(activity: activity) }
+            ForEach(message.activities) { activity in
+                LorvexHanlinToolRow(activity: activity,
+                    expanded: message.expandedActivityIDs.contains(activity.id)) { expanded in
+                    assistant.setActivityExpanded(expanded, messageID: message.id, activityID: activity.id)
+                }
+            }
         }
     }
 }
@@ -209,7 +219,8 @@ private struct LorvexHanlinActivityView: View {
 @MainActor
 private struct LorvexHanlinToolRow: View {
     let activity: LorvexHanlinToolActivity
-    @State private var expanded = false
+    let expanded: Bool
+    let onExpanded: (Bool) -> Void
 
     private var title: String {
         String(localized: String.LocalizationValue(
@@ -235,7 +246,7 @@ private struct LorvexHanlinToolRow: View {
     }
 
     var body: some View {
-        DisclosureGroup(isExpanded: $expanded) {
+        DisclosureGroup(isExpanded: Binding(get: { expanded }, set: onExpanded)) {
             if !activity.arguments.isEmpty {
                 HanlinToolDetailsText(activity.arguments, maximumHeight: 180,
                     accessibilityIdentifier: "hanlin.activity.arguments")

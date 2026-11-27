@@ -12,6 +12,8 @@ public enum LorvexCloudAccountError: Error, LocalizedError, Sendable {
   case invalidResponse
   case inaccessibleKeychain
   case syncFailed
+  case idempotencyReconciliationRequired
+  case idempotencyConflict
 
   public var errorDescription: String? {
     switch self {
@@ -30,6 +32,12 @@ public enum LorvexCloudAccountError: Error, LocalizedError, Sendable {
              defaultValue: "Unable to store credentials in the iPad Keychain", table: "Localizable", bundle: MobileL10n.bundle)
     case .syncFailed: String(localized: "cloud.account.error.sync_failed",
              defaultValue: "Lorvex Cloud could not finish this sync batch. Your local changes are retained.", table: "Localizable", bundle: MobileL10n.bundle)
+    case .idempotencyReconciliationRequired:
+      String(localized: "cloud.account.error.reconciliation_required",
+             defaultValue: "Sync needs to verify an earlier upload. Your local changes are saved. Try Sync again; if this continues, contact support.", table: "Localizable", bundle: MobileL10n.bundle)
+    case .idempotencyConflict:
+      String(localized: "cloud.account.error.idempotency_conflict",
+             defaultValue: "Sync found conflicting upload records. Your local changes are saved. Contact support to resume safely.", table: "Localizable", bundle: MobileL10n.bundle)
     }
   }
 }
@@ -126,10 +134,25 @@ public actor LorvexCloudAccountTransport {
     }
     let results: [Outcome]
   }
-  private struct PushBody: Encodable {
+  private struct PushBody: Codable {
     let request_id: String
     let envelopes: [SyncEnvelope]
     let expected_versions: [String: String?]
+  }
+  private struct ServiceErrorWire: Decodable { let error: String }
+
+  /// One unresolved HTTP request, stored with the canonical database. Its
+  /// immutable outbox IDs cannot acknowledge a later coalesced local edit.
+  /// The original CAS expectations and request ID survive process restart.
+  private struct PendingPush: Codable {
+    enum Resolution: String, Codable {
+      case awaitingResponse, reconciliationRequired, conflict
+    }
+    let formatVersion: Int
+    let accountID: String
+    let outboxIDs: [Int64]
+    let body: PushBody
+    var resolution: Resolution
   }
 
   private func sendRaw(
@@ -156,6 +179,16 @@ public actor LorvexCloudAccountTransport {
       throw LorvexCloudAccountError.invalidResponse
     }
     guard (200...299).contains(response.statusCode) else {
+      if response.statusCode == 409, method == "POST", path == "/v1/sync/push",
+         let failure = try? JSONDecoder().decode(ServiceErrorWire.self, from: data) {
+        switch failure.error {
+        case "idempotency_reconciliation_required":
+          throw LorvexCloudAccountError.idempotencyReconciliationRequired
+        case "idempotency_conflict":
+          throw LorvexCloudAccountError.idempotencyConflict
+        default: break
+        }
+      }
       throw LorvexCloudAccountError.service(response.statusCode)
     }
     return data
@@ -354,7 +387,170 @@ public actor LorvexCloudAccountTransport {
     }
   }
 
+  private func encoded<T: Encodable>(_ value: T) throws -> Data {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.sortedKeys]
+    return try encoder.encode(value)
+  }
+
+  private func savePendingPush(_ pending: PendingPush) throws {
+    let data = try encoded(pending)
+    guard let value = String(data: data, encoding: .utf8) else {
+      throw LorvexCloudAccountError.invalidResponse
+    }
+    try core.setCloudSyncEngineCheckpoint(.oracleCloudPendingPush, value: value)
+  }
+
+  private func pendingPush(accountID: String) throws -> PendingPush? {
+    guard let value = try core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush) else {
+      return nil
+    }
+    // A corrupt or newer checkpoint is unresolved work, never permission to
+    // forget the old request and send the same mutations under another ID.
+    guard let pending = try? JSONDecoder().decode(PendingPush.self, from: Data(value.utf8)),
+          pending.formatVersion == 1, !pending.body.request_id.isEmpty,
+          (1...50).contains(pending.outboxIDs.count),
+          pending.outboxIDs.count == pending.body.envelopes.count,
+          Set(pending.outboxIDs).count == pending.outboxIDs.count,
+          pending.outboxIDs.allSatisfy({ $0 > 0 }) else {
+      throw LorvexCloudAccountError.idempotencyReconciliationRequired
+    }
+    guard pending.accountID == accountID else {
+      throw LorvexCloudAccountError.differentAccount
+    }
+    return pending
+  }
+
+  /// Swift String equality accepts canonically equivalent Unicode spellings.
+  /// The server compares the actual wire strings, including the serialized
+  /// payload; semantic JSON equality or a matching current task is not proof.
+  private func isExactHistoricalEnvelope(_ lhs: SyncEnvelope, _ rhs: SyncEnvelope) -> Bool {
+    lhs.entityType == rhs.entityType
+      && lhs.entityId.utf8.elementsEqual(rhs.entityId.utf8)
+      && lhs.operation == rhs.operation
+      && lhs.version.description.utf8.elementsEqual(rhs.version.description.utf8)
+      && lhs.payloadSchemaVersion == rhs.payloadSchemaVersion
+      && lhs.payload.utf8.elementsEqual(rhs.payload.utf8)
+      && lhs.deviceId.utf8.elementsEqual(rhs.deviceId.utf8)
+  }
+
+  private func reconcilePendingPush(
+    _ pending: PendingPush, revision: UInt64, outcome: inout LorvexCloudSyncOutcome
+  ) async throws {
+    do {
+      var cursor: Int64 = 0
+      var proven: Set<Int> = []
+      for _ in 0..<Self.maxSyncPages {
+        try requireSession(revision, accountID: pending.accountID)
+        let data = try await authorizedCall(
+          method: "GET", path: "/v1/sync/changes?cursor=" + String(cursor) + "&limit=200",
+          revision: revision)
+        let page = try JSONDecoder().decode(ChangesWire.self, from: data)
+        guard page.cursor >= cursor, !page.has_more || page.cursor > cursor else {
+          throw LorvexCloudAccountError.invalidResponse
+        }
+        for envelope in page.envelopes {
+          try validate(envelope)
+          for index in pending.body.envelopes.indices where !proven.contains(index) {
+            if isExactHistoricalEnvelope(pending.body.envelopes[index], envelope) {
+              proven.insert(index)
+            }
+          }
+        }
+        cursor = page.cursor
+        if proven.count == pending.outboxIDs.count {
+          // Every exact immutable mutation is now proven. Unrelated history
+          // after this validated page cannot revoke that proof; large accounts
+          // need not exhaust their history or the page budget to acknowledge.
+          try requireSession(revision, accountID: pending.accountID)
+          // No partial acknowledgement: otherwise the next outbox page could
+          // silently create a new request for the unproven remainder.
+          _ = try core.reconcileOutbound(OutboundReconciliationRequest(
+            confirmedOutboxIds: pending.outboxIDs))
+          // A crash between these transactions re-proves the same immutable
+          // batch. Core ignores missing/already-synced IDs; IDs are never reused.
+          try core.setCloudSyncEngineCheckpoint(.oracleCloudPendingPush, value: nil)
+          outcome.sent += pending.outboxIDs.count
+          return
+        }
+        if !page.has_more {
+          throw LorvexCloudAccountError.idempotencyReconciliationRequired
+        }
+      }
+    } catch {
+      // A cancelled or replaced session may neither acknowledge nor turn into
+      // a recovery error belonging to the new account.
+      try requireSession(revision, accountID: pending.accountID)
+      throw LorvexCloudAccountError.idempotencyReconciliationRequired
+    }
+    throw LorvexCloudAccountError.idempotencyReconciliationRequired
+  }
+
+  private func sendPendingPush(
+    _ pending: PendingPush, revision: UInt64, outcome: inout LorvexCloudSyncOutcome
+  ) async throws {
+    try requireSession(revision, accountID: pending.accountID)
+    switch pending.resolution {
+    case .conflict:
+      throw LorvexCloudAccountError.idempotencyConflict
+    case .reconciliationRequired:
+      try await reconcilePendingPush(pending, revision: revision, outcome: &outcome)
+      return
+    case .awaitingResponse: break
+    }
+    let reply: Data
+    do {
+      reply = try await authorizedCall(
+        method: "POST", path: "/v1/sync/push",
+        payload: encoded(pending.body), revision: revision)
+    } catch LorvexCloudAccountError.idempotencyReconciliationRequired {
+      try requireSession(revision, accountID: pending.accountID)
+      var recovery = pending
+      recovery.resolution = .reconciliationRequired
+      try savePendingPush(recovery)
+      try await reconcilePendingPush(recovery, revision: revision, outcome: &outcome)
+      return
+    } catch LorvexCloudAccountError.idempotencyConflict {
+      try requireSession(revision, accountID: pending.accountID)
+      var recovery = pending
+      recovery.resolution = .conflict
+      try savePendingPush(recovery)
+      throw LorvexCloudAccountError.idempotencyConflict
+    }
+    let receipt = try JSONDecoder().decode(PushWire.self, from: reply)
+    guard receipt.results.count == pending.outboxIDs.count else {
+      throw LorvexCloudAccountError.invalidResponse
+    }
+    var reconciliation = OutboundReconciliationRequest()
+    for (index, result) in receipt.results.enumerated() {
+      let item = PendingOutboundEnvelope(
+        outboxId: pending.outboxIDs[index], envelope: pending.body.envelopes[index])
+      switch result.status {
+      case "accepted", "duplicate":
+        reconciliation.confirmedOutboxIds.append(item.outboxId)
+        observedServerVersions[identity(item.envelope)] = item.envelope.version.description
+        outcome.sent += 1
+      case "stale":
+        guard let winner = result.winner else {
+          throw LorvexCloudAccountError.invalidResponse
+        }
+        try resolveStale(winner, for: item, reconciliation: &reconciliation)
+        outcome.serverConflicts += 1
+      default:
+        throw LorvexCloudAccountError.syncFailed
+      }
+    }
+    try requireSession(revision, accountID: pending.accountID)
+    _ = try core.reconcileOutbound(reconciliation)
+    try core.setCloudSyncEngineCheckpoint(.oracleCloudPendingPush, value: nil)
+  }
+
   private func push(revision: UInt64, outcome: inout LorvexCloudSyncOutcome) async throws {
+    // Resume before reading a new page: coalescing, a new local edit or a
+    // restart must not change an unresolved request's identity or contents.
+    if let pending = try pendingPush(accountID: outcome.accountID) {
+      try await sendPendingPush(pending, revision: revision, outcome: &outcome)
+    }
     var after: Int64?
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -370,34 +566,14 @@ public actor LorvexCloudAccountTransport {
           let key = identity(item.envelope)
           expected.updateValue(observedServerVersions[key], forKey: key)
         }
-        let body = PushBody(
-          request_id: "ipad-" + UUID().uuidString, envelopes: batch.map(\.envelope),
-          expected_versions: expected)
-        let data = try JSONEncoder().encode(body)
-        let reply = try await authorizedCall(
-          method: "POST", path: "/v1/sync/push", payload: data, revision: revision)
-        let receipt = try JSONDecoder().decode(PushWire.self, from: reply)
-        guard receipt.results.count == batch.count else {
-          throw LorvexCloudAccountError.invalidResponse
-        }
-        var reconciliation = OutboundReconciliationRequest()
-        for (item, result) in zip(batch, receipt.results) {
-          switch result.status {
-          case "accepted", "duplicate":
-            reconciliation.confirmedOutboxIds.append(item.outboxId)
-            observedServerVersions[identity(item.envelope)] = item.envelope.version.description
-            outcome.sent += 1
-          case "stale":
-            guard let winner = result.winner else {
-              throw LorvexCloudAccountError.invalidResponse
-            }
-            try resolveStale(winner, for: item, reconciliation: &reconciliation)
-            outcome.serverConflicts += 1
-          default:
-            throw LorvexCloudAccountError.syncFailed
-          }
-        }
-        _ = try core.reconcileOutbound(reconciliation)
+        let saved = PendingPush(
+          formatVersion: 1, accountID: outcome.accountID, outboxIDs: batch.map(\.outboxId),
+          body: PushBody(request_id: "ipad-" + UUID().uuidString,
+                         envelopes: batch.map(\.envelope), expected_versions: expected),
+          resolution: .awaitingResponse)
+        // Durable before the first network await, including a lost response.
+        try savePendingPush(saved)
+        try await sendPendingPush(saved, revision: revision, outcome: &outcome)
       }
       guard let next = page.lastScannedOutboxId else { return }
       guard after == nil || next > after! else {

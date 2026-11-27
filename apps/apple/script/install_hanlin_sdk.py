@@ -31,14 +31,18 @@ def main() -> None:
         arguments.extend(["--source-cache", str(args.source_cache.resolve())])
     # The implementation is fetched from the same immutable canonical revision
     # as the sources. This bootstrap intentionally vendors no SDK implementation.
-    url = f"https://raw.githubusercontent.com/davidpovarsky/hanlin-ai/{revision}/Scripts/SDK/install.py"
-    with urlopen(url, timeout=45) as response:
-        code = response.read(2_000_001)
-    if len(code) > 2_000_000:
-        raise SystemExit("Unexpected SDK installer size")
     with tempfile.TemporaryDirectory(prefix="lorvex-hanlin-bootstrap-") as directory:
+        # The canonical installer imports its native-artifact helper even for
+        # profiles without binary products. Fetch both original files from the
+        # same immutable revision before executing the installer.
+        for filename in ("install.py", "native_artifacts.py"):
+            url = f"https://raw.githubusercontent.com/davidpovarsky/hanlin-ai/{revision}/Scripts/SDK/{filename}"
+            with urlopen(url, timeout=45) as response:
+                code = response.read(2_000_001)
+            if len(code) > 2_000_000:
+                raise SystemExit(f"Unexpected SDK bootstrap file size: {filename}")
+            (Path(directory) / filename).write_bytes(code)
         installer = Path(directory) / "install.py"
-        installer.write_bytes(code)
         subprocess.run([sys.executable, str(installer), *arguments], check=True)
 
 
