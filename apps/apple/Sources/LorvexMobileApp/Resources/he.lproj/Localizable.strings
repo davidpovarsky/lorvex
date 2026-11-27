@@ -184,3 +184,22 @@
 "The saved conversation could not be read. Its existing data has been preserved." = "לא ניתן לקרוא את השיחה השמורה. הנתונים הקיימים שלה נשמרו.";
 "The conversation could not be saved. Its existing data has been preserved." = "לא ניתן לשמור את השיחה. הנתונים הקיימים שלה נשמרו.";
 "Opening conversation…" = "פותח את השיחה…";
+
+/* Task summary chart */
+"Task overview" = "סקירת משימות";
+"Partial sample" = "מדגם חלקי";
+"All tasks" = "כל המשימות";
+"%lld active" = "פעילות: %lld";
+"%lld completed" = "הושלמו: %lld";
+"Breakdown" = "חלוקה";
+"Status" = "מצב";
+"Priority" = "עדיפות";
+"Category" = "קטגוריה";
+"Tasks" = "משימות";
+"Task summary bar chart" = "תרשים עמודות של סיכום המשימות";
+"Based on %lld of %lld matching tasks." = "בהתבסס על %lld מתוך %lld משימות תואמות.";
+"hanlin.dashboard.status.open" = "פתוחות";
+"hanlin.dashboard.status.in_progress" = "בביצוע";
+"hanlin.dashboard.status.completed" = "הושלמו";
+"hanlin.dashboard.status.cancelled" = "בוטלו";
+"hanlin.dashboard.status.someday" = "ביום מן הימים";

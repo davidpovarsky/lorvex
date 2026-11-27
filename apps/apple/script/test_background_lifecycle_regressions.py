@@ -125,6 +125,12 @@ enum DatabaseSuspension {
   func publishWidgetSnapshotInBackgroundWake() async { await widget() }
 }
 
+// Optional account endpoint used by the unchanged host declaration.
+@MainActor final class LorvexCloudAccountState {
+  var flush: @MainActor () async -> Void = {}
+  func flushBeforeSuspension() async { await flush() }
+}
+
 @MainActor final class Gate {
   private var entered = false
   private var entry: CheckedContinuation<Void, Never>?

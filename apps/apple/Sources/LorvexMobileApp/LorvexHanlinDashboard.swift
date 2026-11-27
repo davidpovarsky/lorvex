@@ -11,7 +11,7 @@ struct LorvexHanlinDashboard: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Task overview").font(.headline)
                 Spacer()
-                Text(summary.partial ? "Partial sample" : "All tasks")
+                Text(summary.partial ? String(localized: "Partial sample") : String(localized: "All tasks"))
                     .font(.caption).foregroundStyle(.secondary)
             }
             HStack(spacing: 12) {
@@ -26,9 +26,9 @@ struct LorvexHanlinDashboard: View {
             .pickerStyle(.segmented)
             Chart(summary.buckets(by: chartBreakdown)) { bucket in
                 BarMark(
-                    x: .value("Category", bucket.name),
+                    x: .value("Category", bucketTitle(bucket.name)),
                     y: .value("Tasks", bucket.value))
-                    .foregroundStyle(by: .value("Category", bucket.name))
+                    .foregroundStyle(by: .value("Category", bucketTitle(bucket.name)))
             }
             .chartLegend(.hidden)
             .frame(height: 170)
@@ -42,4 +42,16 @@ struct LorvexHanlinDashboard: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
 
+    /// Localize display labels only; the tool payload and bucket IDs stay canonical.
+    private func bucketTitle(_ name: String) -> String {
+        if chartBreakdown == "priority" { return name.uppercased() }
+        switch name {
+        case "open": return String(localized: "hanlin.dashboard.status.open", defaultValue: "Open")
+        case "in_progress": return String(localized: "hanlin.dashboard.status.in_progress", defaultValue: "In progress")
+        case "completed": return String(localized: "hanlin.dashboard.status.completed", defaultValue: "Completed")
+        case "cancelled": return String(localized: "hanlin.dashboard.status.cancelled", defaultValue: "Cancelled")
+        case "someday": return String(localized: "hanlin.dashboard.status.someday", defaultValue: "Someday")
+        default: return name
+        }
+    }
 }

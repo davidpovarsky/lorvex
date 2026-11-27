@@ -93,7 +93,7 @@ struct MobileTaskMatrixView: View {
     }
     .padding(12)
     .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
-    .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
+    .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: LorvexDesign.Radius.card))
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("lorvex.matrix.quadrant." + quadrant.rawValue)
   }
@@ -146,8 +146,8 @@ struct MobileTaskMatrixView: View {
       dateButton(task, field: .doOn, date: entry.visual.plannedDate, busy: busy || entry.visual.isReadOnly)
     }
     .padding(10)
-    .background(.background, in: RoundedRectangle(cornerRadius: 12))
-    .overlay(RoundedRectangle(cornerRadius: 12).stroke(.quaternary, lineWidth: 1))
+    .background(.background, in: RoundedRectangle(cornerRadius: LorvexDesign.Radius.m))
+    .overlay(RoundedRectangle(cornerRadius: LorvexDesign.Radius.m).stroke(.quaternary, lineWidth: 1))
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("lorvex.matrix.card." + task.id)
   }

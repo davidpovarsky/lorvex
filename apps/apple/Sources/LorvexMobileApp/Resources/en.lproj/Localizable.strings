@@ -184,3 +184,22 @@
 "The saved conversation could not be read. Its existing data has been preserved." = "The saved conversation could not be read. Its existing data has been preserved.";
 "The conversation could not be saved. Its existing data has been preserved." = "The conversation could not be saved. Its existing data has been preserved.";
 "Opening conversation…" = "Opening conversation…";
+
+/* Task summary chart */
+"Task overview" = "Task overview";
+"Partial sample" = "Partial sample";
+"All tasks" = "All tasks";
+"%lld active" = "%lld active";
+"%lld completed" = "%lld completed";
+"Breakdown" = "Breakdown";
+"Status" = "Status";
+"Priority" = "Priority";
+"Category" = "Category";
+"Tasks" = "Tasks";
+"Task summary bar chart" = "Task summary bar chart";
+"Based on %lld of %lld matching tasks." = "Based on %lld of %lld matching tasks.";
+"hanlin.dashboard.status.open" = "Open";
+"hanlin.dashboard.status.in_progress" = "In progress";
+"hanlin.dashboard.status.completed" = "Completed";
+"hanlin.dashboard.status.cancelled" = "Cancelled";
+"hanlin.dashboard.status.someday" = "Someday";
