@@ -11,6 +11,7 @@ public struct MobileTaskWorkspaceView: View {
   private let rootTaskID: String?
   private let listID: String?
   private let embedded: Bool
+  @Environment(\.lorvexTaskWorkspaceAccountID) private var accountID
   @State private var snapshot: TaskWorkspaceSnapshot?
   @State private var loadError: String?
   @State private var loadID: UUID?
@@ -82,7 +83,8 @@ public struct MobileTaskWorkspaceView: View {
           // Keep the original view identity while Matrix is visible so the
           // selected shared tab, zoom and pan survive returning to it.
           TaskWorkspaceView(
-            snapshot: snapshot, initialPresentation: initialPresentation, onAction: perform)
+            snapshot: snapshot, initialPresentation: initialPresentation,
+            presentationState: presentationStateBinding(for: snapshot), onAction: perform)
             .opacity(showsMatrix ? 0 : 1)
             .allowsHitTesting(!showsMatrix)
             .accessibilityHidden(showsMatrix)
@@ -123,6 +125,14 @@ public struct MobileTaskWorkspaceView: View {
     }
     .accessibilityElement(children: .contain)
     .accessibilityIdentifier("lorvex.visual.workspace")
+  }
+
+  private func presentationStateBinding(
+    for snapshot: TaskWorkspaceSnapshot
+  ) -> Binding<TaskWorkspacePresentationState> {
+    store.taskWorkspacePreferences.binding(
+      accountID: accountID, rootTaskID: rootTaskID, listID: listID,
+      visibleLaneIDs: Set(snapshot.lanes.map(\.id)))
   }
 
   private func reload() async {

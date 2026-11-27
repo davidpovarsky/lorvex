@@ -294,6 +294,8 @@ public final class MobileStore {
   let todayString: @Sendable () -> String
   let now: @Sendable () -> Date
   let defaults: UserDefaults
+  /// Shared by navigation, embedded Hanlin cards, and their expanded sheets.
+  public let taskWorkspacePreferences: MobileTaskWorkspacePreferences
 
   // MARK: - CloudKit sync lifecycle
 
@@ -421,6 +423,7 @@ public final class MobileStore {
     self.todayString = todayString
     self.now = now
     self.defaults = defaults
+    self.taskWorkspacePreferences = MobileTaskWorkspacePreferences(defaults: defaults)
     self.calendarDuplicateGrouping = CalendarDuplicateGrouping.remembered(in: defaults)
     self.calendarPresentationMode = MobileCalendarPresentationMode.remembered(in: defaults)
     self.cloudSyncMode = cloudSyncMode

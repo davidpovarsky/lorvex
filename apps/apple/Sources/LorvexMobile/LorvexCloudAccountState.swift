@@ -6,7 +6,9 @@ import LorvexCore
 @MainActor @Observable
 public final class LorvexCloudAccountState {
   public private(set) var email = ""
-  public private(set) var accountID: String?
+  public private(set) var accountID: String? {
+    didSet { didChangeAccount(accountID) }
+  }
   public private(set) var status = String(localized: "cloud.account.signed_out", defaultValue: "Not signed in", table: "Localizable", bundle: MobileL10n.bundle)
   public private(set) var isSigningIn = false
   public private(set) var isSyncing = false
@@ -18,6 +20,7 @@ public final class LorvexCloudAccountState {
   @ObservationIgnored private let transport: LorvexCloudAccountTransport
   @ObservationIgnored private let disableICloud: @Sendable () async -> Void
   @ObservationIgnored private let didSync: @Sendable () async -> Void
+  @ObservationIgnored private let didChangeAccount: @MainActor (String?) -> Void
   @ObservationIgnored private var pollingTask: _Concurrency.Task<Void, Never>?
   @ObservationIgnored private var wantsPolling = false
   @ObservationIgnored private var recoveryPaused = false
@@ -28,20 +31,26 @@ public final class LorvexCloudAccountState {
   public convenience init(
     core: any CloudSyncEngineStore,
     disableICloud: @escaping @Sendable () async -> Void,
+    didChangeAccount: @escaping @MainActor (String?) -> Void = { _ in },
     didSync: @escaping @Sendable () async -> Void
   ) {
     self.init(transport: LorvexCloudAccountTransport(core: core),
-              disableICloud: disableICloud, didSync: didSync)
+              disableICloud: disableICloud, didChangeAccount: didChangeAccount, didSync: didSync)
   }
 
   init(
     transport: LorvexCloudAccountTransport,
     disableICloud: @escaping @Sendable () async -> Void,
+    didChangeAccount: @escaping @MainActor (String?) -> Void = { _ in },
     didSync: @escaping @Sendable () async -> Void
   ) {
     self.transport = transport
     self.disableICloud = disableICloud
     self.didSync = didSync
+    self.didChangeAccount = didChangeAccount
+    // Initial property values do not invoke didSet. Deliver the current
+    // identity before restoration can deliver a saved account asynchronously.
+    didChangeAccount(accountID)
     let revision = accountRevision
     _Concurrency.Task { [weak self] in
       guard let self else { return }
