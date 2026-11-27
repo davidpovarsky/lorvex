@@ -19,6 +19,7 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       "-AppleLocale", language.locale,
     ]
     app.launchEnvironment["LORVEX_CLOUD_SYNC"] = "off"
+    app.launchEnvironment["TASK_WORKSPACE_BOARD_DIAGNOSTICS"] = "1"
     app.launchEnvironment["LORVEX_HANLIN_WORKSPACE_ACCEPTANCE"] = "1"
     app.launchEnvironment["LORVEX_HANLIN_WORKSPACE_TASK_TITLE"] = hanlinTitle
     app.launch()
@@ -723,6 +724,8 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
     // Each coordinate remains relative to its actual card; XCTest applies the
     // device orientation transform. The hold activates system lift, not a swipe.
     from.press(forDuration: 0.8, thenDragTo: to)
+    attach(app, "Lorvex \(language.rawValue) - diagnostic native Board immediately after drop")
+    attachHierarchy(app, "Lorvex \(language.rawValue) - diagnostic native Board immediately after drop hierarchy")
     selectMode("table", app: app, language: language)
     searchFor(title, app: app)
     let lane = app.buttons["task-workspace.lane." + taskID]
