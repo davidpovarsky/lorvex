@@ -143,7 +143,7 @@
       "kind": "remoteSourceControl",
       "location": "https://github.com/davidpovarsky/task-visualization-kit.git",
       "state": {
-        "revision": "153cb2b046b27aae99348539c71288ad88a9bc73"
+        "revision": "c25962929f13d0ef5912aaf6c0128c715d294d75"
       }
     }
   ],
