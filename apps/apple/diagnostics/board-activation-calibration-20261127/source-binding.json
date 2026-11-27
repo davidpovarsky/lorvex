@@ -23,8 +23,9 @@
   ],
   "caseCount": 6,
   "observations": [
-    "Actual source/destination and nested button enabled/hittable flags immediately before hold",
+    "Actual source/destination and nested button isEnabled/frame immediately before hold; no activation-point query on clipped inner controls",
     "Host load/free space before each selector",
     "Before/after original product runtime closure"
-  ]
+  ],
+  "instrumentationCorrection": "Remove only extra isHittable observation that throws on clipped destination button before any drag; original source/destination guards remain"
 }

@@ -489,7 +489,7 @@ final class LorvexDragCalibrationTests: XCTestCase {
     let enabledState = XCTAttachment(string:
       "boardEnabled=\(board.isEnabled) sourceEnabled=\(source.isEnabled) destinationEnabled=\(destination.isEnabled)\n"
       + [source, destination].flatMap { $0.descendants(matching: .button).allElementsBoundByIndex }
-        .map { "\($0.identifier) enabled=\($0.isEnabled) hittable=\($0.isHittable) frame=\($0.frame)" }
+        .map { "\($0.identifier) enabled=\($0.isEnabled) frame=\($0.frame)" }
         .joined(separator: "\n"))
     enabledState.name = "Lorvex calibration controls immediately before native hold"
     enabledState.lifetime = .keepAlways
