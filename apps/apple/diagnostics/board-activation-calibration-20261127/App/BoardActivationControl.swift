@@ -33,10 +33,10 @@ private struct ControlView: View {
                     .position(x: geometry.size.width / 2, y: 170)
                 source
                     .frame(width: 256, height: 210)
-                    .position(x: 149, y: 512.333333)
+                    .position(x: geometry.size.width - 149, y: 512.333333)
                 destination
                     .frame(width: 256, height: 179.666667)
-                    .position(x: 445, y: 497.166667)
+                    .position(x: geometry.size.width - 445, y: 497.166667)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()

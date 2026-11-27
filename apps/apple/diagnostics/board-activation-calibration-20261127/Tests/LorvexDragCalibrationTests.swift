@@ -7,6 +7,31 @@ final class LorvexDragCalibrationTests: XCTestCase {
   @MainActor func testLorvex0800ms() throws { try runCalibration(hold: 0.8) }
   @MainActor func testLorvex1500ms() throws { try runCalibration(hold: 1.5) }
 
+  @MainActor func testRestoreOriginalFixtureLane() throws {
+    continueAfterFailure = false
+    let language = TestLanguage.he
+    let app = XCUIApplication(bundleIdentifier: "com.itorah.lorvex")
+    app.launchArguments = ["-setupCompleted", "YES", "-AppleLanguages", "(he)", "-AppleLocale", "he_IL"]
+    app.launchEnvironment["LORVEX_CLOUD_SYNC"] = "off"
+    app.launch()
+    openWorkspace(app, language: language)
+    selectMode("table", app: app, language: language)
+    if app.buttons[language.clearSearch].exists { clearSearch(app, language: language) }
+    let taskID = "01a21daf-f1d7-74c5-a763-25b8300e1926"
+    let task = app.buttons["task-workspace.open." + taskID]
+    XCTAssertTrue(task.waitForExistence(timeout: 10))
+    searchFor(task.label, app: app)
+    let lane = app.buttons["task-workspace.lane." + taskID]
+    XCTAssertTrue(lane.waitForExistence(timeout: 10))
+    if lane.label != language.inProgress {
+      lane.tap()
+      app.buttons["task-workspace.lane-choice." + taskID + ".in_progress"].tap()
+    }
+    expectation(for: NSPredicate(format: "label == %@", language.inProgress), evaluatedWith: lane)
+    waitForExpectations(timeout: 10)
+    attach(app, "Diagnostic fixture restored to its original In Progress lane through native UI")
+  }
+
   @MainActor private func runCalibration(hold: TimeInterval) throws {
     continueAfterFailure = false
     calibrationHold = hold

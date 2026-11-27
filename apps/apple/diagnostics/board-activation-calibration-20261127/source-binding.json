@@ -27,5 +27,7 @@
     "Host load/free space before each selector",
     "Before/after original product runtime closure"
   ],
-  "instrumentationCorrection": "Remove only extra isHittable observation that throws on clipped destination button before any drag; original source/destination guards remain"
+  "instrumentationCorrection": "Remove only extra isHittable observation that throws on clipped destination button before any drag; original source/destination guards remain",
+  "controlGeometryCorrection": "Convert explicit RTL logical positions to observed physical sourcex21/destinationx317; original geometry assertions unchanged",
+  "fixtureCleanup": "Separate non-drag native UI operation restores original isolated source task to In Progress after controls"
 }
