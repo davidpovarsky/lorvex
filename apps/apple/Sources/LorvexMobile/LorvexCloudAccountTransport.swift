@@ -458,10 +458,10 @@ public actor LorvexCloudAccountTransport {
           }
         }
         cursor = page.cursor
-        if !page.has_more {
-          guard proven.count == pending.outboxIDs.count else {
-            throw LorvexCloudAccountError.idempotencyReconciliationRequired
-          }
+        if proven.count == pending.outboxIDs.count {
+          // Every exact immutable mutation is now proven. Unrelated history
+          // after this validated page cannot revoke that proof; large accounts
+          // need not exhaust their history or the page budget to acknowledge.
           try requireSession(revision, accountID: pending.accountID)
           // No partial acknowledgement: otherwise the next outbox page could
           // silently create a new request for the unproven remainder.
@@ -472,6 +472,9 @@ public actor LorvexCloudAccountTransport {
           try core.setCloudSyncEngineCheckpoint(.oracleCloudPendingPush, value: nil)
           outcome.sent += pending.outboxIDs.count
           return
+        }
+        if !page.has_more {
+          throw LorvexCloudAccountError.idempotencyReconciliationRequired
         }
       }
     } catch {

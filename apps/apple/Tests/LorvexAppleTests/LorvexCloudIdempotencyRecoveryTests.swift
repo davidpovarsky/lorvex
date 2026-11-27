@@ -92,12 +92,35 @@ struct LorvexCloudIdempotencyRecoveryTests {
 
     #expect(result.sent == original.count)
     #expect(await peer.pushBodies.count == 1)
-    #expect(await peer.recoveryCursors == Array(0...original.count).map(Int64.init))
+    #expect(await peer.recoveryCursors == Array(0..<original.count).map(Int64.init))
     #expect(try core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush) == nil)
     #expect(try core.unsyncedOutboundRecordNames().isEmpty)
     #expect(try core.cloudSyncEngineCheckpoint(.oracleCloudCursor) == String(original.count + 1))
     #expect(try await core.loadTask(id: live.id).title == "Later server edit")
     #expect(!(try await core.loadSearchIndexTasks()).contains { $0.id == deleted.id })
+  }
+
+  @Test
+  func completeBatchProofSucceedsBeforeUnrelatedHistoryTail() async throws {
+    let core = try await recoveryCore()
+    let original = try recoveryPending(core)
+    let remote = try makeInMemoryCore()
+    _ = try await remote.createTask(TaskCreateDraft(title: "Unrelated later history"))
+    let tail = try #require(recoveryPending(remote).first?.envelope)
+    let peer = ReceiptRecoveryPeer(
+      mode: .reconcile, laterHistory: [tail], historyFault: .network,
+      recoveryPageSize: original.count)
+    let result = try await recoveryTransport(core: core, peer: peer).sync()
+
+    // The first validated page proves the entire original batch even though
+    // more immutable history remains. Reading that unrelated next page would
+    // fail; recovery must neither block nor needlessly exhaust its page budget.
+    #expect(result.sent == original.count)
+    #expect(await peer.recoveryCursors == [0])
+    #expect(await peer.recoveryHasMore == [true])
+    #expect(await peer.pushBodies.count == 1)
+    #expect(try core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush) == nil)
+    #expect(try core.unsyncedOutboundRecordNames().isEmpty)
   }
 
   @Test
@@ -277,21 +300,24 @@ private actor ReceiptRecoveryPeer {
   private let mismatch: RecoveryMismatch?
   private let laterHistory: [SyncEnvelope]
   private let historyFault: RecoveryHistoryFault
+  private let recoveryPageSize: Int
   private var gate: CloudAccountTestGate?
   private var history: [SyncEnvelope] = []
   private var receipts: [String: (Data, Data)] = [:]
   private(set) var pushBodies: [Data] = []
   private(set) var recoveryCursors: [Int64] = []
+  private(set) var recoveryHasMore: [Bool] = []
   var historyCount: Int { history.count }
 
   init(mode: Mode, historyPrefix: Int? = nil, mismatch: RecoveryMismatch? = nil,
        laterHistory: [SyncEnvelope] = [], historyFault: RecoveryHistoryFault = .none,
-       gate: CloudAccountTestGate? = nil) {
+       recoveryPageSize: Int = 1, gate: CloudAccountTestGate? = nil) {
     self.mode = mode
     self.historyPrefix = historyPrefix
     self.mismatch = mismatch
     self.laterHistory = laterHistory
     self.historyFault = historyFault
+    self.recoveryPageSize = recoveryPageSize
     self.gate = gate
   }
 
@@ -320,7 +346,8 @@ private actor ReceiptRecoveryPeer {
         }
       }
       let start = min(Int(cursor), history.count)
-      let end = recovery ? min(start + 1, history.count) : history.count
+      let end = recovery ? min(start + recoveryPageSize, history.count) : history.count
+      if recovery { recoveryHasMore.append(end < history.count) }
       let data = try JSONEncoder().encode(RecoveryChanges(
         envelopes: Array(history[start..<end]), cursor: Int64(end), has_more: end < history.count))
       return response(data, url: url)
