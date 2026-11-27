@@ -41,14 +41,14 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     app.buttons["task-workspace.graph.fit"].tap()
     let flowCanvas = element("task-workspace.graph.canvas", app: app)
     let flowTask = app.buttons["task-workspace.open." + taskID]
-    let flowBefore = try await stableFrames([flowTask], app: app)[0]
+    let flowBefore = try await stableFrames([("task-workspace.open." + taskID, .button)], app: app)[0]
     XCTAssertGreaterThan(flowBefore.width, 40)
     capture(app, "Lorvex Zoom \(language.rawValue) - Flow before real pinch")
     flowCanvas.pinch(withScale: 0.75, velocity: -0.6)
     try await until("Flow must visibly zoom out after the actual pinch") {
       flowTask.frame.width < flowBefore.width * 0.92
     }
-    let flowAfter = try await stableFrames([flowTask], app: app)[0]
+    let flowAfter = try await stableFrames([("task-workspace.open." + taskID, .button)], app: app)[0]
     let flowRatio = flowAfter.width / flowBefore.width
     XCTAssertGreaterThan(flowRatio, 0.45)
     XCTAssertLessThan(flowRatio, 0.92)
@@ -61,13 +61,16 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     XCTAssertFalse(savedDueDetail.isEmpty)
     XCTAssertFalse(savedPlannedDetail.isEmpty)
     closeDetail(app)
-    let flowAfterDates = try await stableFrames([flowTask], app: app)[0]
+    let flowAfterDates = try await stableFrames([("task-workspace.open." + taskID, .button)], app: app)[0]
     XCTAssertEqual(flowAfterDates.width, flowAfter.width, accuracy: 3,
       "Canonical date edits must not replace the active zoomed Flow viewport.")
 
     let output = element("task-workspace.graph.handle.out." + prerequisiteID, app: app)
     let input = element("task-workspace.graph.handle.in." + taskID, app: app)
-    _ = try await stableFrames([output, input], app: app)
+    _ = try await stableFrames([
+      ("task-workspace.graph.handle.out." + prerequisiteID, .any),
+      ("task-workspace.graph.handle.in." + taskID, .any)
+    ], app: app)
     tapTargetIsVisible(output, app: app)
     tapTargetIsVisible(input, app: app)
     output.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
@@ -98,7 +101,7 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     let networkCanvas = element("task-workspace.network.canvas", app: app)
     app.buttons["task-workspace.network.fit"].tap()
     let nodes = scopedIDs.map { app.buttons["task-workspace.open." + $0] }
-    let networkBefore = try await stableFrames(nodes, app: app)
+    let networkBefore = try await stableFrames(scopedIDs.map { ("task-workspace.open." + $0, .button) }, app: app)
     let pair = farthestPair(networkBefore)
     let beforeDistance = distance(networkBefore[pair.0], networkBefore[pair.1])
     XCTAssertGreaterThan(beforeDistance, 60)
@@ -107,7 +110,7 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     try await until("Network must change node separation after the actual pinch") {
       distance(nodes[pair.0].frame, nodes[pair.1].frame) < beforeDistance * 0.92
     }
-    let networkAfter = try await stableFrames(nodes, app: app)
+    let networkAfter = try await stableFrames(scopedIDs.map { ("task-workspace.open." + $0, .button) }, app: app)
     let networkRatio = distance(networkAfter[pair.0], networkAfter[pair.1]) / beforeDistance
     XCTAssertGreaterThan(networkRatio, 0.45)
     XCTAssertLessThan(networkRatio, 0.92)
@@ -127,7 +130,7 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     let selectedTitle = app.staticTexts["task-workspace.network.selected-title"]
     XCTAssertTrue(selectedTitle.waitForExistence(timeout: 10))
     XCTAssertEqual(selectedTitle.label, title)
-    let networkAfterDates = try await stableFrames(nodes, app: app)
+    let networkAfterDates = try await stableFrames(scopedIDs.map { ("task-workspace.open." + $0, .button) }, app: app)
     assertSameFrame(networkCanvas.frame, viewportBeforeSelection, accuracy: 2)
     for (before, after) in zip(networkAfter, networkAfterDates) {
       assertSameFrame(after, before, accuracy: 3)
@@ -381,10 +384,10 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
 
   @MainActor
   private func until(_ message: String, timeout: TimeInterval = 10,
-                     _ predicate: @MainActor () -> Bool) async throws {
+                     _ predicate: @MainActor () throws -> Bool) async throws {
     let deadline = ProcessInfo.processInfo.systemUptime + timeout
     repeat {
-      if predicate() { return }
+      if try predicate() { return }
       try await Task.sleep(for: .milliseconds(100))
     } while ProcessInfo.processInfo.systemUptime < deadline
     XCTFail(message)
@@ -392,14 +395,57 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
   }
 
   @MainActor
-  private func stableFrames(_ elements: [XCUIElement], app: XCUIApplication) async throws -> [CGRect] {
+  private func stableFrames(
+    _ targets: [(identifier: String, type: XCUIElement.ElementType)], app: XCUIApplication
+  ) async throws -> [CGRect] {
+    let identifiers = targets.map(\.identifier)
+    XCTAssertFalse(identifiers.isEmpty)
+    XCTAssertEqual(Set(identifiers).count, identifiers.count)
+    let expectedTypes = Dictionary(uniqueKeysWithValues: targets.map { ($0.identifier, $0.type) })
     var previous: [CGRect] = []
     var stableSamples = 0
     var result: [CGRect] = []
+    var observations: [String] = []
+    defer {
+      let attachment = XCTAttachment(string: observations.joined(separator: "\n"))
+      attachment.name = "Native hit-target stable snapshot samples"
+      attachment.lifetime = .keepAlways
+      add(attachment)
+    }
     try await until("Native hit-target geometry did not become visible and stable") {
-      guard elements.allSatisfy({ $0.exists }) else { stableSamples = 0; return false }
-      let next = elements.map(\.frame)
-      guard next.allSatisfy({ !$0.isEmpty && app.frame.contains($0) }) else {
+      // One current AX snapshot makes each frame comparison coherent and avoids
+      // repeated remote queries consuming the entire unchanged ten-second bound.
+      // Never reuse a snapshot across polls: two stable comparisons still require
+      // at least three separate observations of the actual application.
+      let started = ProcessInfo.processInfo.systemUptime
+      let snapshot = try app.snapshot()
+      var pending: [any XCUIElementSnapshot] = [snapshot]
+      var matches: [String: [any XCUIElementSnapshot]] = [:]
+      while let node = pending.popLast() {
+        if let type = expectedTypes[node.identifier], type == .any || node.elementType == type {
+          matches[node.identifier, default: []].append(node)
+        }
+        pending.append(contentsOf: node.children)
+      }
+      let counts = identifiers.map { matches[$0]?.count ?? 0 }
+      observations.append(
+        "sample=\(observations.count + 1) started=\(started) "
+        + "finished=\(ProcessInfo.processInfo.systemUptime) app=\(snapshot.frame) "
+        + zip(identifiers, counts).map {
+          "\($0.0):type=\(String(describing: expectedTypes[$0.0])):count=\($0.1)"
+        }.joined(separator: "; "))
+      guard counts.allSatisfy({ $0 <= 1 }) else {
+        XCTFail("Native hit-target identifiers must resolve uniquely within one live snapshot.")
+        throw AcceptanceError.condition("Ambiguous native hit-target snapshot")
+      }
+      guard counts.allSatisfy({ $0 == 1 }) else {
+        stableSamples = 0
+        previous = []
+        return false
+      }
+      let next = try identifiers.map { try XCTUnwrap(matches[$0]?.first).frame }
+      observations[observations.count - 1] += " frames=\(next)"
+      guard next.allSatisfy({ !$0.isEmpty && snapshot.frame.contains($0) }) else {
         stableSamples = 0; previous = next; return false
       }
       if previous.count == next.count,
@@ -462,7 +508,9 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     let scroll = app.scrollViews["task-workspace.timeline"]
     XCTAssertTrue(scroll.waitForExistence(timeout: 10))
     for attempt in 0...4 {
-      let frames = try await stableFrames([scroll, chart], app: app)
+      let frames = try await stableFrames([
+        ("task-workspace.timeline", .scrollView), ("task-workspace.timeline.chart", .any)
+      ], app: app)
       let viewport = frames[0].intersection(app.frame).insetBy(dx: 8, dy: 8)
       let frame = frames[1]
       guard !viewport.isNull, !viewport.isEmpty,
