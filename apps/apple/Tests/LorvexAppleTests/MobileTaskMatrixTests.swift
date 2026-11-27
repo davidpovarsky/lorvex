@@ -66,6 +66,11 @@ struct MobileTaskMatrixTests {
     let peerDue = try day("2026-12-09")
     _ = try await core.updateTask(TaskUpdateDraft(id: original.id, notes: "New peer note", dueDate: .set(peerDue)))
     _ = try await core.cancelTask(id: original.id)
+    let peerCancelled = try await core.loadTask(id: original.id)
+    // Cancellation intentionally detaches dependencies. A stale Matrix editor
+    // must preserve that peer change rather than restoring its original edges.
+    #expect(peerCancelled.status == .cancelled)
+    #expect(peerCancelled.dependsOn.isEmpty)
     try await store.saveMatrixTaskField(.priority, draft: priorityDraft)
     let prioritySaved = try await core.loadTask(id: original.id)
     #expect(prioritySaved.priority == .p1)
@@ -74,7 +79,7 @@ struct MobileTaskMatrixTests {
     #expect(prioritySaved.dueDate == peerDue)
     #expect(prioritySaved.plannedDate == original.plannedDate)
     #expect(prioritySaved.plannedTime == original.plannedTime)
-    #expect(prioritySaved.dependsOn == original.dependsOn)
+    #expect(prioritySaved.dependsOn == peerCancelled.dependsOn)
 
     var dueDraft = MobileTaskEditDraft(task: prioritySaved)
     dueDraft.hasDueDate = true
@@ -86,7 +91,7 @@ struct MobileTaskMatrixTests {
     #expect(dueSaved.priority == .p1)
     #expect(dueSaved.plannedDate == original.plannedDate)
     #expect(dueSaved.plannedTime == original.plannedTime)
-    #expect(dueSaved.dependsOn == original.dependsOn)
+    #expect(dueSaved.dependsOn == peerCancelled.dependsOn)
     #expect(dueSaved.status == .cancelled)
 
     let unchangedDraft = MobileTaskEditDraft(task: dueSaved)
