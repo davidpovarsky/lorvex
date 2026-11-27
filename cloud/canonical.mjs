@@ -1,5 +1,7 @@
 import {spawn} from 'node:child_process';
 import {CloudError,validateEnvelope,SCHEMA_VERSION} from './store.mjs';
+import {requestFingerprint} from './request-fingerprint.mjs';
+import {hydrateCloudTask} from './task-result.mjs';
 
 const MAX_BYTES=32*1024*1024;
 const MAX_ENTITIES=50000;
@@ -47,12 +49,13 @@ export function runCanonicalProcess(input,{
   });
 }
 
-function receipt(store,accountId,requestId,action,id){
+function receipt(store,accountId,requestId,action,id,fingerprint){
   if(!requestId)return null;
   const row=store.get('SELECT response FROM receipts WHERE account_id=? AND request_id=?',accountId,requestId);
   if(!row)return null;
   const prior=JSON.parse(row.response);
-  if(prior.canonical_tool!==action||prior.entity_id!==id||!prior.entity)
+  if(!prior.request_fingerprint)throw new CloudError(409,'idempotency_reconciliation_required');
+  if(prior.canonical_tool!==action||prior.entity_id!==id||prior.request_fingerprint!==fingerprint||!prior.entity)
     throw new CloudError(409,'idempotency_conflict');
   return prior.entity;
 }
@@ -61,17 +64,20 @@ const retry=Symbol('retry_canonical_snapshot');
 
 export async function executeCanonicalTransition(store,accountId,action,args,{execute=runCanonicalProcess}={}){
   const requestId=args.request_id??null;
+  const fingerprint=requestFingerprint(action,args);
+  const {request_id,...parameters}=args;
   for(let attempt=0;attempt<3;attempt++){
-    const prior=receipt(store,accountId,requestId,action,args.id);
+    const prior=receipt(store,accountId,requestId,action,args.id,fingerprint);
     if(prior)return prior;
     const snapshot=store.tx(()=>{
       const account=store.get('SELECT timezone FROM accounts WHERE id=?',accountId);
       if(!account)throw new CloudError(404,'account_not_found');
       if(!store.entity(accountId,'task',args.id))throw new CloudError(404,'task_not_found');
+      if(args.depends_on_id&&!store.entity(accountId,'task',args.depends_on_id))throw new CloudError(404,'dependency_task_not_found');
       const rows=store.all('SELECT * FROM entities WHERE account_id=? ORDER BY entity_type,entity_id LIMIT ?',accountId,MAX_ENTITIES+1);
       if(rows.length>MAX_ENTITIES)throw new CloudError(413,'canonical_snapshot_too_large');
       return {seq:checkpoint(store,accountId),input:{
-        envelopes:rows.map(row=>store.wire(row)),action,arguments:{id:args.id},
+        envelopes:rows.map(row=>store.wire(row)),action,arguments:parameters,
         device_id:'lorvex-cloud-server',now:new Date(store.clock()).toISOString(),timezone:account.timezone
       }};
     });
@@ -83,25 +89,32 @@ export async function executeCanonicalTransition(store,accountId,action,args,{ex
     for(const envelope of result.envelopes){
       validateEnvelope(envelope);
       const key=envelope.entity_type+':'+envelope.entity_id;
+      const payloadVersion=JSON.parse(envelope.payload).version;
+      // Canonical tombstones retain the deleted row's snapshot version;
+      // their envelope carries the newer deletion version. Upserts carry
+      // the same version in both places.
+      const coherentVersion=typeof payloadVersion==='string'&&/^\d{13}_\d{4}_[0-9a-f]{16}$/.test(payloadVersion)&&
+        (envelope.operation==='delete'?payloadVersion<=envelope.version:payloadVersion===envelope.version);
       if(seen.has(key)||envelope.payload_schema_version>SCHEMA_VERSION||
-         JSON.parse(envelope.payload).version!==envelope.version)
+         !coherentVersion)
         throw new CloudError(502,'invalid_canonical_envelope');
       seen.add(key);
     }
     try{
       return store.tx(()=>{
-        const cached=receipt(store,accountId,requestId,action,args.id);
+        const cached=receipt(store,accountId,requestId,action,args.id,fingerprint);
         if(cached)return cached;
         if(checkpoint(store,accountId)!==snapshot.seq)throw retry;
         for(const envelope of result.envelopes){
           const outcome=store.receive(accountId,envelope);
           if(outcome.status==='stale')throw new CloudError(409,'canonical_result_stale');
         }
-        const entity=store.entity(accountId,'task',args.id);
-        if(!entity)throw new CloudError(502,'canonical_task_missing');
+        const task=store.entity(accountId,'task',args.id);
+        if(!task)throw new CloudError(502,'canonical_task_missing');
+        const entity=hydrateCloudTask(store,accountId,task);
         store.run('INSERT INTO audit(account_id,action,entity_id,created) VALUES(?,?,?,?)',accountId,action,args.id,store.clock());
         if(requestId)store.run('INSERT INTO receipts(account_id,request_id,response,created) VALUES(?,?,?,?)',accountId,requestId,
-          JSON.stringify({canonical_tool:action,entity_id:args.id,entity}),store.clock());
+          JSON.stringify({canonical_tool:action,entity_id:args.id,request_fingerprint:fingerprint,entity}),store.clock());
         return entity;
       });
     }catch(error){if(error!==retry)throw error;}

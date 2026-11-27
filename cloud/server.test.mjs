@@ -125,7 +125,7 @@ test('standard OAuth PKCE sign-in uses account password, never device pairing',a
   const access=exchange.value.access_token;
   const catalog=await request(base+'/mcp','POST',rpc(1,'tools/list'),access);
   assert.equal(catalog.status,200);
-  assert.equal(catalog.value.result.tools.length,22);
+  assert.equal(catalog.value.result.tools.length,26);
   const create=await request(base+'/mcp','POST',rpc(2,'tools/call',{
     name:'create_task',arguments:{title:'Without iPad approval'}}),access);
   assert.equal(create.status,200);

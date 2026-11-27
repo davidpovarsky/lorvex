@@ -168,6 +168,10 @@ public enum NativeExecutor {
     guard let row = try TaskRepo.Read.getTask(db, taskId: taskId) else {
       throw NativeError.invalidRequest("task does not exist")
     }
+    if ["add_dependency", "remove_dependency", "delete_task"].contains(request.action) {
+      return try NativeTaskOperations.apply(db, request: request, taskId: taskId,
+        now: now, session: session)
+    }
     let oldStatus = try LifecycleStatus.parsePersistedTaskStatus(taskId: taskId, raw: row.core.status)
     let version = session.nextVersionString()
     let plan: LifecycleSyncPlan

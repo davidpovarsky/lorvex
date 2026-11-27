@@ -15,12 +15,12 @@ async function fixture(t) {
   };
   return {app,rpc};
 }
-test('MCP descriptors expose OAuth requirements without changing the canonical 22 tool catalog',async t=>{
+test('MCP descriptors expose OAuth requirements for all 26 cloud tools',async t=>{
   const {app,rpc}=await fixture(t);
   const account=app.store.createAccount('fixture@example.invalid','Fixture account password');
   const grant=app.store.issueToken(account.id);
   const listed=await rpc('tools/list',{},grant.access_token);
-  assert.equal(listed.status,200);assert.equal(listed.value.result.tools.length,22);
+  assert.equal(listed.status,200);assert.equal(listed.value.result.tools.length,26);
   for(const tool of listed.value.result.tools) {
     const scopes=tool.annotations.readOnlyHint?['lorvex.read']:['lorvex.read','lorvex.write'];
     assert.deepEqual(tool.securitySchemes,[{type:'oauth2',scopes}]);
