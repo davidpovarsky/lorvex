@@ -20,7 +20,7 @@ struct LorvexCloudAccountSettingsView: View {
         Section("Lorvex Cloud") {
           Label(cloud.status, systemImage: cloud.accountID == nil
                 ? "person.crop.circle" : "checkmark.icloud")
-          Text("Tasks, projects, calendar and habits live in your Lorvex Cloud account. ChatGPT can manage them even if your iPad is switched off.")
+          Text("Tasks, projects, calendar and habits live in your Lorvex Cloud account. ChatGPT can manage them even if this device is switched off.")
             .font(.callout).foregroundStyle(.secondary)
         }
 
@@ -63,7 +63,7 @@ struct LorvexCloudAccountSettingsView: View {
         }
 
         Section("ChatGPT connection") {
-          Text("In ChatGPT connect the Lorvex Cloud MCP service. You will see this same Lorvex account login page. No pairing code or iPad approval is needed for ordinary task changes.")
+          Text("In ChatGPT connect the Lorvex Cloud MCP service. You will see this same Lorvex account login page. No pairing code or approval on this device is needed for ordinary task changes.")
             .font(.callout)
           Text("Your local database stays available offline. The first synchronization merges your existing tasks into this account. CloudKit sync is disabled while Lorvex Cloud is active to avoid competing sync transports.")
             .font(.caption).foregroundStyle(.secondary)

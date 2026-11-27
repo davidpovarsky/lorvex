@@ -27,7 +27,7 @@
 "Reauthorize ChatGPT" = "Reauthorize ChatGPT";
 "Sign out of ChatGPT" = "Sign out of ChatGPT";
 "Privacy and limitations" = "Privacy and limitations";
-"The ChatGPT OAuth bearer token stays in the iPad Keychain. Lorvex never copies your ChatGPT cookies or existing conversations. Inference uses OpenAI Responses with no response storage." = "The ChatGPT OAuth bearer token stays in the iPad Keychain. Lorvex never copies your ChatGPT cookies or existing conversations. Inference uses OpenAI Responses with no response storage.";
+"The ChatGPT OAuth bearer token stays in this device's Keychain. Lorvex never copies your ChatGPT cookies or existing conversations. Inference uses OpenAI Responses with no response storage." = "The ChatGPT OAuth bearer token stays in this device's Keychain. Lorvex never copies your ChatGPT cookies or existing conversations. Inference uses OpenAI Responses with no response storage.";
 "ChatGPT plan inference requires an eligible account and explicit permission. If access is unavailable, you can keep using your configured OpenRouter or OpenAI API provider." = "ChatGPT plan inference requires an eligible account and explicit permission. If access is unavailable, you can keep using your configured OpenRouter or OpenAI API provider.";
 "Done" = "Done";
 "Close" = "Close";
@@ -49,7 +49,7 @@
 "Keychain could not securely store this credential." = "Keychain could not securely store this credential.";
 "Open Hanlin AI personal planner" = "Open Hanlin AI personal planner";
 "Lorvex Cloud" = "Lorvex Cloud";
-"Tasks, projects, calendar and habits live in your Lorvex Cloud account. ChatGPT can manage them even if your iPad is switched off." = "Tasks, projects, calendar and habits live in your Lorvex Cloud account. ChatGPT can manage them even if your iPad is switched off.";
+"Tasks, projects, calendar and habits live in your Lorvex Cloud account. ChatGPT can manage them even if this device is switched off." = "Tasks, projects, calendar and habits live in your Lorvex Cloud account. ChatGPT can manage them even if this device is switched off.";
 "Sign in or create an account" = "Sign in or create an account";
 "Email" = "Email";
 "Password (at least 12 characters)" = "Password (at least 12 characters)";
@@ -66,7 +66,7 @@
 "Sync now" = "Sync now";
 "Sign out" = "Sign out";
 "ChatGPT connection" = "ChatGPT connection";
-"In ChatGPT connect the Lorvex Cloud MCP service. You will see this same Lorvex account login page. No pairing code or iPad approval is needed for ordinary task changes." = "In ChatGPT connect the Lorvex Cloud MCP service. You will see this same Lorvex account login page. No pairing code or iPad approval is needed for ordinary task changes.";
+"In ChatGPT connect the Lorvex Cloud MCP service. You will see this same Lorvex account login page. No pairing code or approval on this device is needed for ordinary task changes." = "In ChatGPT connect the Lorvex Cloud MCP service. You will see this same Lorvex account login page. No pairing code or approval on this device is needed for ordinary task changes.";
 "Your local database stays available offline. The first synchronization merges your existing tasks into this account. CloudKit sync is disabled while Lorvex Cloud is active to avoid competing sync transports." = "Your local database stays available offline. The first synchronization merges your existing tasks into this account. CloudKit sync is disabled while Lorvex Cloud is active to avoid competing sync transports.";
 "Sign out of Lorvex Cloud?" = "Sign out of Lorvex Cloud?";
 "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset." = "Your local tasks will remain. Another cloud account cannot take over this database without a separate export and reset.";

@@ -98,7 +98,7 @@ struct LorvexChatGPTPlanSettingsView: View {
       }
 
       Section("Privacy and limitations") {
-        Text("The ChatGPT OAuth bearer token stays in the iPad Keychain. Lorvex never copies your ChatGPT cookies or existing conversations. Inference uses OpenAI Responses with no response storage.")
+        Text("The ChatGPT OAuth bearer token stays in this device's Keychain. Lorvex never copies your ChatGPT cookies or existing conversations. Inference uses OpenAI Responses with no response storage.")
         Text("ChatGPT plan inference requires an eligible account and explicit permission. If access is unavailable, you can keep using your configured OpenRouter or OpenAI API provider.")
           .font(.caption).foregroundStyle(.secondary)
       }
