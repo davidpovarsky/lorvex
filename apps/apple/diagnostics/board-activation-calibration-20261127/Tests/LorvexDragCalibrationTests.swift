@@ -486,6 +486,14 @@ final class LorvexDragCalibrationTests: XCTestCase {
     attach(app, "Lorvex \(language.rawValue) - adjacent native columns before system lift")
     // Each coordinate remains relative to its actual card; XCTest applies the
     // device orientation transform. The hold activates system lift, not a swipe.
+    let enabledState = XCTAttachment(string:
+      "boardEnabled=\(board.isEnabled) sourceEnabled=\(source.isEnabled) destinationEnabled=\(destination.isEnabled)\n"
+      + [source, destination].flatMap { $0.descendants(matching: .button).allElementsBoundByIndex }
+        .map { "\($0.identifier) enabled=\($0.isEnabled) hittable=\($0.isHittable) frame=\($0.frame)" }
+        .joined(separator: "\n"))
+    enabledState.name = "Lorvex calibration controls immediately before native hold"
+    enabledState.lifetime = .keepAlways
+    add(enabledState)
     from.press(forDuration: calibrationHold, thenDragTo: to)
     attach(app, "Lorvex \(language.rawValue) - diagnostic native Board immediately after drop")
     attachHierarchy(app, "Lorvex \(language.rawValue) - diagnostic native Board immediately after drop hierarchy")

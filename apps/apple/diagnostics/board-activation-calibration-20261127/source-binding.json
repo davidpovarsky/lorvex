@@ -21,5 +21,10 @@
     "Parameterize only diagnostic-copy hold; original0.8 remains untouched",
     "Original canonical-lane assertion remains in diagnostic helper"
   ],
-  "caseCount": 6
+  "caseCount": 6,
+  "observations": [
+    "Actual source/destination and nested button enabled/hittable flags immediately before hold",
+    "Host load/free space before each selector",
+    "Before/after original product runtime closure"
+  ]
 }
