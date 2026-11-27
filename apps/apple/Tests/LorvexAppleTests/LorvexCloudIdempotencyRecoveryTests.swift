@@ -30,7 +30,7 @@ struct LorvexCloudIdempotencyRecoveryTests {
         _ = try await recoveryTransport(core: core, peer: peer).sync()
         Issue.record("a lost receipt was acknowledged")
       } catch is URLError {}
-      saved = try #require(core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
+      saved = try #require(try core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
       #expect(!(try core.unsyncedOutboundRecordNames()).isEmpty)
     }
 
@@ -60,7 +60,7 @@ struct LorvexCloudIdempotencyRecoveryTests {
     let peer = ReceiptRecoveryPeer(mode: .reconcile, historyPrefix: 1)
     await expectReconciliationRequired(recoveryTransport(core: core, peer: peer))
     #expect(try recoveryPending(core).map(\.outboxId) == original.map(\.outboxId))
-    let saved = try #require(core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
+    let saved = try #require(try core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
     #expect(await peer.pushBodies.count == 1)
 
     await expectReconciliationRequired(recoveryTransport(core: core, peer: peer))
@@ -162,7 +162,7 @@ struct LorvexCloudIdempotencyRecoveryTests {
     let transport = recoveryTransport(core: core, peer: peer)
     let work = _Concurrency.Task { try await transport.sync() }
     await gate.waitForEntry()
-    let saved = try #require(core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
+    let saved = try #require(try core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
     work.cancel()
     await gate.open()
     do {
@@ -187,7 +187,7 @@ struct LorvexCloudIdempotencyRecoveryTests {
     let transport = recoveryTransport(core: core, peer: peer)
     let work = _Concurrency.Task { try await transport.sync() }
     await gate.waitForEntry()
-    let saved = try #require(core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
+    let saved = try #require(try core.cloudSyncEngineCheckpoint(.oracleCloudPendingPush))
     await transport.signOut()
     await gate.open()
     do {
