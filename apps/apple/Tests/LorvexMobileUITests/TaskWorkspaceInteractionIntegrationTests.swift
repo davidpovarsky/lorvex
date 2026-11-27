@@ -192,18 +192,22 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     let collapse = app.buttons["task-workspace.board.collapse.open"]
     tapVisible(collapse, app: app)
     XCTAssertTrue(column.waitForNonExistence(timeout: 5))
+    _ = try collapsedBoardProof("open", title: language.openLane, taskID: taskID, app: app, language: language)
     tapVisible(app.buttons["lorvex.visual.refresh"], app: app)
     XCTAssertFalse(column.exists)
+    _ = try collapsedBoardProof("open", title: language.openLane, taskID: taskID, app: app, language: language)
     let presentation = app.segmentedControls["lorvex.visual.presentation"]
     presentation.buttons[language.matrix].tap()
     XCTAssertTrue(app.textFields["lorvex.matrix.search"].waitForExistence(timeout: 10))
     presentation.buttons[language.workspace].tap()
     XCTAssertTrue(app.buttons["task-workspace.tab.board"].isSelected)
     XCTAssertFalse(column.exists, "The mounted Board must retain collapse through the Matrix presentation.")
+    _ = try collapsedBoardProof("open", title: language.openLane, taskID: taskID, app: app, language: language)
     selectMode("table", app: app)
     selectMode("board", app: app)
     try revealBoardLane("open", app: app)
     XCTAssertFalse(column.exists, "Host presentation preferences must retain collapse through a shared tab remount.")
+    _ = try collapsedBoardProof("open", title: language.openLane, taskID: taskID, app: app, language: language)
     tapVisible(collapse, app: app)
     XCTAssertTrue(column.waitForExistence(timeout: 5))
     tapVisible(app.buttons["task-workspace.board.actions." + taskID], app: app)
@@ -225,6 +229,8 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     XCTAssertTrue(completedColumn.waitForExistence(timeout: 5))
     tapVisible(app.buttons["task-workspace.board.collapse.completed"], app: app)
     XCTAssertTrue(completedColumn.waitForNonExistence(timeout: 5))
+    let boardBeforeRestart = try collapsedBoardProof("completed", title: language.completedLane,
+      taskID: taskID, app: app, language: language)
     capture(app, "Lorvex Zoom \(language.rawValue) - Board collapsed before cold restart")
 
     app.terminate()
@@ -246,6 +252,8 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     try revealBoardLane("completed", app: app)
     XCTAssertFalse(completedColumn.exists,
       "The real cold app restart must restore the collapsed Completed column from the same host scope.")
+    let boardAfterRestart = try collapsedBoardProof("completed", title: language.completedLane,
+      taskID: taskID, app: app, language: language)
     capture(app, "Lorvex Zoom \(language.rawValue) - Board collapsed after cold restart")
     tapVisible(app.buttons["task-workspace.board.collapse.completed"], app: app)
     XCTAssertTrue(completedColumn.waitForExistence(timeout: 5))
@@ -286,6 +294,7 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
       "boardRealOpenAndLaneMenuActions": true,
       "boardCollapseSurvivedRefreshMatrixAndTabRemount": true,
       "boardCollapseSurvivedColdRestart": true,
+      "boardCollapse": ["beforeRestart": boardBeforeRestart, "afterRestart": boardAfterRestart],
       "canonicalLaneDatesDependencySurvivedRestart": true,
       "boardMenuReopenedPersistedTask": true,
       "pendingSharedProductRequirements": [] as [String]
@@ -451,6 +460,26 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
   }
 
   @MainActor
+  private func collapsedBoardProof(_ laneID: String, title: String, taskID: String,
+                                   app: XCUIApplication, language: Language) throws -> [String: Any] {
+    try revealBoardLane(laneID, app: app)
+    let header = app.buttons["task-workspace.board.collapse." + laneID]
+    tapTargetIsVisible(header, app: app)
+    XCTAssertEqual(header.label, language.expandColumn)
+    XCTAssertEqual(header.value as? String, title)
+    let lane = element("task-workspace.board.lane." + laneID, app: app)
+    XCTAssertTrue(lane.exists)
+    XCTAssertFalse(lane.frame.isEmpty)
+    XCTAssertTrue(lane.frame.intersects(app.frame))
+    XCTAssertFalse(element("task-workspace.board.column." + laneID, app: app).exists)
+    XCTAssertFalse(app.buttons["task-workspace.open." + taskID].exists,
+      "A collapsed lane must hide its card while its own observed Expand control remains visible.")
+    return ["laneID": laneID, "headerLabel": header.label, "headerValue": header.value as? String ?? "",
+            "headerFrame": frameJSON(header.frame), "laneFrame": frameJSON(lane.frame),
+            "headerHittable": header.isHittable, "columnAndTaskAbsent": true]
+  }
+
+  @MainActor
   private func assertConnection(_ prerequisite: String, _ dependent: String, app: XCUIApplication) {
     app.buttons["task-workspace.options"].tap()
     app.buttons["task-workspace.connections"].tap()
@@ -544,5 +573,6 @@ final class TaskWorkspaceInteractionIntegrationTests: XCTestCase {
     var matrix: String { self == .he ? "מטריצה" : "Matrix" }
     var workspace: String { self == .he ? "מרחב משימות" : "Task workspace" }
     var cancel: String { self == .he ? "ביטול" : "Cancel" }
+    var expandColumn: String { self == .he ? "הרחבת העמודה" : "Expand column" }
   }
 }
