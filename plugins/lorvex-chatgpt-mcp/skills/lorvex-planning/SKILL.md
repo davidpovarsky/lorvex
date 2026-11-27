@@ -28,3 +28,9 @@ The `lorvex-remote` connection at `/mcp` is retained during migration. It operat
 Use only the authenticated account and granted scopes. Do not copy credentials between Cloud and the iPad bridge, extract cookies, expose tokens, or claim access to another account. A sign-in requirement must be completed through the provided OAuth flow.
 
 This MCP connection is separate from Sign in with ChatGPT inside Lorvex. It does not grant the embedded AI assistant use of a ChatGPT plan.
+
+## Dependency and write recovery tools
+
+Use the Cloud catalog's `list_dependencies`, `add_dependency` and `remove_dependency` when the user requests prerequisite changes, following the advertised schemas and current task IDs. Cloud `delete_task` moves the task to recoverable Trash through Lorvex's canonical archive operation; do not describe it as permanent deletion or bypass required approvals.
+
+On `idempotency_conflict`, report the changed-payload conflict and retain the original intent. On `idempotency_reconciliation_required`, inspect the account's authoritative history or records through available tools. Only exact evidence for the original entity, operation, version, payload and account can establish commitment; a matching current value or title is insufficient. If those tools cannot prove the outcome, report it as unresolved. Do not issue a new request ID or use the iPad bridge to repeat the uncertain write. Keep successful, failed and unresolved operations separate in the result.

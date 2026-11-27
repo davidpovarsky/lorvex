@@ -11,7 +11,7 @@
     "defaultPrompt": "Help me plan my week using the tasks already in Lorvex."
   },
   "name": "lorvex-chatgpt-mcp",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Private Lorvex Cloud account access through OAuth, with the existing iPad bridge retained for migration.",
   "author": {
     "name": "Lorvex Hanlin integration"
