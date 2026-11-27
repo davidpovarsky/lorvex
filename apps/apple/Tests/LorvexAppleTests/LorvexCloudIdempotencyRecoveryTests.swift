@@ -74,6 +74,7 @@ struct LorvexCloudIdempotencyRecoveryTests {
     let core = try makeInMemoryCore()
     let live = try await core.createTask(TaskCreateDraft(title: "Earlier task"))
     let deleted = try await core.createTask(TaskCreateDraft(title: "Deleted task"))
+    _ = try await core.archiveTask(id: deleted.id)
     try await core.deleteTask(id: deleted.id)
     try prepareRecoveryAccount(core)
     let original = try recoveryPending(core)
