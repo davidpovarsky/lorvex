@@ -318,11 +318,20 @@ class Controller:
         return json.loads(log.read_text())
 
     def unit_command(self):
+        # Test.ID includes the module name. A bare suite selector such as
+        # LorvexHanlinAgentTests also matches every other suite in that module.
+        # Select the unchanged 49 source identities; units() still verifies the
+        # exact catalog, console summaries and XML identities independently.
+        selectors = [
+            "^" + re.escape(item["identifier"].replace("/", ".", 1))
+            + r"(?:\([^)]*\))?(?:/|$)"
+            for item in sorted(self.unit_catalog().values(), key=lambda item: item["identifier"])
+        ]
         return [
             "xcrun", "swift", "test", "--package-path", str(self.apple),
             "--scratch-path", str(self.dd / "SwiftPM"),
             "--disable-automatic-resolution", "--skip-update", "--jobs", "2",
-            "--no-parallel", "--filter", "|".join(UNIT_SUITES + UNIT_FUNCTIONS),
+            "--no-parallel", "--filter", "|".join(selectors),
             "--xunit-output", str(self.out / "unit-results.xml"),
         ]
 
