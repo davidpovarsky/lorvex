@@ -66,10 +66,11 @@ struct MobileTaskMatrixView: View {
         .padding(.bottom, 64)
       }
       .scrollDismissesKeyboard(.interactively)
+      // GeometryReader is transparent to accessibility. Keep the identifier
+      // on the actual scroll view so an outer identifier cannot replace it.
+      .accessibilityElement(children: .contain)
       .accessibilityIdentifier("lorvex.matrix.scroll")
     }
-    .accessibilityElement(children: .contain)
-    .accessibilityIdentifier("lorvex.matrix.workspace")
   }
 
   private func section(_ quadrant: MobileTaskMatrixQuadrant) -> some View {

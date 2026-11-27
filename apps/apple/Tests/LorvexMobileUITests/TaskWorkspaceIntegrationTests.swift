@@ -633,12 +633,26 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
         XCTFail("The full native Board card must fit in the observed viewport.")
         throw NSError(domain: "NativeBoardAcceptance", code: 2)
       }
-      if frame.minX >= horizontalViewport.minX && frame.maxX <= horizontalViewport.maxX {
+      let destinationFrame = destination.frame
+      let destinationVisible = destinationFrame.intersection(horizontalViewport)
+      if frame.minX >= horizontalViewport.minX && frame.maxX <= horizontalViewport.maxX,
+         !destinationVisible.isNull, destinationVisible.width >= 44 {
         break
       }
-      let shift = frame.minX < horizontalViewport.minX
-        ? horizontalViewport.minX - frame.minX
-        : horizontalViewport.maxX - frame.maxX
+      // Keep the whole source and a real 44-point destination on screen.
+      // Aligning only the nearest source edge can hide the adjacent lane.
+      var minimumShift = horizontalViewport.minX - frame.minX
+      var maximumShift = horizontalViewport.maxX - frame.maxX
+      if destinationFrame.minX >= frame.maxX {
+        maximumShift = min(maximumShift, horizontalViewport.maxX - 44 - destinationFrame.minX)
+      } else if destinationFrame.maxX <= frame.minX {
+        minimumShift = max(minimumShift, horizontalViewport.minX + 44 - destinationFrame.maxX)
+      }
+      guard minimumShift <= maximumShift else {
+        XCTFail("The whole source card and a native destination must fit together.")
+        throw NSError(domain: "NativeBoardAcceptance", code: 6)
+      }
+      let shift = (minimumShift + maximumShift) / 2
       let panY = min(sourceColumn.frame.maxY, destinationColumn.frame.maxY,
         boardViewport.maxY) - 16
       guard panY > max(source.frame.maxY, destination.frame.maxY) + 12 else {
@@ -650,7 +664,17 @@ final class TaskWorkspaceIntegrationTests: XCTestCase {
       let origin = app.coordinate(withNormalizedOffset: .zero)
       let panStart = origin.withOffset(CGVector(dx: panX, dy: panY))
       let panEnd = origin.withOffset(CGVector(dx: panX + distance, dy: panY))
-      panStart.press(forDuration: 0.1, thenDragTo: panEnd)
+      // A short release at XCTest's default velocity flings the scroll view
+      // past this measured position. Hold the end of this empty-space pan to
+      // settle scrolling; the original 0.8-second card lift below is unchanged.
+      panStart.press(forDuration: 0.1, thenDragTo: panEnd,
+        withVelocity: .slow, thenHoldForDuration: 0.25)
+      let panObservation = XCTAttachment(string:
+        "source=\(frame) destination=\(destinationFrame) shift=\(shift)\n"
+        + "afterSource=\(source.frame) afterDestination=\(destination.frame)")
+      panObservation.name = "Lorvex \(language.rawValue) - native Board viewport preparation"
+      panObservation.lifetime = .keepAlways
+      add(panObservation)
     }
     let fullSourceViewport = sourceColumn.frame.intersection(board.frame)
       .intersection(app.frame).insetBy(dx: 2, dy: 6)
