@@ -36,6 +36,9 @@ public enum CloudSyncEngineCheckpoint: String, Sendable, CaseIterable {
   case oracleCloudCursor = "oracle_cloud.cursor"
   /// Full-resync backfill is queued once per database/account.
   case oracleCloudInitialized = "oracle_cloud.initialized"
+  /// Exact unresolved HTTP batch, request identity and recovery status. This
+  /// transport metadata travels with the same outbox across restart/restore.
+  case oracleCloudPendingPush = "oracle_cloud.pending_push"
 }
 
 /// The local-store surface the CKSyncEngine transport depends on.
