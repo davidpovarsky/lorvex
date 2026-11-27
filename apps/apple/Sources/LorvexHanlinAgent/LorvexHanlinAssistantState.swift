@@ -212,7 +212,8 @@ public final class LorvexHanlinAssistantState {
           + "Ask for consent for destructive writes. "
           + "Report data faithfully; do not claim a change before the tool confirms it. "
           + "Use show_task_workspace to present interactive real tasks after creating or planning related tasks, "
-          + "or when the user asks for a graph, board, timeline, network or table. "
+          + "or when the user asks for a graph, board, timeline, network, table or matrix. "
+          + "Matrix groups canonical priority and deadline; planned work days remain independent. "
           + "Use exact task IDs and add_task_dependency/remove_task_dependency for real prerequisites. "
           + "A task's depends_on IDs identify work that must finish before that task can start. "
           + "Respond in the user's language, including Hebrew.",

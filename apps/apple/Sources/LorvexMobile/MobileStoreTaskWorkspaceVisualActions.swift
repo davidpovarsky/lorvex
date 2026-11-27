@@ -95,6 +95,47 @@ extension MobileStore {
       return try await core.updateTask(TaskUpdateDraft(id: dependentID, dependsOn: ids))
     }
   }
+
+  /// Canonical priority write used by Matrix and the live cloud acceptance
+  /// probe. Priority has no implicit relationship with due or planned dates.
+  public func setMatrixTaskPriority(taskID: LorvexTask.ID, priority: LorvexTask.Priority) async throws {
+    let success = await mutateTaskReturningTask(id: taskID, publication: .deferred) {
+      try await core.updateTask(TaskUpdateDraft(id: taskID, priority: priority))
+    }
+    guard success else {
+      throw MobileTaskWorkspaceActionError(message: errorMessage ?? MobileTaskWorkspaceCopy.failed)
+    }
+  }
+
+  /// Save exactly the Matrix field the user opened, based on the editor's
+  /// baseline differences. A no-change save is a no-op even if a peer changed
+  /// that field while the sheet was open. All other fields remain omitted.
+  func saveMatrixTaskField(_ field: MobileTaskField, draft: MobileTaskEditDraft) async throws {
+    let changes = draft.coreUpdateDraft
+    let patch: TaskUpdateDraft
+    switch field {
+    case .priority:
+      if let priority = changes.priority {
+        try await setMatrixTaskPriority(taskID: draft.id, priority: priority)
+      }
+      return
+    case .due:
+      patch = TaskUpdateDraft(id: draft.id, dueDate: changes.dueDate)
+    case .doOn:
+      // A changed planned day owns its time. Preserve the existing canonical
+      // editor rule rather than losing a deliberately selected time slot.
+      patch = TaskUpdateDraft(id: draft.id, plannedDate: changes.plannedDate, plannedTime: changes.plannedTime)
+    default:
+      throw MobileTaskWorkspaceActionError(message: MobileTaskWorkspaceCopy.failed)
+    }
+    guard patch != TaskUpdateDraft(id: draft.id) else { return }
+    let success = await mutateTaskReturningTask(id: draft.id, publication: .deferred) {
+      try await core.updateTask(patch)
+    }
+    guard success else {
+      throw MobileTaskWorkspaceActionError(message: errorMessage ?? MobileTaskWorkspaceCopy.failed)
+    }
+  }
 }
 
 struct MobileTaskWorkspaceActionError: LocalizedError {

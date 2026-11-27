@@ -16,7 +16,7 @@ public struct LorvexHanlinTaskWorkspace: Identifiable, Equatable, Sendable {
     }
     guard let data = resultJSON.data(using: .utf8),
       let result = try? JSONDecoder().decode(Result.self, from: data),
-      ["graph", "board", "timeline", "network", "table"].contains(result.presentation)
+      ["graph", "board", "timeline", "network", "table", "matrix"].contains(result.presentation)
     else { return nil }
     id = callID
     presentation = result.presentation

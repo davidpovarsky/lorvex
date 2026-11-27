@@ -15,6 +15,7 @@ public struct MobileTaskWorkspaceView: View {
   @State private var loadError: String?
   @State private var loadID: UUID?
   @State private var sheet: WorkspaceSheet?
+  @State private var showsMatrix = false
 
   /// String boundary keeps the app executable from linking a second static
   /// copy of the visualization package already owned by LorvexMobile.
@@ -25,6 +26,7 @@ public struct MobileTaskWorkspaceView: View {
     self.init(
       store: store, initialPresentation: TaskWorkspacePresentation(rawValue: presentationName) ?? .graph,
       rootTaskID: rootTaskID, listID: listID, embedded: embedded)
+    _showsMatrix = State(initialValue: presentationName == "matrix")
   }
 
   public init(
@@ -68,8 +70,31 @@ public struct MobileTaskWorkspaceView: View {
         .background(LorvexDesign.Palette.warning.opacity(0.12))
       }
       if let snapshot {
-        TaskWorkspaceView(
-          snapshot: snapshot, initialPresentation: initialPresentation, onAction: perform)
+        Picker(MobileTaskWorkspaceCopy.title, selection: $showsMatrix) {
+          Text(MobileTaskWorkspaceCopy.title).tag(false)
+          Text(MobileTaskMatrixCopy.title).tag(true)
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .accessibilityIdentifier("lorvex.visual.presentation")
+        ZStack {
+          // Keep the original view identity while Matrix is visible so the
+          // selected shared tab, zoom and pan survive returning to it.
+          TaskWorkspaceView(
+            snapshot: snapshot, initialPresentation: initialPresentation, onAction: perform)
+            .opacity(showsMatrix ? 0 : 1)
+            .allowsHitTesting(!showsMatrix)
+            .accessibilityHidden(showsMatrix)
+          if showsMatrix {
+            MobileTaskMatrixView(
+              snapshot: snapshot,
+              entries: MobileTaskMatrixProjection.entries(
+                snapshot: snapshot, canonicalTasks: store.taskCache, logicalDay: store.logicalTodayString),
+              onAction: perform,
+              edit: { task, field in sheet = .field(task, field) })
+          }
+        }
       } else if loadError == nil {
         ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
       } else {
@@ -92,6 +117,8 @@ public struct MobileTaskWorkspaceView: View {
         }
       case .create:
         MobileVisualTaskCreateSheet(store: store, listID: listID)
+      case .field(let task, let field):
+        MobileMatrixTaskFieldSheet(store: store, task: task, field: field)
       }
     }
     .accessibilityElement(children: .contain)
@@ -136,12 +163,56 @@ public struct MobileTaskWorkspaceView: View {
   }
 
   private enum WorkspaceSheet: Identifiable {
-    case task(String), create
+    case task(String), create, field(LorvexTask, MobileTaskField)
     var id: String {
       switch self {
       case .task(let id): "task:" + id
       case .create: "create"
+      case .field(let task, let field): "field:" + task.id + ":" + field.rawValue
       }
+    }
+  }
+}
+
+/// The original field editor supplies all date/priority controls. Its draft is
+/// projected to one field at save time, so stale unrelated values never write.
+@MainActor
+private struct MobileMatrixTaskFieldSheet: View {
+  let store: MobileStore
+  let task: LorvexTask
+  let field: MobileTaskField
+  @Environment(\.dismiss) private var dismiss
+  @State private var isSaving = false
+  @State private var error: String?
+
+  var body: some View {
+    MobileTaskFieldEditor(
+      field: field,
+      draft: MobileTaskEditDraft(
+        task: task, defaultPlannedDate: PlannedDayBridge.displayDate(forLogicalDay: store.logicalTodayString) ?? .now),
+      lists: [], currentListID: task.listID,
+      today: PlannedDayBridge.displayDate(forLogicalDay: store.logicalTodayString) ?? .now,
+      tagSuggestions: [], searchDependencyCandidates: { _, _ in [] }, resolveDependencyTasks: { _ in [] },
+      isSaving: isSaving,
+      save: save, moveToList: { _ in }, cancel: { if !isSaving { dismiss() } })
+      .alert(MobileTaskWorkspaceCopy.failed, isPresented: Binding(
+        get: { error != nil }, set: { if !$0 { error = nil } }
+      )) {
+        Button(MobileTaskWorkspaceCopy.close) { error = nil }
+      } message: {
+        Text(error ?? MobileTaskWorkspaceCopy.failed)
+      }
+  }
+
+  private func save(_ draft: MobileTaskEditDraft) async {
+    guard !isSaving else { return }
+    isSaving = true
+    defer { isSaving = false }
+    do {
+      try await store.saveMatrixTaskField(field, draft: draft)
+      dismiss()
+    } catch {
+      self.error = await store.userFacingBannerMessage(for: error, source: "ios.visual_tasks.matrix")
     }
   }
 }
