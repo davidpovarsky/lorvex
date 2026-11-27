@@ -180,3 +180,7 @@
 "Make dependent_id wait for prerequisite_id through canonical cycle validation" = "הוספת קשר תלות בין משימות עם בדיקת תקינות";
 
 "Remove this prerequisite relation without changing other task fields" = "הסרת קשר תלות בלי לשנות שדות אחרים";
+
+"The saved conversation could not be read. Its existing data has been preserved." = "לא ניתן לקרוא את השיחה השמורה. הנתונים הקיימים שלה נשמרו.";
+"The conversation could not be saved. Its existing data has been preserved." = "לא ניתן לשמור את השיחה. הנתונים הקיימים שלה נשמרו.";
+"Opening conversation…" = "פותח את השיחה…";

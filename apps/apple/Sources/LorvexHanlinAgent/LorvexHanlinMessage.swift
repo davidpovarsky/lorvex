@@ -1,11 +1,12 @@
 import Foundation
 import HanlinChatCore
+import HanlinPlatformContracts
 
 /// Presentation of observed canonical SDK events, keyed by their real call IDs.
 /// This contains no tool execution or planning implementation.
-public struct LorvexHanlinMessage: Identifiable, Sendable {
-  public enum Role: String, Sendable { case user, assistant, status }
-  public enum Status: String, Sendable { case streaming, completed, failed, cancelled }
+public struct LorvexHanlinMessage: Identifiable, Codable, Equatable, Sendable {
+  public enum Role: String, Codable, Sendable { case user, assistant, status }
+  public enum Status: String, Codable, Sendable { case streaming, completed, failed, cancelled }
   public let id: UUID
   public let role: Role
   public var text: String
@@ -14,6 +15,9 @@ public struct LorvexHanlinMessage: Identifiable, Sendable {
   public private(set) var activities: [LorvexHanlinToolActivity] = []
   public private(set) var sources: [LorvexHanlinSource] = []
   public private(set) var workspaces: [LorvexHanlinTaskWorkspace] = []
+  public private(set) var structuredParts: [HanlinChatStructuredPart] = []
+  public var expandedActivityIDs: Set<String> = []
+  public var reasoningExpanded = false
 
   public init(id: UUID = UUID(), role: Role, text: String, status: Status = .completed) {
     self.id = id; self.role = role; self.text = text; self.status = status
@@ -23,6 +27,8 @@ public struct LorvexHanlinMessage: Identifiable, Sendable {
     switch event {
     case .textDelta(let text): self.text += text
     case .reasoningDelta(let text): reasoning += text
+    case .structuredPart(let part):
+      if !structuredParts.contains(part) { structuredParts.append(part) }
     case .toolCallArgumentsStarted(let id, let name):
       updateTool(id: id, name: name) { $0.phase = .preparing }
     case .toolCallArgumentsDelta(let id, let delta):
@@ -72,6 +78,13 @@ public struct LorvexHanlinMessage: Identifiable, Sendable {
     }
   }
 
+  func restoredForDisplay() -> Self {
+    var restored = self
+    // An interrupted display never resumes a stream or a pending tool approval.
+    restored.finish(.cancelled)
+    return restored
+  }
+
   private mutating func updateTool(id: String, name: String? = nil,
                                    change: (inout LorvexHanlinToolActivity) -> Void) {
     if let index = activities.firstIndex(where: { $0.id == id }) {
@@ -94,14 +107,14 @@ public struct LorvexHanlinMessage: Identifiable, Sendable {
   }
 }
 
-public struct LorvexHanlinSource: Identifiable, Sendable {
+public struct LorvexHanlinSource: Identifiable, Codable, Equatable, Sendable {
   public let id: String
   public var title: String
   public let url: URL
 }
 
-public struct LorvexHanlinToolActivity: Identifiable, Sendable {
-  public enum Phase: String, Sendable {
+public struct LorvexHanlinToolActivity: Identifiable, Codable, Equatable, Sendable {
+  public enum Phase: String, Codable, Sendable {
     case preparing, awaitingApproval, running, completed, failed, denied, cancelled, incomplete
     public var isActive: Bool { self == .preparing || self == .awaitingApproval || self == .running }
   }
@@ -110,6 +123,10 @@ public struct LorvexHanlinToolActivity: Identifiable, Sendable {
   public var phase: Phase = .preparing
   public var arguments = ""
   public var result = ""
-  public let startedAt = Date()
+  public let startedAt: Date
   public var completedAt: Date?
+
+  public init(id: String, name: String, startedAt: Date = Date()) {
+    self.id = id; self.name = name; self.startedAt = startedAt
+  }
 }

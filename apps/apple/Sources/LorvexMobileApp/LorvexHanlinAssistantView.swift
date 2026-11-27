@@ -20,9 +20,17 @@ struct LorvexHanlinAssistantView: View {
     @State private var showModelSettings = false
     #if canImport(UIKit)
     @State private var composerDraft = HanlinComposerDraft()
+    @State private var unconfiguredDraft = ""
+    @State private var pendingDraftTransfer: DraftTransfer?
+
+    private struct DraftTransfer {
+        let scope: LorvexHanlinConversationScope
+        let text: String
+    }
     #endif
     @State private var apiToken = ""
     @State private var configuredToken = ""
+    @State private var configuredProfileID: String?
     @State private var configurationError: String?
     @State private var draftProvider = "OpenRouter"
     @State private var draftModelID = ""
@@ -45,11 +53,15 @@ struct LorvexHanlinAssistantView: View {
         NavigationStack {
             Group {
                 #if canImport(UIKit)
-                LorvexHanlinChatWorkspace(assistant: assistant, store: store, draft: composerDraft,
-                    modelName: provider == "ChatGPT" ? chatGPTAccount.selectedModelID : modelID,
-                    showModelSettings: { openModelSettings() },
-                    showRemoteBridgeSettings: openMCPSettings,
-                    send: send)
+                if assistant.conversationScope == conversationScope {
+                    LorvexHanlinChatWorkspace(assistant: assistant, store: store, draft: composerDraft,
+                        modelName: provider == "ChatGPT" ? chatGPTAccount.selectedModelID : modelID,
+                        showModelSettings: { openModelSettings() },
+                        showRemoteBridgeSettings: openMCPSettings,
+                        send: send)
+                } else {
+                    ProgressView("Opening conversation…")
+                }
                 #else
                 ContentUnavailableView("Hanlin AI", systemImage: "ipad",
                     description: Text("Open the original Hanlin chat in the Lorvex iPad or iPhone app."))
@@ -83,6 +95,15 @@ struct LorvexHanlinAssistantView: View {
                 }
             }
             .onAppear(perform: loadCredential)
+            .task(id: conversationScope) { await restoreConversation() }
+            #if canImport(UIKit)
+            .onChange(of: composerDraft.text) { [scope = conversationScope] _, text in
+                if let scope { assistant.updateDraft(text, scope: scope) }
+                else if assistant.conversationScope == nil && !assistant.isRestoringConversation {
+                    unconfiguredDraft = text
+                }
+            }
+            #endif
             .onChange(of: chatGPTAccount.sessionRevision) { _, _ in
                 guard provider == "ChatGPT" else { return }
                 cancelPendingSend()
@@ -127,6 +148,48 @@ struct LorvexHanlinAssistantView: View {
         .chatMotionPreferences()
     }
 
+    private var conversationScope: LorvexHanlinConversationScope? {
+        let accountID: String?
+        if provider == "ChatGPT" {
+            #if canImport(UIKit)
+            accountID = chatGPTAccount.activeAccountID
+            #else
+            accountID = nil
+            #endif
+        } else { accountID = configuredProfileID }
+        guard let accountID else { return nil }
+        return .init(lorvexAccountID: cloudAccount?.accountID, provider: provider,
+                     endpoint: provider == "ChatGPT" ? "https://api.openai.com/v1" : endpoint,
+                     providerAccountID: accountID)
+    }
+
+    private func restoreConversation() async {
+        let scope = conversationScope
+        cancelPendingSend()
+        await assistant.selectConversation(scope)
+        guard !_Concurrency.Task<Never, Never>.isCancelled, conversationScope == scope else { return }
+        #if canImport(UIKit)
+        if scope == nil { composerDraft.text = unconfiguredDraft }
+        else {
+            if let transfer = pendingDraftTransfer, transfer.scope == scope,
+               assistant.isConversationReady {
+                if assistant.draft.isEmpty { assistant.updateDraft(transfer.text, scope: scope) }
+                pendingDraftTransfer = nil
+            }
+            composerDraft.text = assistant.draft
+        }
+        #endif
+    }
+
+    private func retainUnconfiguredDraft(provider: String, endpoint: String, profileID: String?) {
+        #if canImport(UIKit)
+        guard conversationScope == nil, let profileID, !composerDraft.text.isEmpty else { return }
+        let scope = LorvexHanlinConversationScope(lorvexAccountID: cloudAccount?.accountID,
+            provider: provider, endpoint: endpoint, providerAccountID: profileID)
+        pendingDraftTransfer = .init(scope: scope, text: composerDraft.text)
+        #endif
+    }
+
     private func cancelPendingSend() {
         // Revoke ownership before cancellation can resume a suspended credential lookup.
         pendingSendID = nil
@@ -148,11 +211,22 @@ struct LorvexHanlinAssistantView: View {
             endpoint = LorvexHanlinWorkspaceAcceptance.endpoint
             apiToken = LorvexHanlinWorkspaceAcceptance.credential
             configuredToken = apiToken
+            configuredProfileID = "native-workspace-acceptance"
             return
         }
         #endif
         apiToken = LorvexHanlinKeychain.read()
         configuredToken = apiToken
+        do {
+            if provider == "ChatGPT" { configuredProfileID = nil }
+            else {
+                configuredProfileID = try LorvexHanlinProviderProfileKeychain.profileID(
+                    provider: provider, endpoint: endpoint, credential: configuredToken)
+            }
+        } catch {
+            configuredProfileID = nil
+            configurationError = String(localized: "Keychain could not securely store this credential.")
+        }
         if modelID.isEmpty { openModelSettings() }
     }
 
@@ -247,6 +321,10 @@ struct LorvexHanlinAssistantView: View {
                     isSavingSettings = false
                     return
                 }
+                #if canImport(UIKit)
+                retainUnconfiguredDraft(provider: "ChatGPT", endpoint: "https://api.openai.com/v1",
+                    profileID: chatGPTAccount.activeAccountID)
+                #endif
                 provider = "ChatGPT"
                 modelID = selectedModel
                 endpoint = "https://api.openai.com/v1"
@@ -262,6 +340,8 @@ struct LorvexHanlinAssistantView: View {
             return
         }
         do {
+            let selectedProfileID = try LorvexHanlinProviderProfileKeychain.profileID(
+                provider: draftProvider, endpoint: draftEndpoint, credential: apiToken)
             try LorvexHanlinKeychain.save(apiToken)
             // Stop the previous owner before the newly saved configuration is
             // exposed to another send. Cancellation of settings leaves the
@@ -272,8 +352,11 @@ struct LorvexHanlinAssistantView: View {
             let selectedEndpoint = draftEndpoint, selectedCredential = apiToken
             _Concurrency.Task {
                 await assistant.cancel()
+                retainUnconfiguredDraft(provider: selectedProvider, endpoint: selectedEndpoint,
+                    profileID: selectedProfileID)
                 provider = selectedProvider; modelID = selectedModel; endpoint = selectedEndpoint
-                configuredToken = selectedCredential; configurationError = nil
+                configuredToken = selectedCredential; configuredProfileID = selectedProfileID
+                configurationError = nil
                 isSavingSettings = false; showModelSettings = false
             }
         } catch {
@@ -285,6 +368,12 @@ struct LorvexHanlinAssistantView: View {
     private func send() {
         let text = composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !assistant.isRunning, pendingSendID == nil else { return }
+        guard let selectedScope = conversationScope else {
+            if provider == "ChatGPT" { showChatGPTAccountSettings = true }
+            else { openModelSettings() }
+            return
+        }
+        guard assistant.isConversationReady, assistant.conversationScope == selectedScope else { return }
         if provider == "ChatGPT" {
             guard chatGPTAccount.canUsePlan else {
                 showChatGPTAccountSettings = true
@@ -299,14 +388,14 @@ struct LorvexHanlinAssistantView: View {
                 do {
                     let credential = try await chatGPTAccount.accessForInference()
                     try _Concurrency.Task<Never, Never>.checkCancellation()
-                    guard pendingSendID == requestID else { return }
+                    guard pendingSendID == requestID, conversationScope == selectedScope else { return }
                     if composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines) == text {
                         composerDraft.text = ""
                     }
                     modelID = credential.modelID
                     await assistant.send(text, modelID: credential.modelID,
                         endpoint: "https://api.openai.com/v1",
-                        credential: credential.token, provider: "ChatGPT")
+                        credential: credential.token, provider: "ChatGPT", scope: selectedScope)
                 } catch is CancellationError {
                     // Preserve the unsent draft when the user closes the assistant.
                 } catch {
@@ -330,12 +419,13 @@ struct LorvexHanlinAssistantView: View {
             defer {
                 if pendingSendID == requestID { pendingSendID = nil; pendingSend = nil }
             }
-            guard pendingSendID == requestID, !_Concurrency.Task<Never, Never>.isCancelled else { return }
+            guard pendingSendID == requestID, conversationScope == selectedScope,
+                  !_Concurrency.Task<Never, Never>.isCancelled else { return }
             if composerDraft.text.trimmingCharacters(in: .whitespacesAndNewlines) == text {
                 composerDraft.text = ""
             }
             await assistant.send(text, modelID: selectedModel, endpoint: selectedEndpoint,
-                                 credential: selectedCredential, provider: selectedProvider)
+                                 credential: selectedCredential, provider: selectedProvider, scope: selectedScope)
         }
     }
     #endif

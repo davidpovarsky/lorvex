@@ -21,6 +21,7 @@ public enum LorvexHanlinAgentFactory {
     configuration: HanlinChatModelConfiguration,
     accountID: String,
     directory: URL,
+    conversationStore: (any HanlinConversationStore)? = nil,
     conversationID: UUID = UUID(),
     sceneID: UUID = UUID(),
     authorizeWrite: @escaping LorvexHanlinHost.WriteAuthorizer = { _ in false },
@@ -40,7 +41,8 @@ public enum LorvexHanlinAgentFactory {
     #else
     let engine = try HanlinAISDKAgentEngine(configuration: configuration)
     #endif
-    let persistence = try HanlinPrivateConversationStore(directory: directory)
+    let persistence = try conversationStore
+      ?? LorvexHanlinConversationHistoryRegistry.store(directory: directory)
     let agent = HanlinAgentSession(identity: identity, host: host,
                                     engine: engine, store: persistence)
     // Provider approval merely moves to the host's *independent* UI check.
