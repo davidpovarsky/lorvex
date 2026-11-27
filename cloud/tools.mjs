@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { CloudError } from './store.mjs';
 import {executeCanonicalTransition} from './canonical.mjs';
+import {requestFingerprint} from './request-fingerprint.mjs';
+import {hydrateCloudTask} from './task-result.mjs';
 
 const field=(type,more={})=>({type,...more});
 const str=max=>field('string',{maxLength:max,minLength:1});
@@ -11,6 +13,7 @@ const commonID={id:str(128)};
 const definitions=[
   ['list_tasks','List tasks with optional filters and pagination',false,{status:field('string',{enum:['all','open','actionable','completed','cancelled','someday']}),list_id:str(128),priority:int(1,3),text:nullable(250),limit:int(1,200),offset:int(0,50000)},[]],
   ['get_task','Read a task by its exact ID',false,commonID,['id']],
+  ['list_dependencies','Read the exact dependency edges for a task',false,commonID,['id']],
   ['search_tasks','Search tasks by title, text and notes',false,{query:str(250),status:field('string',{enum:['all','open','completed','cancelled','someday']}),limit:int(1,200)},['query']],
   ['get_summary','Task status and priority dashboard',false,{},[]],
   ['get_today','Today actionable tasks and schedule',false,{},[]],
@@ -26,6 +29,9 @@ const definitions=[
   ['start_task','Start a task',true,{...commonID,request_id:str(128)},['id']],
   ['pause_task','Pause a task',true,{...commonID,request_id:str(128)},['id']],
   ['cancel_task','Cancel a task',true,{...commonID,request_id:str(128)},['id']],
+  ['add_dependency','Add a prerequisite using the canonical task workflow; cycles and unavailable endpoints are rejected',true,{...commonID,depends_on_id:str(128),request_id:str(128)},['id','depends_on_id']],
+  ['remove_dependency','Remove a prerequisite using the canonical task workflow',true,{...commonID,depends_on_id:str(128),request_id:str(128)},['id','depends_on_id']],
+  ['delete_task','Move a task to Trash using the canonical archive workflow. The task remains recoverable in Lorvex.',true,{...commonID,request_id:str(128)},['id']],
   ['plan_task','Schedule a task for a date',true,{...commonID,date:str(10),request_id:str(128)},['id','date']],
   ['create_event','Create a Lorvex calendar event',true,{title:str(500),start_date:str(10),end_date:str(10),start_time:str(8),end_time:str(8),all_day:field('boolean'),location:nullable(500),notes:nullable(8000),request_id:str(128)},['title','start_date']],
   ['create_list','Create a Lorvex task list',true,{name:str(150),description:nullable(3000),request_id:str(128)},['name']],
@@ -34,7 +40,7 @@ const definitions=[
 ];
 export const CLOUD_TOOLS=definitions.map(([name,description,writes,properties,required])=>({
   name,description,inputSchema:{type:'object',properties,required,additionalProperties:false},
-  annotations:{readOnlyHint:!writes,destructiveHint:writes&&name==='cancel_task',
+  annotations:{readOnlyHint:!writes,destructiveHint:['cancel_task','delete_task'].includes(name),
                openWorldHint:false},writes
 }));
 export function validateTool(name,args) {
@@ -86,12 +92,37 @@ const paginate=(list,args)=>{const offset=args.offset??0,limit=args.limit??100;r
   truncated:list.length>offset+limit,nextOffset:list.length>offset+limit?offset+limit:null}};
 export function invokeCloudTool(store,accountId,name,args={}) {
   const spec=validateTool(name,args);
-  const hydrateTask=t=>{
-    const links=store.list(accountId,'task_tag').filter(l=>l.task_id===t.id);
-    const ids=new Set(links.map(l=>l.tag_id));
-    return {...t,tags:store.list(accountId,'tag').filter(t=>ids.has(t.id)).map(t=>t.display_name)};
-  };
-  const tasks=()=>store.list(accountId,'task').map(hydrateTask);
+  const old=args.id?store.entity(accountId,'task',args.id):null;
+  const canonical=['add_dependency','remove_dependency','delete_task'].includes(name)||
+    (['complete_task','reopen_task','start_task','pause_task','cancel_task'].includes(name)&&
+      (process.env.LORVEX_CANONICAL_CORE_EXECUTABLE||old?.recurrence||
+       (old?.recurrence_rollover_state&&old.recurrence_rollover_state!=='none')||old?.recurrence_successor_id));
+  if(!spec.writes||canonical)return invokeValidatedTool(store,accountId,name,args);
+  return store.tx(()=>{
+    const requestId=args.request_id,fingerprint=requestFingerprint(name,args);
+    if(requestId){
+      const row=store.get('SELECT response FROM receipts WHERE account_id=? AND request_id=?',accountId,requestId);
+      if(row){
+        const prior=JSON.parse(row.response);
+        if(!prior.request_fingerprint)throw new CloudError(409,'idempotency_reconciliation_required');
+        if(prior.mcp_tool!==name||prior.request_fingerprint!==fingerprint||!prior.mcp_response)
+          throw new CloudError(409,'idempotency_conflict');
+        return prior.mcp_response;
+      }
+    }
+    const result=invokeValidatedTool(store,accountId,name,args);
+    if(requestId){
+      const row=store.get('SELECT response FROM receipts WHERE account_id=? AND request_id=?',accountId,requestId);
+      if(!row)throw new CloudError(500,'missing_write_receipt');
+      const receipt={...JSON.parse(row.response),mcp_tool:name,request_fingerprint:fingerprint,mcp_response:result};
+      store.run('UPDATE receipts SET response=? WHERE account_id=? AND request_id=?',JSON.stringify(receipt),accountId,requestId);
+    }
+    return result;
+  });
+}
+function invokeValidatedTool(store,accountId,name,args) {
+  const hydrateTask=task=>hydrateCloudTask(store,accountId,task);
+  const tasks=()=>store.list(accountId,'task').filter(t=>!t.archived_at).map(hydrateTask);
   const lists=()=>store.list(accountId,'list');
   const events=()=>store.list(accountId,'calendar_event');
   const habits=()=>store.list(accountId,'habit');
@@ -126,6 +157,14 @@ export function invokeCloudTool(store,accountId,name,args={}) {
     const t=store.entity(accountId,'task',args.id);
     if(!t)throw new CloudError(404,'task_not_found');
     answer={task:taskFor(hydrateTask(t))};
+  } else if(name==='list_dependencies'){
+    if(!store.entity(accountId,'task',args.id))throw new CloudError(404,'task_not_found');
+    answer={task_id:args.id,dependencies:store.list(accountId,'task_dependency').filter(edge=>edge.task_id===args.id)};
+  } else if(['add_dependency','remove_dependency','delete_task'].includes(name)){
+    if(!process.env.LORVEX_CANONICAL_CORE_EXECUTABLE)throw new CloudError(503,'canonical_core_required');
+    return executeCanonicalTransition(store,accountId,name,args).then(task=>({
+      content:[{type:'text',text:JSON.stringify({task:taskFor(task)})}],isError:false
+    }));
   } else if(name==='get_summary') {
     answer=store.summary(accountId);
   } else if(name==='get_today'){
@@ -171,7 +210,7 @@ export function invokeCloudTool(store,accountId,name,args={}) {
        ['complete_task','reopen_task','start_task','pause_task','cancel_task'].includes(name)){
       if(!process.env.LORVEX_CANONICAL_CORE_EXECUTABLE)throw new CloudError(503,'recurring_transition_requires_canonical_core');
       return executeCanonicalTransition(store,accountId,name,args).then(task=>({
-        content:[{type:'text',text:JSON.stringify({task:taskFor(hydrateTask(task))})}],isError:false
+        content:[{type:'text',text:JSON.stringify({task:taskFor(task)})}],isError:false
       }));
     }
     const patch={};

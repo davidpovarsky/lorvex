@@ -45,7 +45,7 @@ test('OAuth grants only requested scope and prompts reauthorization for unauthor
  assert.equal(exchanged.status,200);assert.equal(exchanged.value.scope,'lorvex.read offline_access');
  const token=exchanged.value.access_token;
  const list=await request('/cloud/mcp',{jsonrpc:'2.0',id:1,method:'tools/list'},token);
- assert.equal(list.status,200);assert.equal(list.value.result.tools.length,22);
+ assert.equal(list.status,200);assert.equal(list.value.result.tools.length,26);
  const denied=await request('/cloud/mcp',{jsonrpc:'2.0',id:2,method:'tools/call',params:{name:'create_task',arguments:{title:'Must not exist'}}},token);
  assert.equal(denied.status,200);assert.equal(denied.value.result.isError,true);
   assert.match(denied.value.result._meta['mcp/www_authenticate'][0],/insufficient_scope/);

@@ -12,7 +12,15 @@ public struct NativeRequest: Codable, Sendable {
 
   public struct Arguments: Codable, Sendable {
     public let id: String
-    public init(id: String) { self.id = id }
+    public let dependsOnId: String?
+    public init(id: String, dependsOnId: String? = nil) {
+      self.id = id
+      self.dependsOnId = dependsOnId
+    }
+    enum CodingKeys: String, CodingKey {
+      case id
+      case dependsOnId = "depends_on_id"
+    }
   }
 
   enum CodingKeys: String, CodingKey {

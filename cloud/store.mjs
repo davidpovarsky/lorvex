@@ -3,6 +3,7 @@ import { randomUUID, randomBytes, createHash, scryptSync, timingSafeEqual } from
 import fs from 'node:fs';
 import path from 'node:path';
 import {entityKinds,projectServerPayload} from './payload.mjs';
+import {requestFingerprint} from './request-fingerprint.mjs';
 
 export const SCHEMA_VERSION=4;
 const ENTITY_KINDS=entityKinds;
@@ -166,7 +167,28 @@ export class CloudStore {
   push(accountId,items,requestId,expectedVersions=undefined){
     if(!Array.isArray(items)||items.length<1||items.length>60||typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{12,128}$/.test(requestId))throw new CloudError(400,'invalid_batch');
     const prior=this.get('SELECT response FROM receipts WHERE account_id=? AND request_id=?',accountId,requestId);
-    if(prior)return JSON.parse(prior.response);
+    const fingerprint=requestFingerprint('sync_push',{items,expectedVersions:expectedVersions??null});
+    if(prior){
+      const cached=JSON.parse(prior.response);
+      if(!cached.request_fingerprint){
+        // Old accepted receipts carry immutable change sequence numbers. Verify
+        // every exact wire envelope before upgrading that receipt in place.
+        const verified=Array.isArray(cached.results)&&cached.results.length===items.length&&
+          cached.results.every((result,index)=>{
+            if(result.status!=='accepted'||!Number.isSafeInteger(result.seq))return false;
+            const row=this.get('SELECT * FROM changes WHERE account_id=? AND seq=?',accountId,result.seq);
+            const item=items[index];
+            return row&&['entity_type','entity_id','operation','version','payload_schema_version','payload','device_id']
+              .every(key=>row[key]===item[key]);
+          });
+        if(!verified)throw new CloudError(409,'idempotency_reconciliation_required');
+        this.run('UPDATE receipts SET response=? WHERE account_id=? AND request_id=?',
+          JSON.stringify({request_fingerprint:fingerprint,sync_response:cached}),accountId,requestId);
+        return cached;
+      }
+      if(cached.request_fingerprint!==fingerprint||!cached.sync_response)throw new CloudError(409,'idempotency_conflict');
+      return cached.sync_response;
+    }
     items.forEach(validateEnvelope);
     if(expectedVersions!==undefined&&(!obj(expectedVersions)||Object.values(expectedVersions).some(v=>v!==null&&(typeof v!=='string'||!validVersion.test(v)))))throw new CloudError(400,'invalid_expected_versions');
     return this.tx(()=>{
@@ -182,7 +204,8 @@ export class CloudStore {
         }
         return this.receive(accountId,e);
       }),response={results};
-      this.run('INSERT INTO receipts(account_id,request_id,response,created) VALUES(?,?,?,?)',accountId,requestId,JSON.stringify(response),this.clock());
+      this.run('INSERT INTO receipts(account_id,request_id,response,created) VALUES(?,?,?,?)',accountId,requestId,
+        JSON.stringify({request_fingerprint:fingerprint,sync_response:response}),this.clock());
       return response;
     });
   }
@@ -223,7 +246,7 @@ export class CloudStore {
     });
   }
   summary(accountId){
-    const tasks=this.list(accountId,'task');
+    const tasks=this.list(accountId,'task').filter(t=>!t.archived_at);
     const byStatus={},byPriority={'1':0,'2':0,'3':0};
     for(const t of tasks){
       byStatus[t.status||'open']=(byStatus[t.status||'open']||0)+1;
